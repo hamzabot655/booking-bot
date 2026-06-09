@@ -204,25 +204,23 @@ def create_driver(use_headless: bool, logger: logging.Logger) -> webdriver.Chrom
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_argument("--disable-infobars")
     options.add_argument("--lang=en-US,en")
-    options.add_argument("--start-maximized")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-software-rasterizer")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument(f"--remote-debugging-port={0}")
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    if os.name == "nt":
+        options.add_argument("--start-maximized")
+    else:
+        options.add_argument("--window-size=1920,1080")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        os.environ["DBUS_SESSION_BUS_ADDRESS"] = "/dev/null"
+        os.environ["DISPLAY"] = ":99"
     options.add_experimental_option("prefs", {"intl.accept_languages": "en-US,en"})
-    options.add_experimental_option("detach", True)
     profile_dir = Path.home() / "goethe-bot-profiles" / f"profile_{_driver_counter}"
     profile_dir.mkdir(parents=True, exist_ok=True)
     options.add_argument(f"--user-data-dir={profile_dir}")
 
-    os.environ["DBUS_SESSION_BUS_ADDRESS"] = "/dev/null"
-    os.environ["DISPLAY"] = ":99"
-
     service = Service(ChromeDriverManager().install())
-    service.creation_flags = 0
+    if os.name == "nt":
+        service.creation_flags = 0
     driver = webdriver.Chrome(service=service, options=options)
     try:
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")

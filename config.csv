@@ -1,6 +1,0 @@
-name,email,password,exam_level,city,booking_datetime,passport,cnic,dob,phone,gender,nationality,address
-Ahmad Raza,ahmad.test@gmail.com,TestPass123!,A1,Karachi,2026-07-03T11:24:00,AB1234567,42101-1234567-8,15/03/2001,+923001112233,Male,Pakistani,House 10 Block 5 Clifton Karachi
-Fatima Zafar,fatima.test@gmail.com,TestPass456!,A2,Lahore,2026-07-03T14:08:00,CD7890123,42201-9876543-2,22/07/2000,+923004455667,Female,Pakistani,Flat 3 Gulberg Main Boulevard Lahore
-Hamza Ali,hamza.test@gmail.com,TestPass789!,B1,Islamabad,2026-07-03T15:04:00,EF3456789,42301-4567890-1,10/12/2002,+923007788990,Male,Pakistani,Street 5 F-11/2 Islamabad
-Zainab Khan,zainab.test@gmail.com,TestPass000!,A1,Karachi,2026-07-19T10:23:00,GH9012345,42401-1112223-4,05/09/1999,+923001234567,Female,Pakistani,House 20 Block 4 Defence Karachi
-Bilal Ahmed,bilal.test@gmail.com,TestPass111!,B1,Lahore,2026-07-03T14:08:00,IJ5678901,42501-2223334-5,18/12/2001,+923009988776,Male,Pakistani,17 Main Market Gulberg Lahore

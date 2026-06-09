@@ -8,3 +8,5 @@ venv
 debug_*
 confirmation_*
 .env
+
+config.csv
