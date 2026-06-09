@@ -1,7 +1,7 @@
-FROM python:3.12
+FROM python:3.12-slim
 
-# Install Chromium browser + driver from Debian repos (handles all dependencies)
-RUN apt-get update && apt-get install -y \
+# Install Chromium + driver from Debian (auto-handles deps, slim-friendly)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     chromium-driver \
     xvfb \
