@@ -104,6 +104,27 @@ BURST_POST_POLL_MIN = 2.0
 BURST_POST_POLL_MAX = 3.0
 BURST_CRASH_RETRY = 1.5
 
+# ── Exam schedule (Pakistan 2026) ──
+EXAM_SCHEDULE = [
+    {"level": "A1", "city": "Islamabad", "exam_date": "18-19 Jul 2026", "registration_period": "26 Jun - 17 Jul 2026", "bookable_from": "26.06.2026", "price_full": "PKR 25,000", "price_reduced": "PKR 16,500", "status": "upcoming"},
+    {"level": "A1", "city": "Lahore", "exam_date": "24 Jul 2026", "registration_period": "3 Jul - 23 Jul 2026", "bookable_from": "03.07.2026", "price_full": "PKR 25,000", "price_reduced": "PKR 16,500", "status": "upcoming"},
+    {"level": "A1", "city": "Karachi", "exam_date": "31 Jul - 1 Aug 2026", "registration_period": "17 Jul - 30 Jul 2026", "bookable_from": "17.07.2026", "price_full": "PKR 25,000", "price_reduced": "PKR 16,500", "status": "upcoming"},
+    {"level": "A1", "city": "Lahore", "exam_date": "21 Aug 2026", "registration_period": "7 Aug - 20 Aug 2026", "bookable_from": "07.08.2026", "price_full": "PKR 25,000", "price_reduced": "PKR 16,500", "status": "upcoming"},
+    {"level": "A2", "city": "Karachi", "exam_date": "3-4 Jul 2026", "registration_period": "19 Jun - 2 Jul 2026", "bookable_from": "19.06.2026", "price_full": "PKR 25,000", "price_reduced": "PKR 16,500", "status": "upcoming"},
+    {"level": "A2", "city": "Islamabad", "exam_date": "18-19 Jul 2026", "registration_period": "26 Jun - 17 Jul 2026", "bookable_from": "26.06.2026", "price_full": "PKR 25,000", "price_reduced": "PKR 16,500", "status": "upcoming"},
+    {"level": "A2", "city": "Lahore", "exam_date": "25-26 Jul 2026", "registration_period": "3 Jul - 23 Jul 2026", "bookable_from": "03.07.2026", "price_full": "PKR 25,000", "price_reduced": "PKR 16,500", "status": "upcoming"},
+    {"level": "B1", "city": "Lahore", "exam_date": "20-21 Jun 2026", "registration_period": "5 Jun - 18 Jun 2026", "bookable_from": "fully_booked", "price_full": "PKR 30,000", "price_reduced": "PKR 25,000", "status": "fully_booked"},
+    {"level": "B1", "city": "Karachi", "exam_date": "3-4 Jul 2026", "registration_period": "19 Jun - 2 Jul 2026", "bookable_from": "19.06.2026", "price_full": "PKR 30,000", "price_reduced": "PKR 25,000", "status": "upcoming"},
+    {"level": "B1", "city": "Islamabad", "exam_date": "18-19 Jul 2026", "registration_period": "26 Jun - 17 Jul 2026", "bookable_from": "26.06.2026", "price_full": "PKR 30,000", "price_reduced": "PKR 25,000", "status": "upcoming"},
+    {"level": "B1", "city": "Lahore", "exam_date": "25-26 Jul 2026", "registration_period": "3 Jul - 23 Jul 2026", "bookable_from": "03.07.2026", "price_full": "PKR 30,000", "price_reduced": "PKR 25,000", "status": "upcoming"},
+    {"level": "B1", "city": "Karachi", "exam_date": "31 Jul - 1 Aug 2026", "registration_period": "17 Jul - 29 Jul 2026", "bookable_from": "17.07.2026", "price_full": "PKR 30,000", "price_reduced": "PKR 25,000", "status": "upcoming"},
+    {"level": "B1", "city": "Lahore", "exam_date": "22-23 Aug 2026", "registration_period": "7 Aug - 20 Aug 2026", "bookable_from": "07.08.2026", "price_full": "PKR 30,000", "price_reduced": "PKR 25,000", "status": "upcoming"},
+]
+
+
+def get_schedule() -> list:
+    return EXAM_SCHEDULE
+
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 

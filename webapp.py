@@ -272,6 +272,11 @@ def api_results():
     return jsonify(student_results)
 
 
+@app.route("/api/schedule")
+def api_schedule():
+    return jsonify(bot.get_schedule())
+
+
 def _get_loaded_students() -> List[Dict]:
     global config_path
     if not config_path or not Path(config_path).exists():

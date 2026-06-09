@@ -180,6 +180,15 @@
     </div>
   </div>
 
+  <!-- Exam Schedule -->
+  <div class="card" id="scheduleCard">
+    <div class="card-title">
+      <span>📅 Exam Schedule 2026</span>
+      <button class="btn btn-secondary btn-sm" onclick="loadSchedule()">🔄 Refresh</button>
+    </div>
+    <div id="scheduleBody" style="font-size:12px;color:#6c7086;text-align:center;padding:10px;">Connect to backend to view schedule</div>
+  </div>
+
   <div class="row">
     <div class="col">
       <div class="card">
@@ -233,6 +242,7 @@ async function connectBackend() {
     document.getElementById("backendStatus").textContent = "✅ Connected";
     updateBadge(false);
     await loadConfigFromBackend();
+    await loadSchedule();
     startStatusPoll();
   } catch (e) {
     connected = false;
@@ -398,6 +408,52 @@ async function stopBot() {
     setTimeout(loadResults, 2000);
   } catch (e) {
     alert("Failed to stop: " + e.message);
+  }
+}
+
+// ── Schedule ──
+async function loadSchedule() {
+  if (!connected) return;
+  try {
+    const resp = await fetch(`${BASE}/api/schedule`, { signal: AbortSignal.timeout(5000) });
+    const data = await resp.json();
+    if (!data || data.length === 0) {
+      document.getElementById("scheduleBody").innerHTML = '<span style="color:#6c7086;">No schedule data available</span>';
+      return;
+    }
+    // Group by level
+    const levels = ["A1","A2","B1"];
+    let html = "";
+    for (const lv of levels) {
+      const items = data.filter(s => s.level === lv);
+      if (items.length === 0) continue;
+      html += `<div style="margin-bottom:10px;"><b style="color:#89b4fa;font-size:13px;">${lv}</b>`;
+      html += `<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;">`;
+      html += `<tr style="color:#6c7086;font-size:10px;text-transform:uppercase;">
+        <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #313244;">City</th>
+        <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #313244;">Exam Date</th>
+        <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #313244;">Registration</th>
+        <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #313244;">Bookable</th>
+        <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #313244;">Price</th>
+        <th style="text-align:left;padding:4px 6px;border-bottom:1px solid #313244;">Status</th>
+      </tr>`;
+      for (const s of items) {
+        const statColor = s.status === "fully_booked" ? "#f38ba8" : s.status === "upcoming" ? "#a6e3a1" : "#6c7086";
+        const statLabel = s.status === "fully_booked" ? "❌ Fully booked" : "✅ Open";
+        html += `<tr>
+          <td style="padding:4px 6px;border-bottom:1px solid #252536;">${escHtml(s.city)}</td>
+          <td style="padding:4px 6px;border-bottom:1px solid #252536;">${escHtml(s.exam_date)}</td>
+          <td style="padding:4px 6px;border-bottom:1px solid #252536;">${escHtml(s.registration_period)}</td>
+          <td style="padding:4px 6px;border-bottom:1px solid #252536;">${escHtml(s.bookable_from)}</td>
+          <td style="padding:4px 6px;border-bottom:1px solid #252536;">${escHtml(s.price_full)}</td>
+          <td style="padding:4px 6px;border-bottom:1px solid #252536;color:${statColor};">${statLabel}</td>
+        </tr>`;
+      }
+      html += `</table></div>`;
+    }
+    document.getElementById("scheduleBody").innerHTML = html;
+  } catch (e) {
+    document.getElementById("scheduleBody").innerHTML = '<span style="color:#f38ba8;">Failed to load schedule</span>';
   }
 }
 
