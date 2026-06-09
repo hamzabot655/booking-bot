@@ -199,28 +199,35 @@ def create_driver(use_headless: bool, logger: logging.Logger) -> webdriver.Chrom
     global _driver_counter
     _driver_counter += 1
     options = Options()
-    if use_headless:
-        options.add_argument("--headless=new")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--lang=en-US,en")
     if os.name == "nt":
+        if use_headless:
+            options.add_argument("--headless=new")
         options.add_argument("--start-maximized")
     else:
+        options.binary_location = "/usr/bin/chromium"
+        options.add_argument("--headless=new")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         os.environ["DBUS_SESSION_BUS_ADDRESS"] = "/dev/null"
         os.environ["DISPLAY"] = ":99"
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--lang=en-US,en")
     options.add_experimental_option("prefs", {"intl.accept_languages": "en-US,en"})
     profile_dir = Path.home() / "goethe-bot-profiles" / f"profile_{_driver_counter}"
     profile_dir.mkdir(parents=True, exist_ok=True)
     options.add_argument(f"--user-data-dir={profile_dir}")
 
-    service = Service(ChromeDriverManager().install())
-    if os.name == "nt":
-        service.creation_flags = 0
+    chromedriver_bin = os.environ.get("CHROMEDRIVER_PATH", "")
+    if not chromedriver_bin and os.name != "nt" and Path("/usr/bin/chromedriver").exists():
+        chromedriver_bin = "/usr/bin/chromedriver"
+    if chromedriver_bin:
+        service = Service(chromedriver_bin)
+    else:
+        service = Service(ChromeDriverManager().install())
+        if os.name == "nt":
+            service.creation_flags = 0
     driver = webdriver.Chrome(service=service, options=options)
     try:
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")

@@ -1,32 +1,10 @@
-FROM python:3.12-slim
+FROM python:3.12
 
-# Install Chrome + all required dependencies for headless container use
+# Install Chromium browser + driver from Debian repos (handles all dependencies)
 RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    unzip \
-    curl \
+    chromium \
+    chromium-driver \
     xvfb \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0t64 \
-    libatk-bridge2.0-0t64 \
-    libcups2t64 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2t64 \
-    libgdk-pixbuf2.0-0 \
-    libgtk-3-0t64 \
-    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/chrome-key.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/chrome-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
