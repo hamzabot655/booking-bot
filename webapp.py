@@ -71,6 +71,9 @@ def setup_web_logger(name: str) -> logging.Logger:
     return logger
 
 
+def _student_key(s: Dict) -> str:
+    return f"{s.get('name', '?')}|{s.get('level', s.get('exam_level', '?'))}|{s.get('city', '?')}"
+
 def run_students_web(students: List[Dict], headless: bool):
     global bot_stop_event, bot_running, student_status, student_results
     bot_stop_event.clear()
@@ -83,9 +86,11 @@ def run_students_web(students: List[Dict], headless: bool):
     results_lock = threading.Lock()
 
     def run_one(s: Dict):
+        key = _student_key(s)
         name = s.get("name", "Unknown")
-        student_logger = setup_web_logger(f"bot_{name}")
-        student_status[name] = {"status": "Waiting...", "color": "warning", "details": "Polling for slot"}
+        level = s.get("level", s.get("exam_level", "?"))
+        student_logger = setup_web_logger(f"bot_{name}_{level}")
+        student_status[key] = {"status": "Waiting...", "color": "warning", "details": "Polling for slot"}
 
         result = bot.run_student_flow(
             s, use_headless=headless,
@@ -97,19 +102,19 @@ def run_students_web(students: List[Dict], headless: bool):
 
         status = result.get("status", "failed")
         if status == "confirmed":
-            student_status[name] = {"status": "Confirmed!", "color": "success", "details": f"Ref: {result.get('reference', 'N/A')}"}
+            student_status[key] = {"status": "Confirmed!", "color": "success", "details": f"Ref: {result.get('reference', 'N/A')}"}
         elif status == "submitted":
-            student_status[name] = {"status": "Submitted", "color": "success", "details": "Form submitted"}
+            student_status[key] = {"status": "Submitted", "color": "success", "details": "Form submitted"}
         elif status == "stopped":
-            student_status[name] = {"status": "Stopped", "color": "danger", "details": "Cancelled by user"}
+            student_status[key] = {"status": "Stopped", "color": "danger", "details": "Cancelled by user"}
         elif status == "failed":
-            student_status[name] = {"status": "Failed", "color": "danger", "details": "Error occurred"}
+            student_status[key] = {"status": "Failed", "color": "danger", "details": "Error occurred"}
         else:
-            student_status[name] = {"status": status, "color": "warning", "details": ""}
+            student_status[key] = {"status": status, "color": "warning", "details": ""}
 
     for s in students:
-        name = s.get("name", "Unknown")
-        student_status[name] = {"status": "Starting...", "color": "info", "details": "Launching browser"}
+        key = _student_key(s)
+        student_status[key] = {"status": "Starting...", "color": "info", "details": "Launching browser"}
         t = threading.Thread(target=run_one, args=(s,), daemon=True)
         threads.append(t)
         t.start()
@@ -150,9 +155,9 @@ def api_status():
                 "level": s.get("level", s.get("exam_level", "?")),
                 "city": s.get("city", "?"),
                 "booking_time": s.get("booking_datetime", "?"),
-                "status": student_status.get(s.get("name", ""), {}).get("status", "Not started"),
-                "color": student_status.get(s.get("name", ""), {}).get("color", "secondary"),
-                "details": student_status.get(s.get("name", ""), {}).get("details", ""),
+                "status": student_status.get(_student_key(s), {}).get("status", "Not started"),
+                "color": student_status.get(_student_key(s), {}).get("color", "secondary"),
+                "details": student_status.get(_student_key(s), {}).get("details", ""),
             }
             for s in _get_loaded_students()
         ],
