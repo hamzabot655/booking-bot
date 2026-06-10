@@ -50,9 +50,11 @@ Automated bot for booking Goethe-Institut Pakistan German language exams (A1, A2
   - v4: width-aware text, zero overlap
   - v5: clean light theme, simple
   - v6: advanced dark theme with dashboard mockup, phone+desktop mockup, workflow diagram, speed table, architecture flow
-- **Explained polling constants** in booking_helper.py (DEFAULT_POLL_INTERVAL, burst timings, human delays, crash retry)
-- **Discussed testing options** — user can create local test HTML or point to current bookable Goethe page
-- **Discussed frontend improvements** — current UI rated 5.5/10, user may want redesign later
+  - User took v6, will finalize manually (adding images, fixing text overflow, font sizes)
+- **Explained polling constants** in booking_helper.py — which timings control what, how to optimize, realistic limits
+- **Discussed testing strategy** — local test HTML page vs pointing to current bookable Goethe page
+- **Discussed frontend improvements** — current UI rated 5.5/10, may revisit later
+- **Made GitHub repo private** — repo is now PRIVATE, only user can see it
 - **No code changes to core project files** (booking_helper.py, webapp.py etc.)
 
 ## Current Config (3 students)
