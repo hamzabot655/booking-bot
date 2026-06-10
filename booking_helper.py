@@ -222,7 +222,7 @@ def create_driver(use_headless: bool, logger: logging.Logger) -> webdriver.Chrom
         options.add_argument("--start-maximized")
     else:
         # Auto-detect Chrome binary on Linux (multiple paths)
-        for chrome_bin in ["/usr/bin/google-chrome-stable", "/usr/bin/google-chrome", "/usr/bin/chromium-browser", "/usr/bin/chromium"]:
+        for chrome_bin in ["/opt/google/chrome/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/google-chrome", "/usr/bin/chromium-browser", "/usr/bin/chromium"]:
             if Path(chrome_bin).exists():
                 options.binary_location = chrome_bin
                 break
@@ -242,7 +242,7 @@ def create_driver(use_headless: bool, logger: logging.Logger) -> webdriver.Chrom
 
     # Use system chromedriver on Linux if available (Alpine), else use webdriver-manager
     if os.name != "nt":
-        system_driver = next((p for p in ["/usr/bin/chromedriver", "/usr/lib/chromium/chromedriver"] if Path(p).exists()), None)
+        system_driver = next((p for p in ["/usr/local/bin/chromedriver", "/usr/bin/chromedriver", "/usr/lib/chromium/chromedriver"] if Path(p).exists()), None)
         if system_driver:
             service = Service(system_driver)
         else:

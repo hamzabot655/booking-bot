@@ -1,7 +1,4 @@
-FROM python:3.12-alpine
-
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.20/community" >> /etc/apk/repositories && \
-    apk add --no-cache chromium chromium-chromedriver xvfb
+FROM joyzoursky/python-chromedriver:3.12
 
 WORKDIR /app
 
