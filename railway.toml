@@ -2,7 +2,8 @@
 name = "goethe-booking-bot"
 
 [build]
-builder = "nixpacks"
+builder = "dockerfile"
+dockerfile_path = "Dockerfile"
 
 [deploy]
 restartPolicyType = "never"
