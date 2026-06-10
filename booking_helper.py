@@ -79,16 +79,12 @@ SELECTOR_REFERENCE = {
     "login_password_input": "input[type='password'], input[name='password'], #password, #passwort",
     "login_submit_button": "button[type='submit'], input[type='submit'], .btn-submit, #login-button, .login-button",
     "login_checkbox_stay": "input[type='checkbox']",
-    "form_firstname": "input[name*='first'], input[id*='first'], input[name*='vorname']",
-    "form_lastname": "input[name*='last'], input[id*='last'], input[name*='nachname'], input[name*='surname']",
+    "form_name": "input[name*='name'], input[id*='name'], input[placeholder*='Name'], input[placeholder*='name']",
     "form_dob": "input[name*='birth'], input[id*='birth'], input[name*='geburt'], input[type='date']",
-    "form_gender": "select[name*='gender'], select[id*='gender'], select[name*='geschlecht']",
-    "form_nationality": "select[name*='nation'], select[id*='nation'], select[name*='staats']",
-    "form_passport": "input[name*='passport'], input[id*='passport'], input[name*='ausweis'], input[name*='id']",
-    "form_cnic": "input[name*='cnic'], input[id*='cnic'], input[name*='nic'], input[name*='identity']",
-    "form_phone": "input[name*='phone'], input[id*='phone'], input[name*='telefon'], input[name*='mobile'], input[type='tel']",
+    "form_place_of_birth": "input[name*='place'], input[id*='place'], input[name*='ort'], input[placeholder*='Place'], input[placeholder*='Birth']",
     "form_address": "textarea[name*='address'], input[name*='address'], textarea[id*='address']",
-    "form_city": "select[name*='city'], select[id*='city'], input[name*='city']",
+    "form_phone": "input[name*='phone'], input[id*='phone'], input[name*='telefon'], input[name*='mobile'], input[type='tel']",
+    "form_level": "select[name*='level'], select[id*='level'], select[name*='stufe'], select[name*='kurs']",
     "form_terms": "input[type='checkbox'], .terms input, .agb input, input[name*='agree'], input[name*='confirm']",
     "form_submit": "button[type='submit'], input[type='submit'], .btn-submit, .submit-button, button:contains('Submit'), button:contains('Book'), button:contains('Confirm'), button:contains('Register')",
 }
@@ -495,13 +491,10 @@ def fill_registration_form(driver: webdriver.Chrome, student: Dict[str, str], lo
         logger.info("Page title: %s", driver.title)
 
         fields = {
-            "form_firstname": student.get("firstname", student.get("name", "").split()[0] if student.get("name") else ""),
-            "form_lastname": student.get("lastname", " ".join(student.get("name", "").split()[1:]) if student.get("name") and len(student.get("name", "").split()) > 1 else ""),
+            "form_name": student.get("name", ""),
             "form_dob": student.get("dob", ""),
-            "form_passport": student.get("passport", student.get("passport_number", "")),
-            "form_cnic": student.get("cnic", ""),
+            "form_place_of_birth": student.get("place_of_birth", ""),
             "form_phone": student.get("phone", ""),
-            "form_nationality": student.get("nationality", "Pakistani"),
         }
 
         for selector_key, value in fields.items():
@@ -520,16 +513,6 @@ def fill_registration_form(driver: webdriver.Chrome, student: Dict[str, str], lo
             except (NoSuchElementException, TimeoutException):
                 logger.debug("Field not found: %s", selector_key)
                 continue
-
-        try:
-            gender_val = student.get("gender", "").lower()
-            if gender_val:
-                gender_el = driver.find_element(By.CSS_SELECTOR, SELECTOR_REFERENCE["form_gender"])
-                if gender_el.is_displayed():
-                    Select(gender_el).select_by_visible_text(student["gender"])
-                    random_human_delay()
-        except (NoSuchElementException, TimeoutException):
-            pass
 
         try:
             address = student.get("address", "")
@@ -551,6 +534,16 @@ def fill_registration_form(driver: webdriver.Chrome, student: Dict[str, str], lo
                     break
         except (NoSuchElementException, TimeoutException):
             pass
+
+        try:
+            level_val = student.get("level", student.get("exam_level", ""))
+            if level_val:
+                level_el = driver.find_element(By.CSS_SELECTOR, SELECTOR_REFERENCE["form_level"])
+                if level_el.is_displayed():
+                    Select(level_el).select_by_visible_text(level_val)
+                    random_human_delay()
+        except (NoSuchElementException, TimeoutException):
+            logger.debug("Level dropdown not found")
 
         random_human_delay(1.0, 2.0)
 
