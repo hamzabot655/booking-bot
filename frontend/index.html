@@ -252,6 +252,10 @@
     <!-- Actions + Schedule -->
     <div class="card">
       <div class="card-hd"><h3><span class="ico">🎯</span> Actions</h3></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+        <input type="email" id="goetheEmail" placeholder="Goethe email" style="font-size:12px;grid-column:1;">
+        <input type="password" id="goethePass" placeholder="Goethe password" style="font-size:12px;grid-column:2;">
+      </div>
       <div class="btn-group" style="margin-bottom:8px;">
         <button id="btnStart" class="btn btn-success" onclick="startBot()">▶ Start Bot</button>
         <button id="btnStop" class="btn btn-danger" disabled onclick="stopBot()">■ Stop</button>
@@ -508,9 +512,13 @@ async function startBot() {
   }
 
   // Run now mode
+  const goetheEmail = document.getElementById("goetheEmail").value.trim();
+  const goethePass = document.getElementById("goethePass").value.trim();
   const body = {
     headless: document.getElementById("headlessMode").checked,
     immediate: true,
+    goethe_email: goetheEmail || undefined,
+    goethe_password: goethePass || undefined,
     telegram_token: document.getElementById("tgToken").value.trim(),
     telegram_chat_id: document.getElementById("tgChatId").value.trim(),
   };
@@ -661,11 +669,17 @@ function loadNotificationSettings() {
   if (e) document.getElementById("emailTo").value = e;
   const w = localStorage.getItem("wa_to");
   if (w) document.getElementById("waTo").value = w;
+  const ge = localStorage.getItem("goethe_email");
+  if (ge) document.getElementById("goetheEmail").value = ge;
+  const gp = localStorage.getItem("goethe_pass");
+  if (gp) document.getElementById("goethePass").value = gp;
 }
 document.getElementById("tgToken").onchange = () => localStorage.setItem("tg_token", document.getElementById("tgToken").value);
 document.getElementById("tgChatId").onchange = () => localStorage.setItem("tg_chat_id", document.getElementById("tgChatId").value);
 document.getElementById("emailTo").onchange = () => localStorage.setItem("email_to", document.getElementById("emailTo").value);
 document.getElementById("waTo").onchange = () => localStorage.setItem("wa_to", document.getElementById("waTo").value);
+document.getElementById("goetheEmail").onchange = () => localStorage.setItem("goethe_email", document.getElementById("goetheEmail").value);
+document.getElementById("goethePass").onchange = () => localStorage.setItem("goethe_pass", document.getElementById("goethePass").value);
 
 // ── Helpers ──
 function escHtml(s) {

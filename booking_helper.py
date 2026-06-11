@@ -514,15 +514,18 @@ def solve_captcha(driver: webdriver.Chrome, logger: logging.Logger) -> bool:
 
 def smart_retry(student: Dict[str, str], use_headless: bool, logger: logging.Logger,
                 stop_event: threading.Event, attempt: int = 1,
-                immediate: bool = False) -> Dict[str, str]:
+                immediate: bool = False,
+                global_email: str = "", global_password: str = "") -> Dict[str, str]:
     """Run student flow with smart retry on failure (new profile, new proxy).
-    When immediate=True, skip the scheduled wait and run right away."""
-    result = run_student_flow(student, use_headless, logger, stop_event, immediate=immediate)
+    When immediate=True, skip the scheduled wait and run right away.
+    When global_email/password set, overrides per-student CSV credentials."""
+    result = run_student_flow(student, use_headless, logger, stop_event, immediate=immediate,
+                              global_email=global_email, global_password=global_password)
     status = result.get("status", "failed")
     if status in ("failed", "error") and attempt <= MAX_SMART_RETRIES:
         logger.warning("Smart retry %d/%d for %s", attempt, MAX_SMART_RETRIES, student.get("name", "?"))
         time.sleep(random.uniform(30, 60))
-        result = smart_retry(student, use_headless, logger, stop_event, attempt + 1, immediate=immediate)
+        result = smart_retry(student, use_headless, logger, stop_event, attempt + 1, immediate=immediate, global_email=global_email, global_password=global_password)
     return result
 
 
@@ -895,10 +898,11 @@ def get_exam_url(level: str) -> str:
 
 def run_student_flow(student: Dict[str, str], use_headless: bool, logger: logging.Logger,
                      stop_event: threading.Event = None, proxy: Optional[str] = None,
-                     immediate: bool = False) -> Dict[str, str]:
+                     immediate: bool = False,
+                     global_email: str = "", global_password: str = "") -> Dict[str, str]:
     name = student.get("name", "Unknown")
-    email = student.get("email", "")
-    password = student.get("password", "")
+    email = global_email or student.get("email", "")
+    password = global_password or student.get("password", "")
     level = student.get("level", student.get("exam_level", ""))
     city = student.get("city", "Karachi")
     booking_time_str = student.get("booking_datetime", "")

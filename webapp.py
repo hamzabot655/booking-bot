@@ -92,7 +92,7 @@ def setup_web_logger(name: str) -> logging.Logger:
 def _student_key(s: Dict) -> str:
     return f"{s.get('name', '?')}|{s.get('level', s.get('exam_level', '?'))}|{s.get('city', '?')}"
 
-def run_students_web(students: List[Dict], headless: bool, immediate: bool = False):
+def run_students_web(students: List[Dict], headless: bool, immediate: bool = False, goethe_email: str = "", goethe_password: str = ""):
     global bot_stop_event, bot_running, student_status, student_results
     bot_stop_event.clear()
     bot_running = True
@@ -116,6 +116,8 @@ def run_students_web(students: List[Dict], headless: bool, immediate: bool = Fal
             logger=student_logger,
             stop_event=bot_stop_event,
             immediate=immediate,
+            global_email=goethe_email,
+            global_password=goethe_password,
         )
         with results_lock:
             student_results.append(result)
@@ -245,6 +247,8 @@ def api_start():
     data = request.get_json(silent=True) or {}
     headless = data.get("headless", not os.environ.get("DISPLAY"))
     immediate = data.get("immediate", False)
+    goethe_email = data.get("goethe_email", "") or ""
+    goethe_password = data.get("goethe_password", "") or ""
     if not headless and not os.environ.get("DISPLAY"):
         headless = True
 
@@ -266,7 +270,7 @@ def api_start():
         except queue.Empty:
             break
 
-    bot_thread = threading.Thread(target=run_students_web, args=(students, headless, immediate), daemon=True)
+    bot_thread = threading.Thread(target=run_students_web, args=(students, headless, immediate, goethe_email, goethe_password), daemon=True)
     bot_thread.start()
 
     return jsonify({"ok": True, "message": f"Started bot for {len(students)} student(s)"})
