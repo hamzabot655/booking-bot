@@ -91,8 +91,8 @@ SELECTOR_REFERENCE = {
 }
 
 DEFAULT_POLL_INTERVAL = 45
-MIN_HUMAN_DELAY = 0.5
-MAX_HUMAN_DELAY = 2.0
+MIN_HUMAN_DELAY = 0.05
+MAX_HUMAN_DELAY = 0.2
 
 BURST_BEFORE_SECONDS = 10
 BURST_AFTER_SECONDS = 150
@@ -409,13 +409,12 @@ def wait_and_find(driver: webdriver.Chrome, css_selector: str, timeout: int = 15
 
 def type_slowly(element: WebElement, text: str) -> None:
     element.clear()
-    for ch in text:
-        element.send_keys(ch)
-        time.sleep(random.uniform(0.02, 0.06))
+    element.send_keys(text)
+    time.sleep(random.uniform(0.01, 0.05))
 
 
 def click_continue_button(driver: webdriver.Chrome, logger: logging.Logger, timeout: int = 90) -> None:
-    random_human_delay(1.0, 2.5)
+    random_human_delay(0.1, 0.3)
     xpath = (
         "//*[self::a or self::button]"
         "[contains(translate(normalize-space(.), "
@@ -440,7 +439,7 @@ def click_continue_button(driver: webdriver.Chrome, logger: logging.Logger, time
 
 
 def click_book_for_myself(driver: webdriver.Chrome, logger: logging.Logger, timeout: int = 90) -> None:
-    random_human_delay(1.0, 2.5)
+    random_human_delay(0.1, 0.3)
     xpath = (
         "//*[self::a or self::button]"
         "[contains(translate(normalize-space(.), "
@@ -494,7 +493,7 @@ def _login_attempt(driver: webdriver.Chrome, email: str, password: str, logger: 
             return False
 
         type_slowly(email_input, email)
-        random_human_delay(0.5, 1.5)
+        random_human_delay(0.1, 0.3)
 
         pwd_input = driver.find_element(By.CSS_SELECTOR, SELECTOR_REFERENCE["login_password_input"])
         type_slowly(pwd_input, password)
@@ -560,7 +559,7 @@ def _fill_attempt(driver: webdriver.Chrome, student: Dict[str, str], logger: log
     logger.info("══ STEP 5: Filling registration form ══")
     try:
         wait_for_document_ready(driver, timeout=30)
-        random_human_delay(0.5, 1.5)
+        random_human_delay(0.1, 0.3)
 
         logger.info("Current URL after login: %s", driver.current_url)
         logger.info("Page title: %s", driver.title)
@@ -583,7 +582,7 @@ def _fill_attempt(driver: webdriver.Chrome, student: Dict[str, str], logger: log
                         Select(el).select_by_visible_text(value)
                     else:
                         type_slowly(el, value)
-                    random_human_delay(0.3, 0.8)
+                    random_human_delay(0.05, 0.15)
                     logger.info("Filled %s = %s", selector_key, value[:30])
             except (NoSuchElementException, TimeoutException):
                 logger.debug("Field not found: %s", selector_key)
@@ -620,7 +619,7 @@ def _fill_attempt(driver: webdriver.Chrome, student: Dict[str, str], logger: log
         except (NoSuchElementException, TimeoutException):
             logger.debug("Level dropdown not found")
 
-        random_human_delay(0.3, 0.8)
+        random_human_delay(0.05, 0.15)
 
         submit_btn = None
         for selector in [
@@ -828,21 +827,21 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
         if not step1_done:
             raise RuntimeError("Step 1 failed after all retries")
 
-        random_human_delay(0.5, 1.5)
+        random_human_delay(0.1, 0.3)
 
         logger.info("══ STEP 2: Clicking Continue ══")
         click_continue_button(driver, logger)
         enforce_single_tab(driver)
         logger.info("★ STEP 2 DONE")
 
-        random_human_delay(0.5, 1.5)
+        random_human_delay(0.1, 0.3)
 
         logger.info("══ STEP 3: Clicking Book for Myself ══")
         click_book_for_myself(driver, logger)
         enforce_single_tab(driver)
         logger.info("★ STEP 3 DONE")
 
-        random_human_delay(0.5, 1.5)
+        random_human_delay(0.1, 0.3)
 
         if email and password:
             logged_in = login_to_goethe(driver, email, password, logger)
@@ -853,14 +852,14 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
             logger.warning("No credentials provided — skipping login automation.")
             driver.save_screenshot(f"debug_no_creds_{name}.png")
 
-        random_human_delay(0.5, 1.5)
+        random_human_delay(0.1, 0.3)
 
         form_ok = fill_registration_form(driver, student, logger)
         if not form_ok:
             logger.warning("Form fill had issues. Proceeding to capture state.")
             driver.save_screenshot(f"debug_form_{name}.png")
 
-        random_human_delay(0.3, 0.8)
+        random_human_delay(0.05, 0.15)
 
         conf = capture_confirmation(driver, name, logger)
         result.update(conf)
