@@ -1,4 +1,4 @@
-# Goethe Booking Bot — Session Summary (Updated 11 Jun 2026 v4 — Mock Testing)
+# Goethe Booking Bot — Session Summary (Updated 11 Jun 2026 v5 — Speed Testing)
 
 ## Project
 Automated bot for booking Goethe-Institut Pakistan German language exams (A1, A2, B1) — multi-student, multi-city.
@@ -10,6 +10,10 @@ Automated bot for booking Goethe-Institut Pakistan German language exams (A1, A2
 | `C:\Users\brosp\Downloads\Goethe Bot Presentation.pdf` | Client pitch presentation for Hamza (12 slides, v6) |
 | `C:\Users\brosp\AppData\Local\Temp\opencode\Inter-Regular.ttf` | Inter Regular font (downloaded from Google Fonts) |
 | `C:\Users\brosp\AppData\Local\Temp\opencode\Inter-Bold.ttf` | Inter Bold font (downloaded from Google Fonts) |
+| `C:\Users\brosp\Downloads\goethe-mock\mock_server.py` | Flask-based mock server (alternative to static Netlify) |
+| `C:\Users\brosp\Downloads\goethe-mock\test_bot.py` | Test runner — runs bot against local mock server |
+| `C:\Users\brosp\Downloads\goethe-mock\frontend\*.html` | Static HTML mock pages (deployed to Netlify) |
+| `C:\Users\brosp\Downloads\goethe-mock\config-1student.csv` | 1-student config for testing |
 
 ## User
 - GitHub: `abeermeer`
@@ -53,6 +57,24 @@ Automated bot for booking Goethe-Institut Pakistan German language exams (A1, A2
 - **Set Railway env vars** to point to mock URLs for testing
 - **Redeployed backend** to Railway with updated code
 - **Note:** To test, open https://aesthetic-alpaca-769b17.netlify.app → connect to Railway backend → click Start Bot
+
+## What's Done This Session (11 Jun v4 — Stale Element Fixes)
+- **Added stale element retry** to Steps 2-5:
+  - `click_continue_button` — retry 3x on StaleElementReferenceException
+  - `click_book_for_myself` — retry 3x on StaleElementReferenceException
+  - `login_to_goethe` — wrapped in `_login_attempt` with 3x retry
+  - `fill_registration_form` — wrapped in `_fill_attempt` with 3x retry
+- **Fixed orphaned exception handlers** after function split (indentation bug)
+- **1-student test passed** — A1 mock → full flow → confirmed ✅
+
+## What's Done This Session (11 Jun v5 — Speed Optimization)
+- Reduced `MIN_HUMAN_DELAY` 1.5→0.05, `MAX_HUMAN_DELAY` 5.5→0.2
+- `type_slowly` changed to instant paste (was per-char typing loop)
+- All step gaps reduced: 2.0-4.0s → 0.1-0.3s, 1.0-2.0s → 0.05-0.15s
+- `random_human_delay(1.0, 2.5)` → `(0.1, 0.3)`
+- **Result:** 1-student test dropped from ~1min to ~10-12s
+- **Speed mode is for mock testing only** — real Goethe site will detect this speed and ban
+- Created `config-1student.csv` in `C:\Users\brosp\Downloads\goethe-mock\`
 
 ## What's Done This Session (11 Jun v2 — Presentation & Misc)
 - **Created client pitch presentation** for Hamza — 6 iterations (v1→v6) using fpdf2 + Inter font
@@ -117,8 +139,9 @@ name,email,password,level,city,booking_datetime,dob,place_of_birth,address,phone
 - Removed unused: form_firstname, form_lastname, form_gender, form_nationality, form_passport, form_cnic, form_city
 
 ## Known Issues
-1. Railway free tier (512MB) barely handles 3 Chrome instances — retry logic helps but upgrade to $5 Starter for reliability
-2. Chrome 148 + `--user-data-dir` + `excludeSwitches` still crashes on Windows — removed `excludeSwitches`
+1. Railway free tier (512MB) barely handles 3 Chrome instances — retry logic + stale element handling helps but upgrade to $5 Starter for reliability
+2. Max speed mode (0.05s delays, instant paste) is for mock only — real Goethe will detect and ban
+3. CSS selectors in mock are simplified — real Goethe page may have different selectors (verify on July 17)
 
 ## Pre-July 17 Checklist
 - [x] All code deployed to Railway
@@ -126,8 +149,10 @@ name,email,password,level,city,booking_datetime,dob,place_of_birth,address,phone
 - [x] Frontend deployed to Netlify
 - [x] Mock Goethe site deployed (https://goethe-bot-mock.netlify.app) for testing
 - [x] Railway env vars set (MOCK_A1_URL, MOCK_A2_URL, MOCK_B1_URL → mock site)
-- [ ] Test the bot with mock → open Netlify frontend, click Start Bot, verify full flow
-- [ ] After testing: revert mock env vars and code changes
+- [x] Stale element retry added to all step functions
+- [x] 1-student mock test passed (A1 → confirmed) in ~10-12s
+- [ ] Test with 2-3 students in parallel on mock
+- [ ] After testing complete: revert mock env vars, restore original speeds, restore original config
 - [ ] Connect custom domain to Netlify (CNAME or nameservers)
 - [ ] On July 17: open Netlify URL, click Start Bot 5-10 min before 10:00
 
