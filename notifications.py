@@ -22,10 +22,7 @@ EMAIL_PASS = os.environ.get("EMAIL_PASS", "")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "")
 EMAIL_TO = os.environ.get("EMAIL_TO", "")
 
-WHAPI_TOKEN = os.environ.get("WHAPI_TOKEN", "")
-WHAPI_PHONE = os.environ.get("WHAPI_PHONE", "")  # Your WhatsApp number
-WHAPI_TO = os.environ.get("WHAPI_TO", "")  # Recipient WhatsApp number
-WHAPI_BASE = os.environ.get("WHAPI_BASE", "https://gate.whapi.cloud")
+
 
 
 def send_telegram(message: str, logger: logging.Logger) -> bool:
@@ -62,27 +59,7 @@ def send_email(subject: str, body: str, logger: logging.Logger) -> bool:
         return False
 
 
-def send_whatsapp(message: str, logger: logging.Logger) -> bool:
-    if not all([WHAPI_TOKEN, WHAPI_PHONE, WHAPI_TO]):
-        return False
-    try:
-        url = f"{WHAPI_BASE}/messages/text"
-        headers = {
-            "Authorization": f"Bearer {WHAPI_TOKEN}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "to": WHAPI_TO,
-            "body": message,
-        }
-        data = json.dumps(payload).encode()
-        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-        urllib.request.urlopen(req, timeout=10)
-        logger.info("WhatsApp sent")
-        return True
-    except Exception as exc:
-        logger.warning("WhatsApp failed: %s", exc)
-        return False
+
 
 
 def notify_all(title: str, message: str, logger: logging.Logger):
@@ -90,7 +67,3 @@ def notify_all(title: str, message: str, logger: logging.Logger):
     logger.info("NOTIFY: %s - %s", title, message)
     send_telegram(full, logger)
     send_email(title, message, logger)
-    send_whatsapp(message, logger)
-
-
-import json  # noqa: E402 (needed by send_whatsapp)
