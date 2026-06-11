@@ -510,6 +510,7 @@ async function startBot() {
   // Run now mode
   const body = {
     headless: document.getElementById("headlessMode").checked,
+    immediate: true,
     telegram_token: document.getElementById("tgToken").value.trim(),
     telegram_chat_id: document.getElementById("tgChatId").value.trim(),
   };

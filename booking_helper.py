@@ -513,14 +513,16 @@ def solve_captcha(driver: webdriver.Chrome, logger: logging.Logger) -> bool:
 # ── Smart retry wrapper ──
 
 def smart_retry(student: Dict[str, str], use_headless: bool, logger: logging.Logger,
-                stop_event: threading.Event, attempt: int = 1) -> Dict[str, str]:
-    """Run student flow with smart retry on failure (new profile, new proxy)."""
-    result = run_student_flow(student, use_headless, logger, stop_event)
+                stop_event: threading.Event, attempt: int = 1,
+                immediate: bool = False) -> Dict[str, str]:
+    """Run student flow with smart retry on failure (new profile, new proxy).
+    When immediate=True, skip the scheduled wait and run right away."""
+    result = run_student_flow(student, use_headless, logger, stop_event, immediate=immediate)
     status = result.get("status", "failed")
     if status in ("failed", "error") and attempt <= MAX_SMART_RETRIES:
         logger.warning("Smart retry %d/%d for %s", attempt, MAX_SMART_RETRIES, student.get("name", "?"))
         time.sleep(random.uniform(30, 60))
-        result = smart_retry(student, use_headless, logger, stop_event, attempt + 1)
+        result = smart_retry(student, use_headless, logger, stop_event, attempt + 1, immediate=immediate)
     return result
 
 
@@ -892,7 +894,8 @@ def get_exam_url(level: str) -> str:
 
 
 def run_student_flow(student: Dict[str, str], use_headless: bool, logger: logging.Logger,
-                     stop_event: threading.Event = None, proxy: Optional[str] = None) -> Dict[str, str]:
+                     stop_event: threading.Event = None, proxy: Optional[str] = None,
+                     immediate: bool = False) -> Dict[str, str]:
     name = student.get("name", "Unknown")
     email = student.get("email", "")
     password = student.get("password", "")
@@ -903,9 +906,10 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
     if stop_event is None:
         stop_event = threading.Event()
 
-    # Scheduled mode: wait until booking time
-    if not scheduled_wait(booking_time_str, logger, stop_event):
-        return {"name": name, "email": email, "level": level, "city": city, "status": "stopped"}
+    # Scheduled mode: wait until booking time (skip if immediate)
+    if not immediate:
+        if not scheduled_wait(booking_time_str, logger, stop_event):
+            return {"name": name, "email": email, "level": level, "city": city, "status": "stopped"}
 
     # Pick a proxy for this student (rotation)
     assigned_proxy = proxy
