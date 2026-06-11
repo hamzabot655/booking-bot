@@ -491,6 +491,23 @@ function toggleConfigPreview() {
 // ── Start / Stop ──
 async function startBot() {
   if (!connected) return alert("Connect to backend first");
+
+  // Schedule mode
+  if (currentMode === "later") {
+    const dt = document.getElementById("scheduleDt").value;
+    if (!dt) return alert("Select a date/time for the schedule");
+    try {
+      const resp = await fetch(`${BASE}/api/schedule-start`, {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({datetime: dt + ":00"}), signal: AbortSignal.timeout(5000),
+      });
+      const data = await resp.json();
+      document.getElementById("scheduleStatus").textContent = data.ok ? "✅ Scheduled for " + dt : "❌ " + data.error;
+    } catch(e) { alert("Schedule failed"); }
+    return;
+  }
+
+  // Run now mode
   const body = {
     headless: document.getElementById("headlessMode").checked,
     telegram_token: document.getElementById("tgToken").value.trim(),
@@ -530,24 +547,7 @@ function setMode(mode) {
   if (mode === "now") document.getElementById("scheduleStatus").textContent = "";
 }
 
-// Override startBot to handle schedule mode
-const _origStartBot = startBot;
-startBot = async function() {
-  if (currentMode === "later") {
-    const dt = document.getElementById("scheduleDt").value;
-    if (!dt) return alert("Select a date/time for the schedule");
-    try {
-      const resp = await fetch(`${BASE}/api/schedule-start`, {
-        method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({datetime: dt + ":00"}), signal: AbortSignal.timeout(5000),
-      });
-      const data = await resp.json();
-      document.getElementById("scheduleStatus").textContent = data.ok ? "✅ Scheduled for " + dt : "❌ " + data.error;
-    } catch(e) { alert("Schedule failed"); }
-    return;
-  }
-  return _origStartBot.call(this);
-};
+
 
 // ── Schedule ──
 async function scheduleStart() {
