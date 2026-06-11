@@ -61,9 +61,9 @@ import notifications
 
 # ── Exam level → page URL mapping ──
 EXAM_URLS = {
-    "A1": "https://www.goethe.de/ins/pk/en/spr/prf/gzsd1.cfm",
-    "A2": "https://www.goethe.de/ins/pk/en/spr/prf/gzsd2.cfm",
-    "B1": "https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm",
+    "A1": os.environ.get("MOCK_A1_URL", "https://www.goethe.de/ins/pk/en/spr/prf/gzsd1.cfm"),
+    "A2": os.environ.get("MOCK_A2_URL", "https://www.goethe.de/ins/pk/en/spr/prf/gzsd2.cfm"),
+    "B1": os.environ.get("MOCK_B1_URL", "https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm"),
 }
 
 SELECTOR_REFERENCE = {
