@@ -416,7 +416,6 @@ def type_slowly(element: WebElement, text: str) -> None:
 
 def click_continue_button(driver: webdriver.Chrome, logger: logging.Logger, timeout: int = 90) -> None:
     random_human_delay(1.0, 2.5)
-    wait_for_document_ready(driver, timeout=timeout)
     xpath = (
         "//*[self::a or self::button]"
         "[contains(translate(normalize-space(.), "
@@ -424,14 +423,24 @@ def click_continue_button(driver: webdriver.Chrome, logger: logging.Logger, time
         " or contains(translate(normalize-space(.), "
         "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'weiter')]"
     )
-    button = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.XPATH, xpath)))
-    logger.info("'Continue' button found. Clicking...")
-    human_move_and_click(driver, button)
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            wait_for_document_ready(driver, timeout=timeout)
+            button = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.XPATH, xpath)))
+            logger.info("'Continue' button found. Clicking...")
+            human_move_and_click(driver, button)
+            return
+        except StaleElementReferenceException:
+            if attempt < max_attempts:
+                logger.warning("Stale element on Continue button, retrying %d/%d", attempt, max_attempts)
+                time.sleep(2)
+            else:
+                raise
 
 
 def click_book_for_myself(driver: webdriver.Chrome, logger: logging.Logger, timeout: int = 90) -> None:
     random_human_delay(1.0, 2.5)
-    wait_for_document_ready(driver, timeout=timeout)
     xpath = (
         "//*[self::a or self::button]"
         "[contains(translate(normalize-space(.), "
@@ -441,13 +450,36 @@ def click_book_for_myself(driver: webdriver.Chrome, logger: logging.Logger, time
         " or contains(translate(normalize-space(.), "
         "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'für mich')]"
     )
-    button = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.XPATH, xpath)))
-    logger.info("'Book for myself' button found. Clicking...")
-    human_move_and_click(driver, button)
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            wait_for_document_ready(driver, timeout=timeout)
+            button = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.XPATH, xpath)))
+            logger.info("'Book for myself' button found. Clicking...")
+            human_move_and_click(driver, button)
+            return
+        except StaleElementReferenceException:
+            if attempt < max_attempts:
+                logger.warning("Stale element on Book for Myself button, retrying %d/%d", attempt, max_attempts)
+                time.sleep(2)
+            else:
+                raise
 
 
 def login_to_goethe(driver: webdriver.Chrome, email: str, password: str, logger: logging.Logger) -> bool:
     logger.info("══ STEP 4: Logging in to My Goethe.de ══")
+    for attempt in range(1, 4):
+        try:
+            return _login_attempt(driver, email, password, logger)
+        except StaleElementReferenceException:
+            if attempt < 3:
+                logger.warning("Stale element during login, retrying %d/3", attempt)
+                time.sleep(2)
+            else:
+                logger.error("Login failed after 3 attempts due to stale elements")
+                return False
+
+def _login_attempt(driver: webdriver.Chrome, email: str, password: str, logger: logging.Logger) -> bool:
     try:
         wait_for_document_ready(driver, timeout=30)
         random_human_delay()
@@ -512,6 +544,19 @@ def login_to_goethe(driver: webdriver.Chrome, email: str, password: str, logger:
 
 
 def fill_registration_form(driver: webdriver.Chrome, student: Dict[str, str], logger: logging.Logger) -> bool:
+    logger.info("══ STEP 5: Filling registration form ══")
+    for attempt in range(1, 4):
+        try:
+            return _fill_attempt(driver, student, logger)
+        except StaleElementReferenceException:
+            if attempt < 3:
+                logger.warning("Stale element during form fill, retrying %d/3", attempt)
+                time.sleep(2)
+            else:
+                logger.error("Form fill failed after 3 attempts due to stale elements")
+                return False
+
+def _fill_attempt(driver: webdriver.Chrome, student: Dict[str, str], logger: logging.Logger) -> bool:
     logger.info("══ STEP 5: Filling registration form ══")
     try:
         wait_for_document_ready(driver, timeout=30)
@@ -614,7 +659,6 @@ def fill_registration_form(driver: webdriver.Chrome, student: Dict[str, str], lo
             logger.warning("Submit button not found! Dumping page for debugging.")
             driver.save_screenshot("debug_no_submit.png")
             return False
-
     except Exception as exc:
         logger.exception("Form fill error: %s", exc)
         return False

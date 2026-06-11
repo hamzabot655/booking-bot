@@ -1,4 +1,4 @@
-# Goethe Booking Bot — Session Summary (Updated 11 Jun 2026 v3)
+# Goethe Booking Bot — Session Summary (Updated 11 Jun 2026 v4 — Mock Testing)
 
 ## Project
 Automated bot for booking Goethe-Institut Pakistan German language exams (A1, A2, B1) — multi-student, multi-city.
@@ -41,6 +41,18 @@ Automated bot for booking Goethe-Institut Pakistan German language exams (A1, A2
 - **Chrome OOM crash** — 3 Chrome instances on 512MB RAM killed each other at simultaneous launch. Fixed: auto-retry `create_driver` up to 3 times with 5s delay
 - **Logger handler overwrite** — all 3 students used logger name `bot_Abeer Meer`, causing `handlers.clear()` to drop logs from previous students. Fixed: unique logger names per student (`bot_{name}_{level}`)
 - **Status key collision** — `student_status` dict used `name` as key, so all 3 "Abeer Meer" entries overwrote each other. Fixed: compound key `name|level|city`
+
+## What's Done This Session (11 Jun v3 — Mock Server & Testing)
+- **Created mock Goethe website** (static HTML, deployed to Netlify) — simulates entire booking flow for A1/A2/B1
+  - Pages: Exam Finder → Continue → Book for Myself → CAS Login → Registration Form → Confirmation
+  - URL: https://goethe-bot-mock.netlify.app
+  - Local copy: `C:\Users\brosp\Downloads\goethe-mock\`
+- **Added env var override** in `booking_helper.py:58-62` — `MOCK_A1_URL`, `MOCK_A2_URL`, `MOCK_B1_URL`
+  - When set, bot uses mock URLs instead of real Goethe URLs
+  - To revert: delete these 3 env vars from Railway, remove the override code
+- **Set Railway env vars** to point to mock URLs for testing
+- **Redeployed backend** to Railway with updated code
+- **Note:** To test, open https://aesthetic-alpaca-769b17.netlify.app → connect to Railway backend → click Start Bot
 
 ## What's Done This Session (11 Jun v2 — Presentation & Misc)
 - **Created client pitch presentation** for Hamza — 6 iterations (v1→v6) using fpdf2 + Inter font
@@ -112,6 +124,10 @@ name,email,password,level,city,booking_datetime,dob,place_of_birth,address,phone
 - [x] All code deployed to Railway
 - [x] config.csv uploaded to Railway backend
 - [x] Frontend deployed to Netlify
+- [x] Mock Goethe site deployed (https://goethe-bot-mock.netlify.app) for testing
+- [x] Railway env vars set (MOCK_A1_URL, MOCK_A2_URL, MOCK_B1_URL → mock site)
+- [ ] Test the bot with mock → open Netlify frontend, click Start Bot, verify full flow
+- [ ] After testing: revert mock env vars and code changes
 - [ ] Connect custom domain to Netlify (CNAME or nameservers)
 - [ ] On July 17: open Netlify URL, click Start Bot 5-10 min before 10:00
 
