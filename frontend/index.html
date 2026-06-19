@@ -1384,6 +1384,7 @@ async function deleteDBStudent(id, name) {
 
 async function fetchLiveDates() {
   const level = document.getElementById("sLevel").value;
+  const city = document.getElementById("sCity").value;
   const btn = document.getElementById("fetchDatesBtn");
   const dropdown = document.getElementById("liveDatesDropdown");
   const select = document.getElementById("liveDatesSelect");
@@ -1391,18 +1392,35 @@ async function fetchLiveDates() {
   btn.disabled = true;
   dropdown.style.display = "none";
   try {
-    const resp = await apiFetch(`${BASE}/api/exams?level=${level}`, {
+    const resp = await apiFetch(`${BASE}/api/goethe-schedule`, {
       signal: AbortSignal.timeout(15000), _loading: "Fetching dates...",
     });
     const data = await resp.json();
-    if (!data.ok || !data.exams || data.exams.length === 0) {
-      showToast(data.message || "No dates available", "warning");
+    if (!data.ok || !data.data || data.data.length === 0) {
+      showToast("No dates available from Goethe schedule", "warning");
       return;
     }
-    select.innerHTML = `<option value="">— Select a date —</option>` +
-      data.exams.map(ex => `<option value="${escHtml(ex.date)}">${escHtml(ex.label)}</option>`).join("");
+    const filtered = data.data.filter(e =>
+      e.level === level && e.city === city
+    );
+    if (filtered.length === 0) {
+      showToast(`No ${level} dates found for ${city}`, "warning");
+      return;
+    }
+    select.innerHTML = `<option value="">— Select an exam —</option>` +
+      filtered.map(ex => {
+        const dt = ex.reg_open;
+        const tm = ex.reg_open_time || "10:00";
+        const bookingVal = dt ? dt + "T" + tm : "";
+        const parts = dt ? dt.split(/[.\/]/) : [];
+        const iso = parts.length === 3 ? `20${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}` : dt;
+        const finalVal = iso + "T" + tm;
+        const examDate = ex.exam_date || "?";
+        const label = `${examDate} exam — reg opens ${dt} at ${tm}`;
+        return `<option value="${escHtml(finalVal)}">${escHtml(label)}</option>`;
+      }).join("");
     dropdown.style.display = "block";
-    showToast(`${data.exams.length} date(s) loaded`, "success");
+    showToast(`${filtered.length} date(s) loaded`, "success");
   } catch (e) {
     showToast("Failed to fetch dates: " + e.message, "error");
   } finally {
