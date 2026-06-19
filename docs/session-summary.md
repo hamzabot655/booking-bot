@@ -15,6 +15,18 @@
 - `test_check_slot_via_api_fallback_no_curl`: verifies graceful fallback without curl_cffi
 - `test_check_slot_via_api_returns_dict`: verifies dict shape even on network error
 
+### `booking_helper.py` — A1/A2 level support for API pre-check
+
+Extracted `courseLevelData` from all three exam pages via Selenium. Added `API_LEVEL_PARAMS` and `API_REFERERS` dicts so `check_slot_via_api()` uses the correct `category`/`type` per level:
+
+| Level | Category | Type | activeLevel |
+|-------|----------|------|-------------|
+| A1 | E004 | ER | 2 |
+| A2 | E005 | ER | 4 |
+| B1 | E006 | ER | 5 |
+
+Previously only B1 (E006/ER) was hardcoded — A1/A2 would have gotten wrong results.
+
 # Session Summary — June 18, 2026
 
 ## What Changed
