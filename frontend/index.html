@@ -1392,7 +1392,7 @@ async function fetchLiveDates() {
   btn.disabled = true;
   dropdown.style.display = "none";
   try {
-    const resp = await apiFetch(`${BASE}/api/goethe-schedule`, {
+    const resp = await apiFetch(`${BASE}/api/goethe-schedule?refresh=1`, {
       signal: AbortSignal.timeout(15000), _loading: "Fetching dates...",
     });
     const data = await resp.json();
