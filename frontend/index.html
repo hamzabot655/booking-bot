@@ -882,6 +882,30 @@
         </div>
       </div>
 
+      <div class="section-title" style="margin-top:20px;">Add Student (via DB)</div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="settings-grid" style="grid-template-columns:1fr 1fr;">
+          <span class="field-label">Name</span>
+          <input type="text" id="sName" placeholder="e.g. Abeer Meer">
+          <span class="field-label">Email</span>
+          <input type="email" id="sEmail" placeholder="student@example.com">
+          <span class="field-label">Password</span>
+          <input type="password" id="sPassword" placeholder="Goethe password">
+          <span class="field-label">Level</span>
+          <select id="sLevel"><option value="A1">A1</option><option value="A2">A2</option><option value="B1" selected>B1</option></select>
+          <span class="field-label">City</span>
+          <select id="sCity"><option value="Karachi">Karachi</option><option value="Lahore">Lahore</option><option value="Islamabad">Islamabad</option></select>
+          <span class="field-label">Booking DateTime</span>
+          <input type="text" id="sBookingDatetime" placeholder="e.g. 2026-07-17T10:00">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" onclick="addDBStudent()">Add Student</button>
+          <button class="btn btn-outline btn-sm" onclick="loadDBStudents()">Refresh List</button>
+        </div>
+        <div id="dbStudentList" style="margin-top:10px;font-size:13px;color:var(--text2);"></div>
+        <div id="dbStudentError" style="color:var(--red);font-size:12px;margin-top:4px;"></div>
+      </div>
+
       <div class="section-title">Notifications</div>
       <div class="card" style="margin-bottom:14px;">
         <div class="settings-grid">
@@ -1097,6 +1121,7 @@ async function connectBackend(retries = 2) {
       statusEl.className = "status-text ok";
       updateBadge(false);
       await loadConfigFromBackend();
+      await loadDBStudents();
       await refreshSchedule();
       await loadScheduleStatus();
       checkCookieStatus();
@@ -1280,6 +1305,7 @@ async function uploadConfig(event) {
         document.getElementById("configInfo").textContent = `${data.count} student(s) uploaded`;
         document.getElementById("configPreview").textContent = e.target.result;
         await loadConfigFromBackend();
+        await loadDBStudents();
         showToast(`${data.count} student(s) uploaded`, "success");
       } else {
         document.getElementById("configInfo").textContent = (data.error || "Upload failed");
@@ -1297,6 +1323,83 @@ async function uploadConfig(event) {
 function toggleConfigPreview() {
   const el = document.getElementById("configPreview");
   el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+// ── DB Students ──
+async function addDBStudent() {
+  const name = document.getElementById("sName").value.trim();
+  const email = document.getElementById("sEmail").value.trim();
+  const password = document.getElementById("sPassword").value;
+  const level = document.getElementById("sLevel").value;
+  const city = document.getElementById("sCity").value;
+  const booking_datetime = document.getElementById("sBookingDatetime").value.trim();
+  const errEl = document.getElementById("dbStudentError");
+  errEl.textContent = "";
+  if (!name) { errEl.textContent = "Name is required"; return; }
+  try {
+    const resp = await apiFetch(`${BASE}/api/students`, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({name, email, password, level, city, booking_datetime}),
+      signal: AbortSignal.timeout(5000), _loading: "Adding student...",
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showToast(`Student "${name}" added`, "success");
+      document.getElementById("sName").value = "";
+      document.getElementById("sEmail").value = "";
+      document.getElementById("sPassword").value = "";
+      document.getElementById("sBookingDatetime").value = "";
+      await loadDBStudents();
+      await loadConfigFromBackend();
+    } else {
+      errEl.textContent = data.error || "Failed to add student";
+    }
+  } catch (e) {
+    errEl.textContent = "Error: " + e.message;
+  }
+}
+
+async function deleteDBStudent(id, name) {
+  if (!confirm(`Delete student "${name}"?`)) return;
+  try {
+    const resp = await apiFetch(`${BASE}/api/students/${id}`, {
+      method: "DELETE", signal: AbortSignal.timeout(5000),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showToast(`"${name}" deleted`, "success");
+      await loadDBStudents();
+      await loadConfigFromBackend();
+    }
+  } catch (e) {
+    showToast("Delete failed: " + e.message, "error");
+  }
+}
+
+async function loadDBStudents() {
+  const listEl = document.getElementById("dbStudentList");
+  try {
+    const resp = await apiFetch(`${BASE}/api/students`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    const data = await resp.json();
+    if (!data.ok || !data.students) {
+      listEl.textContent = "Failed to load students";
+      return;
+    }
+    if (data.students.length === 0) {
+      listEl.textContent = "No students in DB. Add one above.";
+      return;
+    }
+    listEl.innerHTML = data.students.map(s =>
+      `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
+        <span style="flex:1;">${escHtml(s.name)} <span style="color:var(--text3);font-size:11px;">${escHtml(s.level)} ${escHtml(s.city)} ${s.booking_datetime ? '| ' + escHtml(s.booking_datetime) : ''}</span></span>
+        <button class="btn btn-outline btn-sm" style="font-size:11px;color:var(--red);" onclick="deleteDBStudent(${s.id},'${escHtml(s.name).replace(/'/g, "\\'")}')">Delete</button>
+      </div>`
+    ).join("");
+  } catch (e) {
+    listEl.textContent = "Error loading students: " + e.message;
+  }
 }
 
 // ── Slot Pre-check ──

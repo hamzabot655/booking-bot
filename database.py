@@ -62,6 +62,7 @@ class StudentModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     email = Column(String(255), default="")
+    password = Column(String(255), default="")
     level = Column(String(50), default="")
     city = Column(String(100), default="")
     booking_datetime = Column(String(50), default="")
@@ -214,6 +215,7 @@ def save_students(students: List[Dict]):
             session.add(StudentModel(
                 name=s.get("name", ""),
                 email=s.get("email", ""),
+                password=s.get("password", ""),
                 level=s.get("level", ""),
                 city=s.get("city", ""),
                 booking_datetime=s.get("booking_datetime", ""),
@@ -221,6 +223,33 @@ def save_students(students: List[Dict]):
                 result_json=json.dumps(s.get("result", {})),
             ))
         session.commit()
+
+
+def add_student(student: Dict) -> int:
+    with SessionLocal() as session:
+        m = StudentModel(
+            name=student.get("name", ""),
+            email=student.get("email", ""),
+            password=student.get("password", ""),
+            level=student.get("level", ""),
+            city=student.get("city", ""),
+            booking_datetime=student.get("booking_datetime", ""),
+            status=student.get("status", "pending"),
+        )
+        session.add(m)
+        session.commit()
+        session.refresh(m)
+        return m.id
+
+
+def delete_student(student_id: int) -> bool:
+    with SessionLocal() as session:
+        m = session.query(StudentModel).filter(StudentModel.id == student_id).first()
+        if not m:
+            return False
+        session.delete(m)
+        session.commit()
+        return True
 
 
 def get_students() -> List[Dict]:
