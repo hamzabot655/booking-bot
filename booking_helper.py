@@ -455,8 +455,12 @@ def find_book_buttons(driver: webdriver.Chrome) -> List[WebElement]:
         text_filtered = []
         for item in fallback:
             txt = normalize_text(item.text)
-            if any(t in txt for t in ["book", "next", "buchen", "weiter"]):
+            if any(t in txt for t in ["book", "next", "buchen", "weiter", "select", "module"]):
                 text_filtered.append(item)
+        buttons = text_filtered
+    if not buttons:
+        all_links = driver.find_elements(By.XPATH, "//a[contains(@href, 'book') or contains(@href, 'buchen') or contains(@href, 'anmelden')]")
+        text_filtered = [a for a in all_links if looks_clickable(a)]
         buttons = text_filtered
     return [b for b in buttons if looks_clickable(b)]
 
@@ -1560,7 +1564,7 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
         page_loaded = False
         consecutive_errors = 0
 
-        logger.info("══ STEP 1: Waiting for 'Select modules' button ══")
+        logger.info("══ STEP 1: Waiting for booking button ('Select modules' / 'Book Now') ══")
         while True:
             if stop_event.is_set():
                 logger.warning("Stop requested by user. Aborting.")
@@ -1606,6 +1610,20 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
                         continue
                     raise
 
+                if burst:
+                    js_btn = driver.execute_script("""
+                        var els = document.querySelectorAll('a.standard, button.standard, a.btnGruen, button.btnGruen');
+                        for (var i = 0; i < els.length; i++) {
+                            var t = (els[i].textContent || '').toLowerCase().trim();
+                            if (t.indexOf('select') >= 0 || t.indexOf('book') >= 0 || t.indexOf('buchen') >= 0) {
+                                if (els[i].offsetParent !== null && !els[i].disabled) return els[i].outerHTML;
+                            }
+                        }
+                        return null;
+                    """)
+                    if js_btn:
+                        logger.info("JS burst scan found button: %s", js_btn[:200])
+
                 buttons = find_book_buttons(driver)
                 logger.info("Found %d clickable button(s).", len(buttons))
 
@@ -1634,7 +1652,8 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
                     continue
 
                 logger.info("★ STEP 1 DONE: 'Select modules' found! Clicking...")
-                db.add_log(sk, level, f"★ Slot found! Clicking 'Select modules' — {level} {city}")
+                logger.info("Button text: '%s' | class: '%s'", normalize_text(target_button.text), target_button.get_attribute("class") or "")
+                db.add_log(sk, level, f"★ Slot found! Clicking '{normalize_text(target_button.text)}' — {level} {city}")
                 notify(f"Slot found for {name}", f"Exam: {level} | City: {city}", logger)
                 human_move_and_click(driver, target_button)
                 enforce_single_tab(driver)
