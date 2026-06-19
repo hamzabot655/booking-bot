@@ -1367,6 +1367,10 @@ def _fill_step_personal_data_1(driver: webdriver.Chrome, student: Dict[str, str]
         email_val = student.get("email", "")
         _fill_text_input(driver, ["email_field"], email_val, logger)
 
+        contact_number = student.get("contact_number", student.get("passport_number", ""))
+        if contact_number:
+            _fill_text_input(driver, ["contact_number"], contact_number, logger)
+
         if not _click_continue_wizard(driver, logger):
             driver.save_screenshot("debug_step1_no_continue.png")
             return False

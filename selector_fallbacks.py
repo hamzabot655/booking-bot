@@ -136,6 +136,14 @@ ELEMENT_SELECTORS: Dict[str, List[Tuple[str, str]]] = {
         (By.XPATH, "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'submit')]"),
         (By.XPATH, "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buchen')]"),
     ],
+    "contact_number": [
+        (By.CSS_SELECTOR, "input[name*='contact']"),
+        (By.CSS_SELECTOR, "input[name*='passport']"),
+        (By.CSS_SELECTOR, "input[id*='contact']"),
+        (By.CSS_SELECTOR, "input[id*='passport']"),
+        (By.XPATH, "//label[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'number')]/following::input[1]"),
+        (By.XPATH, "//input[contains(@placeholder, 'number') or contains(@placeholder, 'Number')]"),
+    ],
     "login_email": [
         (By.CSS_SELECTOR, "input[type='email']"),
         (By.CSS_SELECTOR, "input[name='email']"),
