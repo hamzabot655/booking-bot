@@ -769,4 +769,20 @@ Added a **Summary** section below Live Booking Status log feed. When user picks 
 
 Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6).
 
+---
+
+## Session 3 — June 19, 2026 (cache bypass)
+
+### Fix: Fetch Dates ab har baar fresh data laega
+
+**Problem:** "Fetch Dates" button backend ka 1-hour cache use kar raha tha. Goethe page update ho chuka tha, lekin frontend purana data dikha raha tha.
+
+**Fix:** Frontend ab `?refresh=1` bhejta hai → backend `get_schedule(force_refresh=True)` call karta hai → Goethe page se fresh HTML fetch hota hai → cache bypass.
+
+**Only change:** `frontend/index.html` — `apiFetch('/api/goethe-schedule')` → `apiFetch('/api/goethe-schedule?refresh=1')`
+
+| Commit | Message |
+|--------|---------|
+| `fc910de` | fix: add refresh=1 to frontend Fetch Dates to bypass 1hr cache |
+
 
