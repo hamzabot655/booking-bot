@@ -1,4 +1,4 @@
-# Session Summary — June 19, 2026
+# Session Summary — June 19, 2026 (Updated)
 
 ## What Changed
 
@@ -740,5 +740,33 @@ Added a **Summary** section below Live Booking Status log feed. When user picks 
 | Commit | Message |
 |--------|---------|
 | `0762da2` | feat: add date-wise summary section below Live Booking Status |
+
+---
+
+## Session 2 — June 19, 2026 (bugfix)
+
+### Bug: `202026-08-07T11:11` — 6-digit year crash
+
+**Root cause:** `goethe_scraper.get_schedule()` returns `reg_open` as `DD.MM.YYYY` (e.g. `24.04.2026` — 4-digit year already). Frontend JS at `frontend/index.html` was doing `` `20${parts[2]}` `` which prepended another `20` → `20202026` → `202026-08-07T11:11`.
+
+`datetime.fromisoformat("202026-08-07T11:11")` raises `ValueError` → `parse_exam_time_str` crashes → `run_student_flow` exits → `run_students_web` logs misleading "All students finished".
+
+### Fixes applied (3 files)
+
+| Commit | Message |
+|--------|---------|
+| `cb86393` | fix: date conversion bug — scraper returns YYYY but code was adding '20' prefix |
+| `db1e4b7` | fix: add defensive date validation + clearer error on invalid datetime |
+
+### What changed
+
+- **`frontend/index.html`** — year-aware conversion: `if (y.length === 2) y = "20" + y` else use as-is
+- **`booking_helper.py:parse_exam_time_str()`** — now raises `ValueError` with readable message (e.g. `Invalid date format: '202026-08-07T11:11' — expected format like 2026-07-17T10:00 or DD.MM.YYYY HH:MM`)
+- **`booking_helper.py:scheduled_wait()`** — logs warning with date + error details instead of silent `return True`
+- **`booking_helper.py:run_student_flow()`** — wraps `parse_exam_time_str` in try/except, returns proper error result with `status: "failed"` instead of crashing to "All students finished"
+
+### User Action Required
+
+Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6).
 
 
