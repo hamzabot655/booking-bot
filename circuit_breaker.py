@@ -24,7 +24,7 @@ class CircuitBreaker:
     """
 
     # Per-error-type thresholds/cooldowns (overridable via env)
-    _CONFIG = {
+    _DEFAULT_CONFIG = {
         "block": {
             "threshold": int(os.environ.get("CB_BLOCK_THRESHOLD", "5")),
             "cooldown": int(os.environ.get("CB_BLOCK_COOLDOWN", "900")),
@@ -32,10 +32,6 @@ class CircuitBreaker:
         "timeout": {
             "threshold": int(os.environ.get("CB_TIMEOUT_THRESHOLD", "10")),
             "cooldown": int(os.environ.get("CB_TIMEOUT_COOLDOWN", "300")),
-        },
-        "generic": {
-            "threshold": int(os.environ.get("CB_GENERIC_THRESHOLD", "10")),
-            "cooldown": int(os.environ.get("CB_GENERIC_COOLDOWN", "900")),
         },
     }
 
@@ -46,6 +42,11 @@ class CircuitBreaker:
         self._open_until: float = 0.0
         self._logger = logger or logging.getLogger("circuit_breaker")
         self._state = "closed"
+        self._config = {
+            "block": self._DEFAULT_CONFIG["block"].copy(),
+            "timeout": self._DEFAULT_CONFIG["timeout"].copy(),
+            "generic": {"threshold": threshold, "cooldown": cooldown},
+        }
 
     @property
     def state(self) -> str:
@@ -71,7 +72,7 @@ class CircuitBreaker:
 
     def record_failure(self, error_type: str = "generic"):
         with self._lock:
-            cfg = self._CONFIG.get(error_type, self._CONFIG["generic"])
+            cfg = self._config.get(error_type, self._config["generic"])
             self._failures[error_type] = self._failures.get(error_type, 0) + 1
             total = sum(self._failures.values())
             if total >= cfg["threshold"]:

@@ -10,11 +10,12 @@
 > **You are responsible for** verifying TOS compliance in your jurisdiction before using this bot for actual bookings. This is an experimental tool, not a guaranteed booking service.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-71%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-88%20passing-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/python-3.12%2B-blue" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/modules-26-orange" alt="Modules">
   <img src="https://img.shields.io/badge/gaps-0%20remaining-brightgreen" alt="Gaps">
+  <img src="https://github.com/abeermeer/goethe-booking-bot/actions/workflows/live-integration.yml/badge.svg" alt="Live Integration">
 </p>
 
 ## Demo
@@ -45,7 +46,7 @@
   - **Config Validation** — Auto-validates CSV on upload: checks required fields, email format, valid level (A1-C2), city, DOB, datetime format — reports all errors at once.
   - **Slot Pre-check** — `POST /api/slots/check` opens exam page and scans for "Book Now" buttons before starting the bot. Returns availability per student.
   - **Form Scanner** — `POST /api/form/scan` logs into Goethe, navigates booking form, scans all form fields, compares against `selector_fallbacks.py`. Pre-flight check before actual booking.
-  - **Local Form Scanner** — `scripts/scan_form_local.py` runs form scanner on your laptop (residential IP bypasses reCAPTCHA). Railway-based form scanner blocked by reCAPTCHA v3 from datacenter IPs. Cookie replay approach also abandoned (Goethe uses HttpOnly session cookies).
+  - **Local Form Scanner** — `scripts/scan_form_local.py` runs form scanner on your laptop (residential IP bypasses reCAPTCHA). Railway-based form scanner blocked by reCAPTCHA v3 from datacenter IPs.
   - **Booking History** — `GET /api/history` + full-text search `GET /api/history/search?q=...` across queue history and logs.
 - **Security** — CSP/HSTS/XSS-Protection headers, CORS whitelist (restricted), server-side sessions with 24hr expiry + refresh token endpoint (`/api/refresh`), constant-time password compare, rate limiting (5/5min) with `Retry-After` headers, brute force account lockout (30 fails = 15min ban), Sentry error tracking, audit log (`/api/audit-log`), SRI on static assets, Dependabot + pip-audit CI, secrets rotation script, HTTPS redirect option.
 - **Monitoring** — Health endpoint (`/api/health`) with DB + Chrome + circuit breaker checks, business metrics (`/api/metrics`), structured JSON logging to stdout, uptime monitor script, Telegram alerting script.
@@ -227,7 +228,6 @@ The dashboard includes a built-in AI assistant powered by Google Gemini 2.5 Flas
 | `scripts/rotate_secrets.py` | Secret rotation utility |
 | `scripts/uptime_monitor.py` | Health check monitoring script |
 | `scripts/alert.py` | Telegram alerting utility |
-| `scripts/save_cookies_simple.py` | Save Goethe login cookies to Railway for form scanner |
 | `scripts/scan_form_local.py` | Run form scanner locally (bypass Railway reCAPTCHA) |
 | `tests/test_e2e.py` | E2E Playwright tests |
 | `tests/test_perf.py` | Performance benchmarks |

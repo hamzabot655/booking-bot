@@ -17,7 +17,6 @@ Frontend connects via Backend URL input.
 from __future__ import annotations
 
 import gc
-import hmac
 import json
 import logging
 import os
@@ -30,6 +29,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from collections import defaultdict
+
+import crypto_utils
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -203,7 +204,12 @@ def enforce_https():
 
 # ── Auth config ──
 AUTH_EMAIL = os.environ.get("AUTH_EMAIL", "admin@example.com")
-AUTH_PASSWORD = os.environ.get("AUTH_PASSWORD", "change-me-in-production")
+_raw_password = os.environ.get("AUTH_PASSWORD", "change-me-in-production")
+AUTH_PASSWORD_HASHED = crypto_utils.hash_password(_raw_password)
+FERNET_KEY = os.environ.get("FERNET_KEY", "")
+if not FERNET_KEY:
+    FERNET_KEY = crypto_utils.generate_fernet_key()
+    print("WARNING: No FERNET_KEY env var set. Generated ephemeral key. Student passwords will be lost on restart.")
 AUTH_SALT = os.environ.get("AUTH_SALT", "goethe-bot-salt-2026")
 SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "admin@example.com")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
@@ -482,7 +488,7 @@ def api_login(data: LoginRequest):
         return resp
     email = data.email.strip().lower()
     password = data.password
-    if hmac.compare_digest(email, AUTH_EMAIL.lower()) and hmac.compare_digest(password, AUTH_PASSWORD):
+    if email == AUTH_EMAIL.lower() and crypto_utils.check_password(password, AUTH_PASSWORD_HASHED):
         _global_failures = 0
         token = _make_token(AUTH_EMAIL)
         db.add_audit_log("login", email, "Successful login", ip)
@@ -636,11 +642,13 @@ def api_add_student():
     name = (data.get("name") or "").strip()
     if not name:
         return jsonify({"ok": False, "error": "Name is required"}), 400
+    password_plain = data.get("password", "")
+    password_enc = crypto_utils.encrypt_password(password_plain, FERNET_KEY)
     try:
         sid = db.add_student({
             "name": name,
             "email": (data.get("email") or "").strip(),
-            "password": data.get("password", ""),
+            "password": password_enc,
             "level": (data.get("level") or "").strip().upper(),
             "city": (data.get("city") or "").strip(),
             "booking_datetime": (data.get("booking_datetime") or "").strip(),
@@ -1201,10 +1209,11 @@ def _get_loaded_students() -> List[Dict]:
     try:
         db_students = db.get_students()
         for s in db_students:
+            raw_pw = s.get("password", "")
             students.append({
                 "name": s.get("name", ""),
                 "email": s.get("email", ""),
-                "password": s.get("password", ""),
+                "password": crypto_utils.decrypt_password(raw_pw, FERNET_KEY),
                 "level": s.get("level", ""),
                 "city": s.get("city", ""),
                 "booking_datetime": s.get("booking_datetime", ""),

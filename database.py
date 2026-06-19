@@ -27,6 +27,15 @@ DATABASE_URL = os.environ.get(
     f"sqlite:///{PROJECT_DIR / 'bot_data.db'}",
 )
 
+# On Railway, enforce PostgreSQL — SQLite will lose data on restart
+if os.environ.get("RAILWAY_SERVICE_ID") or os.environ.get("RAILWAY_PROJECT_ID"):
+    if not DATABASE_URL or "sqlite" in DATABASE_URL.lower():
+        raise RuntimeError(
+            "DATABASE_URL must point to PostgreSQL on Railway. "
+            "SQLite data is lost on restart. "
+            "Set DATABASE_URL env var to your PostgreSQL connection string."
+        )
+
 # Fix for Railway's postgres:// vs postgresql://
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
