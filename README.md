@@ -242,7 +242,7 @@ The dashboard includes a built-in AI assistant powered by Google Gemini 2.5 Flas
 
 ```bash
 pytest -q
-# .......................................................... 66 passed
+# .......................................................... 61 passed
 pytest tests/test_e2e.py -v  # requires: playwright install chromium
 pytest tests/test_perf.py -v  # performance benchmarks
 pytest tests/test_fuzz.py -v   # input fuzzing

@@ -15,5 +15,6 @@ config.csv
 .netlify
 
 bot_data.db
+bot_data.db-*
 *.ndjson
 SESSION_SUMMARY.md

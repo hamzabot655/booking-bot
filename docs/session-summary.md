@@ -630,4 +630,19 @@ A1/A2/B1 Karachi next registration open: date unknown (was June 19 this cycle). 
 - CAS login happens automatically if redirect detected — not a separate step.
 - VPS still needed for 24/7 operation (bot dies when laptop sleeps). Client to purchase later.
 
+### Follow-up Fix: DB Logging Missing
+
+**Problem:** `/api/live-status` showed no logs because `run_student_flow` only used `logger.info()` (stdout/WebSocket) — never called `db.add_log()`. The endpoint reads from the `logs` table, which was empty.
+
+**Fix:** Added `db.add_log()` calls at every milestone: start → slot found → wicket detected → each wizard step (success/failure) → confirmation → exception handler.
+
+**Commit:** `58758c4` — pushed to GitHub.
+
+### Pushed to GitHub
+
+| Commit | Message |
+|--------|---------|
+| `a2cef8a` | feat: rewrite booking flow with 5-step wizard, fix 'Select modules' selector, add wicket handling |
+| `58758c4` | fix: add db.add_log calls throughout booking flow so live-status shows logs |
+
 
