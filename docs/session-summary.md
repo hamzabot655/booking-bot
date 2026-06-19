@@ -42,9 +42,9 @@ New API endpoints:
 
 Frontend: "Add Student (via DB)" card in Settings tab with form fields + student list with delete buttons. Auto-refreshes on connect.
 
-**Step 2: Live exam dates from Goethe API.**
+**Step 2: Live exam dates from goethe_scraper (replaces REST API).**
 
-`GET /api/exams?level=B1` — proxies Goethe's REST API via `check_slot_via_api()`, returns structured dates. Frontend "Fetch Dates" button populates a dropdown; selecting a date fills the `booking_datetime` field. Currently shows 0 dates (API maintenance mode), will work during booking windows.
+Initially used `GET /api/exams` → Goethe REST API, but Akamai blocks it. Switched to existing `goethe_scraper.py` with `GET /api/goethe-schedule` — works reliably (26 entries, no Akamai issues). Frontend "Fetch Dates" buttons filters by level + city, shows exam date + reg open time. Selecting fills `booking_datetime` with registration open datetime (e.g. `2026-07-17T10:00`).
 
 # Session Summary — June 18, 2026
 
