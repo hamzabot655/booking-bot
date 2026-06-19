@@ -645,4 +645,52 @@ A1/A2/B1 Karachi next registration open: date unknown (was June 19 this cycle). 
 | `a2cef8a` | feat: rewrite booking flow with 5-step wizard, fix 'Select modules' selector, add wicket handling |
 | `58758c4` | fix: add db.add_log calls throughout booking flow so live-status shows logs |
 
+---
+
+## Session 26 — June 19 — Public Repo Cleanup
+
+### What Changed
+
+| File | Action |
+|------|--------|
+| `docs/session-summary.md` | Moved from root to `docs/` (was `SESSION_SUMMARY.md`) |
+| `.gitignore` | Added `bot_data.db-*`; removed `bot_data.db-shm` and `bot_data.db-wal` from tracking |
+| `README.md` | Fixed test count: `66 passed` → `61 pass` |
+| GitHub repo | Description updated: 26 modules, 69 tests, 5-step wizard, Telegram Commander |
+| GitHub Release | Created `v1.0.0` — initial public release with full changelog |
+
+### Rationale
+
+- `SESSION_SUMMARY.md` is a dev diary — useful for the author but off-putting for visitors. Moved to `docs/` to keep it versioned but not prominent.
+- `bot_data.db-shm` and `bot_data.db-wal` are SQLite runtime lock files — should never be committed.
+- Test count was stale (said 66 when 8 circuit breaker tests fail due to timing).
+- Repo description said "12 modules" but README counts 26 — fixed mismatch.
+- No release/tag existed — created v1.0.0 so users see a stable reference point.
+
+### Repo State After Cleanup
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Root files | SESSION_SUMMARY.md cluttering root | Clean root, only standard files |
+| Gitignore | Missing `bot_data.db-*` | Covers all SQLite artifacts |
+| Test count | "66 passed" (wrong) | "61 pass" (correct) |
+| Description | "12 modules, 66 tests" | "26 modules, 69 tests, 5-step wizard, Telegram Commander" |
+| Release | None | v1.0.0 with changelog |
+
+### Follow-up: Optional Number Field (Step 1)
+
+Added `contact_number` selector + handler for the cropped-label optional field in Step 1 (likely "CONTACT NUMBER" or "PASSPORT NUMBER"). Falls back gracefully if missing.
+
+| Commit | Message |
+|--------|---------|
+| `a224862` | feat: add optional contact/passport number field to Step 1 |
+
+### Follow-up: Date-Wise Summary Section
+
+Added a **Summary** section below Live Booking Status log feed. When user picks a date from the date picker, it shows: Total, Booked, Failed, Pending counts for that date, plus level breakdown and log entry stats.
+
+| Commit | Message |
+|--------|---------|
+| `0762da2` | feat: add date-wise summary section below Live Booking Status |
+
 
