@@ -1411,9 +1411,13 @@ async function fetchLiveDates() {
       filtered.map(ex => {
         const dt = ex.reg_open;
         const tm = ex.reg_open_time || "10:00";
-        const bookingVal = dt ? dt + "T" + tm : "";
         const parts = dt ? dt.split(/[.\/]/) : [];
-        const iso = parts.length === 3 ? `20${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}` : dt;
+        let iso = dt;
+        if (parts.length === 3) {
+          let y = parts[2];
+          if (y.length === 2) y = "20" + y;
+          iso = `${y}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+        }
         const finalVal = iso + "T" + tm;
         const examDate = ex.exam_date || "?";
         const label = `${examDate} exam — reg opens ${dt} at ${tm}`;
