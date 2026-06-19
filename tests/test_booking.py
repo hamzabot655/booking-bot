@@ -63,3 +63,29 @@ def test_random_human_delay():
     bot.random_human_delay(0.1, 0.2)
     elapsed = time.time() - start
     assert 0.05 <= elapsed <= 0.5
+
+
+def test_check_slot_via_api_fallback_no_curl():
+    """Without curl_cffi, returns api_ok=False with fallback message."""
+    old = bot.HAS_CURL_CFFI
+    bot.HAS_CURL_CFFI = False
+    try:
+        import logging
+        logger = logging.getLogger("test")
+        result = bot.check_slot_via_api("B1", logger)
+        assert result["api_ok"] is False
+        assert "curl_cffi" in result["message"]
+    finally:
+        bot.HAS_CURL_CFFI = old
+
+
+def test_check_slot_via_api_returns_dict():
+    """Returns valid dict shape even on network error."""
+    import logging
+    logger = logging.getLogger("test")
+    result = bot.check_slot_via_api("B1", logger)
+    assert isinstance(result, dict)
+    assert "api_ok" in result
+    assert "available" in result
+    assert "message" in result
+    assert "slots_found" in result

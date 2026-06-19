@@ -10,7 +10,7 @@
 > **You are responsible for** verifying TOS compliance in your jurisdiction before using this bot for actual bookings. This is an experimental tool, not a guaranteed booking service.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-69%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-71%20passing-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/python-3.12%2B-blue" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/modules-26-orange" alt="Modules">
@@ -238,7 +238,7 @@ The dashboard includes a built-in AI assistant powered by Google Gemini 2.5 Flas
 
 ## Testing
 
-69 pytest tests (61 pass, 8 pre-existing circuit breaker timing failures) + 16 additional tests (manual/skip by default):
+71 pytest tests (63 pass, 8 pre-existing circuit breaker timing failures) + 16 additional tests (manual/skip by default):
 
 ```bash
 pytest -q

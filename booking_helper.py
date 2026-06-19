@@ -34,6 +34,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import requests
+try:
+    from curl_cffi import requests as curl_requests
+    HAS_CURL_CFFI = True
+except ImportError:
+    curl_requests = None  # type: ignore[assignment]
+    HAS_CURL_CFFI = False
 from selenium import webdriver
 try:
     import undetected_chromedriver as uc
@@ -77,6 +83,14 @@ EXAM_URLS = {
     "A1": os.environ.get("MOCK_A1_URL", "https://www.goethe.de/ins/pk/en/spr/prf/gzsd1.cfm"),
     "A2": os.environ.get("MOCK_A2_URL", "https://www.goethe.de/ins/pk/en/spr/prf/gzsd2.cfm"),
     "B1": os.environ.get("MOCK_B1_URL", "https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm"),
+}
+
+# ── REST API pre-check config ──
+API_BASE = "https://www.goethe.de/rest/examfinder/exams/institute/O%2010000366"
+API_REFERER = "https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm"
+API_QUERY_PARAMS = {
+    "category": "E006", "type": "ER", "countryIsoCode": "pk",
+    "count": "20", "start": "1", "langId": "1", "timezone": "47",
 }
 
 # ── Polling configuration ──
@@ -699,6 +713,67 @@ def check_slot_availability(student: Dict[str, str], logger: logging.Logger) -> 
             except Exception:
                 pass
     return result
+
+
+def check_slot_via_api(level: str, logger: logging.Logger) -> Dict:
+    """REST API pre-check for exam availability.
+    Uses curl_cffi TLS fingerprinting to bypass Akamai.
+    Returns {available, slots_found, message, exams, api_ok} or
+    {api_ok: False, message, fallback: True} on failure."""
+    result = {"available": False, "slots_found": 0, "message": "", "exams": [], "api_ok": False}
+    if not HAS_CURL_CFFI:
+        result["message"] = "curl_cffi not installed — skipping API pre-check"
+        return result
+    try:
+        level = level.upper().strip()
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": API_REFERER,
+            "Origin": "https://www.goethe.de",
+        }
+        sess = curl_requests.Session()
+        sess.headers.update(headers)
+        sess.get("https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm", impersonate="chrome", timeout=15)
+
+        resp = sess.get(API_BASE, params=API_QUERY_PARAMS, impersonate="chrome", timeout=15)
+        ct = (resp.headers.get("Content-Type") or "").lower()
+        if resp.status_code != 200 or "application/json" not in ct:
+            logger.debug("API pre-check: status=%d ct=%s body=%s", resp.status_code, ct, resp.text[:120])
+            result["message"] = f"API returned {resp.status_code} (not JSON)"
+            return result
+
+        data = resp.json()
+        exams = data.get("exams") or data.get("data") or data.get("results") or (data if isinstance(data, list) else [data])
+        if not isinstance(exams, list):
+            exams = [exams]
+
+        bookable = []
+        for ex in exams:
+            if not isinstance(ex, dict):
+                continue
+            txt = (ex.get("availabilityText") or "").lower()
+            disabled = ex.get("disabled") or ex.get("availabilityState") == "disabled"
+            if not disabled and ("select" in txt or "book" in txt or "buchen" in txt or "next" in txt):
+                bookable.append(ex)
+
+        result["api_ok"] = True
+        result["exams"] = bookable
+        if bookable:
+            result["available"] = True
+            result["slots_found"] = len(bookable)
+            names = [ex.get("courselevelShortcut", "") or ex.get("level", "") for ex in bookable]
+            locs = [ex.get("locationName", "") or ex.get("city", "") for ex in bookable]
+            result["message"] = f"API: {len(bookable)} bookable — {' '.join(f'{n}@{l}' for n, l in zip(names, locs))}"
+        else:
+            result["message"] = f"API: no bookable slots (found {len(exams)} total exams)"
+        return result
+
+    except Exception as exc:
+        logger.debug("API pre-check error: %s", exc)
+        result["message"] = f"API error: {exc}"
+        return result
 
 
 # ── Form scanner (pre-flight check) ──
@@ -1580,6 +1655,22 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
                 continue
 
             burst = exam_dt - dt.timedelta(seconds=BURST_BEFORE_SECONDS) <= dt.datetime.now() <= exam_dt + dt.timedelta(seconds=BURST_AFTER_SECONDS)
+
+            if not burst and not page_loaded:
+                api_result = check_slot_via_api(level, logger)
+                if api_result.get("api_ok"):
+                    if api_result.get("available"):
+                        logger.info("API pre-check: %s", api_result.get("message", "slots found!"))
+                        db.add_log(sk, level, f"API pre-check: slots available — {api_result['message']}")
+                    else:
+                        logger.debug("API pre-check: no slots — %s", api_result.get("message", ""))
+                        gap = max(15, DEFAULT_POLL_INTERVAL + random.randint(-10, 15))
+                        for _ in range(int(gap)):
+                            if stop_event.is_set():
+                                result["status"] = "stopped"
+                                return result
+                            time.sleep(1)
+                        continue
 
             try:
                 if burst and page_loaded:

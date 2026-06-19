@@ -1,3 +1,20 @@
+# Session Summary — June 19, 2026
+
+## What Changed
+
+### `booking_helper.py` — REST API pre-check + curl_cffi integration
+
+**New: `check_slot_via_api()` function** — fast API-based slot availability check using the Goethe REST endpoint `/rest/examfinder/exams/institute/O%2010000366`. Uses `curl_cffi` with Chrome TLS impersonation to bypass Akamai. Returns structured dict with `api_ok`, `available`, `slots_found`, `exams`, `message`.
+
+**Integration into polling loop** — before loading the full Selenium page (non-burst), the bot now tries the REST API first. If the API says "no slots available", it skips the expensive page load (~20-40s) and retries after the normal polling interval. If the API says "slots available" or errors, it falls through to the existing Selenium flow. The API is currently returning a maintenance page (`Service-Unterbrechung`), so this is a **future-proofing optimization** that will work when the API is operational (typical during booking windows).
+
+**New import:** `curl_cffi` (already installed at Python312). Guarded by `HAS_CURL_CFFI` flag with graceful fallback.
+
+### `tests/test_booking.py` — 2 new tests
+
+- `test_check_slot_via_api_fallback_no_curl`: verifies graceful fallback without curl_cffi
+- `test_check_slot_via_api_returns_dict`: verifies dict shape even on network error
+
 # Session Summary — June 18, 2026
 
 ## What Changed
