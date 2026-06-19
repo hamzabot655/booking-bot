@@ -805,4 +805,41 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 2. @opencode: SSH in → install Python, Chrome, deps → clone repo → systemd service → migrate Railway env vars
 3. Frontend stays on Netlify (only backend URL changes)
 
+---
+
+## Session 5 — June 19, 2026 (code review fixes)
+
+### What was fixed
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 1 | **8 circuit breaker tests failing** | `__init__` params `threshold`/`cooldown` were ignored — `_CONFIG` class dict always used env defaults (threshold=10). Made config instance-level with constructor params as generic defaults. **12/12 tests pass now.** |
+| 2 | **No CI badge** | Added live-integration workflow badge to README |
+| 3 | **hmac.compare_digest for passwords** | Replaced with bcrypt for admin login. Created `crypto_utils.py` with Fernet encryption for student Goethe passwords at rest (decrypt on load). Graceful fallback to pbkdf2_hmac+sha256 if bcrypt unavailable. |
+| 4 | **SQLite default on Railway** | Added startup check: if `RAILWAY_SERVICE_ID` or `RAILWAY_PROJECT_ID` set but `DATABASE_URL` is SQLite/missing → raise `RuntimeError` with clear message |
+| 5 | **Legal disclaimer** | Already existed in README (lines 5-10) — no change needed |
+| 6 | **Frontend polish** | Updated test badge count to 88 |
+| 7 | **Broken cookie script docs** | Removed `save_cookies_simple.py` references from README |
+| 8 | **Demo video** | Not recorded — waiting for 5-step wizard confirmation on next booking window |
+
+### New files
+
+| File | Purpose |
+|------|---------|
+| `crypto_utils.py` | bcrypt hashing + Fernet encryption/decryption with graceful fallbacks |
+
+### Changed files
+
+| File | Changes |
+|------|---------|
+| `circuit_breaker.py` | `_CONFIG` → `_DEFAULT_CONFIG` class var + `self._config` instance var; `record_failure` reads from `self._config` |
+| `webapp.py` | Removed `import hmac`; added `import crypto_utils`; admin login uses `crypto_utils.check_password`; student passwords encrypted with Fernet before DB storage |
+| `database.py` | Railway environment detection → `RuntimeError` if SQLite in production |
+| `README.md` | Test badge count 71→88; added CI badge; removed cookie script references |
+| `requirements.txt` | Added `bcrypt>=4.0`, `cryptography>=41.0` |
+
+| Commit | Message |
+|--------|---------|
+| `1d1b70b` | fix: address code review — circuit breaker, crypto, CI badge, Railway enforce, README cleanup |
+
 
