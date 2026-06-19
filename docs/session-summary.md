@@ -874,4 +874,35 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 - Will work on Hetzner VPS, not on Railway
 - Postponed until VPS is live
 
+---
+
+## Session 8 — June 19, 2026 (Claude audit fixes)
+
+### Claude review findings (outdated code — tested pre-fix, but valid points)
+
+| # | Issue | Fix | Status |
+|---|-------|-----|--------|
+| 1 | **Credentials in smoke.yml** | Replaced plaintext `hamzarafiq655`/`REDACTED` with `${{ secrets.AUTH_EMAIL }}`/`${{ secrets.AUTH_PASSWORD }}`. Set secrets via `gh secret set`. | ✅ |
+| 2 | **pytest-asyncio missing** | Added `pytest-asyncio>=0.21.0` to `requirements.txt` | ✅ |
+| 3 | **loginBtn bug** | Added `id="loginBtn"` to Sign In button (Ctrl+Enter shortcut was broken) | ✅ |
+| 4 | **Binary assets in repo** | Removed 7 files from `presentation/` (42MB MP4, 2.5MB PPTX, 5 PDFs including invoices) from git history via `git filter-repo` | ✅ |
+
+### Also done
+
+- `.gitignore` — added `presentation/`, `*.mp4`, `*.pptx`
+- Force pushed cleaned history
+- **Repo made private** (next step)
+
+### Claude missed (already fixed before his review)
+
+- Circuit breaker: already fixed in Session 5
+- Test badges: already updated to 88
+- README badges: already updated
+
+### Remaining after this session
+
+- Hetzner VPS setup (waiting on client)
+- Demo video (waiting on booking window)
+- Full db.py → database.py migration (deferred — high risk, low urgency)
+
 
