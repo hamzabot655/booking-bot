@@ -267,10 +267,13 @@ def parse_exam_time_str(raw: str) -> Optional[dt.datetime]:
     raw = raw.strip()
     if not raw:
         return None
-    if "T" in raw or "-" in raw:
-        return dt.datetime.fromisoformat(raw)
-    today = dt.date.today().isoformat()
-    return dt.datetime.fromisoformat(f"{today}T{raw}")
+    try:
+        if "T" in raw or "-" in raw:
+            return dt.datetime.fromisoformat(raw)
+        today = dt.date.today().isoformat()
+        return dt.datetime.fromisoformat(f"{today}T{raw}")
+    except ValueError:
+        raise ValueError(f"Invalid date format: '{raw}' — expected format like 2026-07-17T10:00 or DD.MM.YYYY HH:MM")
 
 
 def random_human_delay(min_sec: float = MIN_HUMAN_DELAY, max_sec: float = MAX_HUMAN_DELAY) -> None:
@@ -948,7 +951,8 @@ def scheduled_wait(booking_time_str: str, logger: logging.Logger, stop_event: th
         return True
     try:
         target = parse_exam_time_str(booking_time_str)
-    except Exception:
+    except Exception as exc:
+        logger.warning("Invalid booking_datetime '%s' — %s. Starting immediately.", booking_time_str, exc)
         return True
 
     logger.info("Scheduled mode: waiting until %s", target.strftime("%Y-%m-%d %H:%M:%S"))
@@ -1630,7 +1634,11 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
     db.add_log(sk, level, f"Starting booking — {level} {city}")
 
     exam_url = get_exam_url(level)
-    exam_dt = parse_exam_time_str(booking_time_str) if booking_time_str else dt.datetime.now()
+    try:
+        exam_dt = parse_exam_time_str(booking_time_str) if booking_time_str else dt.datetime.now()
+    except ValueError as exc:
+        logger.error("Invalid booking_datetime for %s: %s", name, exc)
+        return {"name": name, "email": email, "level": level, "city": city, "status": "failed", "error": str(exc)}
 
     student_key = f"{name}|{level}|{city}"
     resume_step = db.get_checkpoint(student_key)
