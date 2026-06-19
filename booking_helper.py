@@ -87,10 +87,19 @@ EXAM_URLS = {
 
 # ── REST API pre-check config ──
 API_BASE = "https://www.goethe.de/rest/examfinder/exams/institute/O%2010000366"
-API_REFERER = "https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm"
-API_QUERY_PARAMS = {
-    "category": "E006", "type": "ER", "countryIsoCode": "pk",
-    "count": "20", "start": "1", "langId": "1", "timezone": "47",
+API_REFERERS = {
+    "A1": "https://www.goethe.de/ins/pk/en/spr/prf/gzsd1.cfm",
+    "A2": "https://www.goethe.de/ins/pk/en/spr/prf/gzsd2.cfm",
+    "B1": "https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm",
+}
+API_BASE_PARAMS = {
+    "countryIsoCode": "pk", "count": "20", "start": "1",
+    "langId": "1", "timezone": "47",
+}
+API_LEVEL_PARAMS = {
+    "A1": {"category": "E004", "type": "ER"},
+    "A2": {"category": "E005", "type": "ER"},
+    "B1": {"category": "E006", "type": "ER"},
 }
 
 # ── Polling configuration ──
@@ -726,18 +735,22 @@ def check_slot_via_api(level: str, logger: logging.Logger) -> Dict:
         return result
     try:
         level = level.upper().strip()
+        level_key = level if level in API_LEVEL_PARAMS else "B1"
+        level_params = API_LEVEL_PARAMS[level_key]
+        level_referer = API_REFERERS.get(level_key, API_REFERERS["B1"])
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
             "Accept": "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
-            "Referer": API_REFERER,
+            "Referer": level_referer,
             "Origin": "https://www.goethe.de",
         }
         sess = curl_requests.Session()
         sess.headers.update(headers)
-        sess.get("https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm", impersonate="chrome", timeout=15)
+        sess.get(level_referer, impersonate="chrome", timeout=15)
 
-        resp = sess.get(API_BASE, params=API_QUERY_PARAMS, impersonate="chrome", timeout=15)
+        params = {**API_BASE_PARAMS, **level_params}
+        resp = sess.get(API_BASE, params=params, impersonate="chrome", timeout=15)
         ct = (resp.headers.get("Content-Type") or "").lower()
         if resp.status_code != 200 or "application/json" not in ct:
             logger.debug("API pre-check: status=%d ct=%s body=%s", resp.status_code, ct, resp.text[:120])
