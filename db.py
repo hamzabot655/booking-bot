@@ -25,6 +25,13 @@ def _get_conn() -> sqlite3.Connection:
     return _local.conn
 
 
+def _migrate_db(conn):
+    """Add missing columns for backward compatibility."""
+    existing = {r["name"] for r in conn.execute("PRAGMA table_info(students)").fetchall()}
+    if "password" not in existing:
+        conn.execute("ALTER TABLE students ADD COLUMN password TEXT DEFAULT ''")
+
+
 def init_db():
     conn = _get_conn()
     conn.executescript("""
@@ -32,6 +39,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT,
+            password TEXT DEFAULT '',
             level TEXT,
             city TEXT,
             booking_datetime TEXT,
@@ -82,15 +90,43 @@ def init_db():
     conn.commit()
 
 
+def _ensure_password_column():
+    conn = _get_conn()
+    existing = {r["name"] for r in conn.execute("PRAGMA table_info(students)").fetchall()}
+    if "password" not in existing:
+        conn.execute("ALTER TABLE students ADD COLUMN password TEXT DEFAULT ''")
+        conn.commit()
+
+
 def save_students(students: List[Dict[str, str]]):
     conn = _get_conn()
     conn.execute("DELETE FROM students")
     for s in students:
         conn.execute(
-            "INSERT INTO students (name, email, level, city, booking_datetime, status) VALUES (?, ?, ?, ?, ?, ?)",
-            (s.get("name", ""), s.get("email", ""), s.get("level", s.get("exam_level", "")), s.get("city", ""), s.get("booking_datetime", ""), "pending"),
+            "INSERT INTO students (name, email, password, level, city, booking_datetime, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (s.get("name", ""), s.get("email", ""), s.get("password", ""), s.get("level", s.get("exam_level", "")), s.get("city", ""), s.get("booking_datetime", ""), "pending"),
         )
     conn.commit()
+
+
+def add_student(student: Dict[str, str]) -> int:
+    _ensure_password_column()
+    conn = _get_conn()
+    cur = conn.execute(
+        "INSERT INTO students (name, email, password, level, city, booking_datetime, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')",
+        (student.get("name", ""), student.get("email", ""), student.get("password", ""),
+         student.get("level", student.get("exam_level", "")), student.get("city", ""),
+         student.get("booking_datetime", "")),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def delete_student(student_id: int) -> bool:
+    conn = _get_conn()
+    cur = conn.execute("DELETE FROM students WHERE id = ?", (student_id,))
+    conn.commit()
+    return cur.rowcount > 0
 
 
 def get_students() -> List[Dict[str, Any]]:

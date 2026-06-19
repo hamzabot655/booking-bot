@@ -619,6 +619,49 @@ def api_config_upload():
         return jsonify({"ok": False, "error": str(exc)}), 400
 
 
+@bp.route("/students", methods=["GET"])
+@require_auth
+def api_get_students():
+    try:
+        students = db.get_students()
+        return jsonify({"ok": True, "students": _strip_sensitive(students)})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@bp.route("/students", methods=["POST"])
+@require_auth
+def api_add_student():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"ok": False, "error": "Name is required"}), 400
+    try:
+        sid = db.add_student({
+            "name": name,
+            "email": (data.get("email") or "").strip(),
+            "password": data.get("password", ""),
+            "level": (data.get("level") or "").strip().upper(),
+            "city": (data.get("city") or "").strip(),
+            "booking_datetime": (data.get("booking_datetime") or "").strip(),
+        })
+        return jsonify({"ok": True, "id": sid})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@bp.route("/students/<int:student_id>", methods=["DELETE"])
+@require_auth
+def api_delete_student(student_id: int):
+    try:
+        ok = db.delete_student(student_id)
+        if not ok:
+            return jsonify({"ok": False, "error": "Student not found"}), 404
+        return jsonify({"ok": True})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
 @bp.route("/start", methods=["POST"])
 @require_auth
 @swag_from({
@@ -1120,12 +1163,27 @@ def api_db_logs():
 
 def _get_loaded_students() -> List[Dict]:
     global config_path
-    if not config_path or not Path(config_path).exists():
-        return []
+    students = []
+    if config_path and Path(config_path).exists():
+        try:
+            students.extend(bot.load_all_students(config_path))
+        except Exception:
+            pass
     try:
-        return bot.load_all_students(config_path)
+        db_students = db.get_students()
+        for s in db_students:
+            students.append({
+                "name": s.get("name", ""),
+                "email": s.get("email", ""),
+                "password": s.get("password", ""),
+                "level": s.get("level", ""),
+                "city": s.get("city", ""),
+                "booking_datetime": s.get("booking_datetime", ""),
+                "status": s.get("status", "pending"),
+            })
     except Exception:
-        return []
+        pass
+    return students
 
 
 # ── Alexa AI Assistant ──
