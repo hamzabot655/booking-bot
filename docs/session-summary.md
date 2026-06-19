@@ -856,6 +856,6 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 
 | Commit | Message |
 |--------|---------|
-| *(pending)* | |
+| `63ceee4` | docs: expanded .env.example, docstrings on complex functions, db.py deprecation warning |
 
 
