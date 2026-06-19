@@ -28,7 +28,7 @@ ELEMENT_SELECTORS: Dict[str, List[Tuple[str, str]]] = {
             "[not(contains(translate(@class, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'disabled'))]"
         )),
         (By.CSS_SELECTOR, "a.standard, button.standard"),
-        (By.XPATH, "//*[self::a or self::button][contains(text(), 'Select') or contains(text(), 'Book') or contains(text(), 'book')]"),
+        (By.XPATH, "//*[self::a or self::button][contains(text(), 'Select') or contains(text(), 'select') or contains(text(), 'Module') or contains(text(), 'Book') or contains(text(), 'book')]"),
         (By.XPATH, "//*[self::a or self::button][contains(@href, 'book') or contains(@href, 'buchen')]"),
     ],
     "bookable_from_text": [
