@@ -842,4 +842,20 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 |--------|---------|
 | `1d1b70b` | fix: address code review — circuit breaker, crypto, CI badge, Railway enforce, README cleanup |
 
+---
+
+## Session 6 — June 19, 2026 (env example + docstrings + db deprecation)
+
+### Changes
+
+| # | Task | What happened |
+|---|------|---------------|
+| 1 | **`.env.example`** | Expanded from 25→65 lines. Added all missing vars: `DATABASE_URL`, `FERNET_KEY`, `SENTRY_DSN`, `ENFORCE_HTTPS`, `AUTH_SALT`, `SUPPORT_EMAIL`, `PORT`, `HOST`, `MOCK_A*_URL`, `POLL_INTERVAL`, `POLL_JITTER`, `MAX_SMART_RETRIES`, `CB_*` vars |
+| 2 | **Docstrings** | Added to `run_student_flow()` and `CircuitBreaker` class. `crypto_utils.py` already had one. |
+| 3 | **`db.py` deprecation** | Marked as deprecated with warning. Actual migration to SQLAlchemy deferred — API mismatches (`save_checkpoint`, `update_student_status` signatures differ) make it higher risk. |
+
+| Commit | Message |
+|--------|---------|
+| *(pending)* | |
+
 

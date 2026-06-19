@@ -15,12 +15,13 @@ class CircuitBreaker:
       open     — N consecutive failures tripped; requests blocked for cooldown
       half-open — cooldown expired; one probe request allowed
 
-    Error types:
-      - 503/block: short threshold, longer cooldown (server is struggling)
-      - timeout: medium threshold (might be transient)
-      - no_slot: never trips breaker (empty results != failure)
+    Error types (configurable via env vars):
+      - block:   503/CAPTCHA/429 — short threshold, long cooldown
+      - timeout: connection timeout — medium threshold
+      - generic:  all other failures — default threshold/cooldown
 
-    Thread-safe.
+    Thread-safe via _lock. Use allow_request() before each call,
+    record_failure() / record_success() after.
     """
 
     # Per-error-type thresholds/cooldowns (overridable via env)
