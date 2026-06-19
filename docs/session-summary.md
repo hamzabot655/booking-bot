@@ -858,4 +858,20 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 |--------|---------|
 | `63ceee4` | docs: expanded .env.example, docstrings on complex functions, db.py deprecation warning |
 
+---
+
+## Session 7 — June 19, 2026 (VPS plan & verify credentials discussion)
+
+### Decision: Hetzner CPX11 (€3.99/mo) confirmed
+
+- CPX11 enough for 1-2 students parallel
+- Railway reCAPTCHA blocks Goethe login → "Verify Credentials" button won't work until VPS
+- Client will buy VPS, then @opencode will set up (Python, Chrome, bot, systemd)
+
+### Rejected: "Verify Credentials" on Add Student page
+
+- Needs residential IP (Goethe login behind reCAPTCHA)
+- Will work on Hetzner VPS, not on Railway
+- Postponed until VPS is live
+
 
