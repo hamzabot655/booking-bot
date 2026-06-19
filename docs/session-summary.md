@@ -785,4 +785,24 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 |--------|---------|
 | `fc910de` | fix: add refresh=1 to frontend Fetch Dates to bypass 1hr cache |
 
+---
+
+## Session 4 — June 19, 2026 (hosting plan)
+
+### Decision: Hetzner VPS for production
+
+**Problem:** Railway blocks Selenium (datacenter IP → reCAPTCHA). Bot can't book from there.
+
+**Plan:** Move backend + bot from Railway to Hetzner VPS.
+
+| Option | Price | Verdict |
+|--------|-------|:-------:|
+| **Hetzner CPX11** (2 vCPU, 4GB RAM, 40GB SSD) | **€3.99/mo** | ✅ Best value — enough for Selenium + Flask |
+| Hetzner CPX21 (4 vCPU, 8GB RAM) | €6.99/mo | If multiple students parallel |
+
+**Steps to migrate:**
+1. Client buys Hetzner CPX11
+2. @opencode: SSH in → install Python, Chrome, deps → clone repo → systemd service → migrate Railway env vars
+3. Frontend stays on Netlify (only backend URL changes)
+
 
