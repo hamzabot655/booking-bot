@@ -1607,6 +1607,17 @@ def _fill_step_review(driver: webdriver.Chrome, student: Dict[str, str],
 def run_student_flow(student: Dict[str, str], use_headless: bool, logger: logging.Logger,
                      stop_event: threading.Event = None, proxy: Optional[str] = None,
                      immediate: bool = False) -> Dict[str, str]:
+    """Execute full booking flow for one student.
+
+    1. Wait until booking_datetime (continuous fast-poll in burst window)
+    2. Load exam page → detect "Select modules" button
+    3. Click through 5-step Wicket wizard (Personal Data × 2 → Payment → Promo → Review)
+    4. Handle CAS login if session expired
+    5. Screenshot confirmation + parse reference number
+    6. Update DB logs, status, checkpoint at each milestone
+
+    Returns dict with status: booked/failed/stopped/error and details.
+    """
     name = student.get("name", "Unknown")
     email = student.get("email", "")
     password = student.get("password", "")

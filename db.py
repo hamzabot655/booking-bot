@@ -1,6 +1,11 @@
 """
-Database persistence layer (SQLite).
+Database persistence layer (SQLite).        [DEPRECATED]
 Stores students, results, logs persistently.
+
+⚠️ WARNING: This module is deprecated. Use `database.py` (SQLAlchemy)
+   for all new code. It supports both SQLite and PostgreSQL and is
+   the production database layer. This file is kept for backward
+   compatibility and will be removed in a future release.
 """
 
 from __future__ import annotations
