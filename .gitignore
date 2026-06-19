@@ -18,3 +18,6 @@ bot_data.db
 bot_data.db-*
 *.ndjson
 SESSION_SUMMARY.md
+presentation/
+*.mp4
+*.pptx
