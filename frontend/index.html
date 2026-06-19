@@ -896,7 +896,13 @@
           <span class="field-label">City</span>
           <select id="sCity"><option value="Karachi">Karachi</option><option value="Lahore">Lahore</option><option value="Islamabad">Islamabad</option></select>
           <span class="field-label">Booking DateTime</span>
-          <input type="text" id="sBookingDatetime" placeholder="e.g. 2026-07-17T10:00">
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="sBookingDatetime" placeholder="e.g. 2026-07-17T10:00" style="flex:1;">
+            <button class="btn btn-outline btn-sm" onclick="fetchLiveDates()" id="fetchDatesBtn" style="white-space:nowrap;">Fetch Dates</button>
+          </div>
+          <div id="liveDatesDropdown" style="display:none;grid-column:1/-1;">
+            <select id="liveDatesSelect" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface1);color:var(--text);font-size:13px;" onchange="document.getElementById('sBookingDatetime').value=this.value"></select>
+          </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
           <button class="btn btn-primary btn-sm" onclick="addDBStudent()">Add Student</button>
@@ -1373,6 +1379,35 @@ async function deleteDBStudent(id, name) {
     }
   } catch (e) {
     showToast("Delete failed: " + e.message, "error");
+  }
+}
+
+async function fetchLiveDates() {
+  const level = document.getElementById("sLevel").value;
+  const btn = document.getElementById("fetchDatesBtn");
+  const dropdown = document.getElementById("liveDatesDropdown");
+  const select = document.getElementById("liveDatesSelect");
+  btn.textContent = "Loading...";
+  btn.disabled = true;
+  dropdown.style.display = "none";
+  try {
+    const resp = await apiFetch(`${BASE}/api/exams?level=${level}`, {
+      signal: AbortSignal.timeout(15000), _loading: "Fetching dates...",
+    });
+    const data = await resp.json();
+    if (!data.ok || !data.exams || data.exams.length === 0) {
+      showToast(data.message || "No dates available", "warning");
+      return;
+    }
+    select.innerHTML = `<option value="">— Select a date —</option>` +
+      data.exams.map(ex => `<option value="${escHtml(ex.date)}">${escHtml(ex.label)}</option>`).join("");
+    dropdown.style.display = "block";
+    showToast(`${data.exams.length} date(s) loaded`, "success");
+  } catch (e) {
+    showToast("Failed to fetch dates: " + e.message, "error");
+  } finally {
+    btn.textContent = "Fetch Dates";
+    btn.disabled = false;
   }
 }
 

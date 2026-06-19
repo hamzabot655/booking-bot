@@ -662,6 +662,35 @@ def api_delete_student(student_id: int):
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@bp.route("/exams", methods=["GET"])
+@require_auth
+def api_get_exams():
+    level = request.args.get("level", "B1").strip().upper()
+    try:
+        result = bot.check_slot_via_api(level, flask.current_app.logger)
+        if not result.get("api_ok"):
+            return jsonify({"ok": False, "error": result.get("message", "API unavailable"), "exams": []})
+        exams = result.get("exams", [])
+        dates = []
+        for ex in exams:
+            date_str = ex.get("startDate", "")
+            loc = ex.get("locationName", "") or ""
+            txt = ex.get("availabilityText", "") or ""
+            dates.append({
+                "date": date_str,
+                "location": loc,
+                "available": txt,
+                "level": ex.get("courselevelShortcut", level),
+                "label": f"{date_str} — {loc} ({txt})" if loc else f"{date_str} ({txt})",
+            })
+        if not dates:
+            msg = result.get("message", "No dates available")
+            return jsonify({"ok": True, "exams": [], "message": msg})
+        return jsonify({"ok": True, "exams": dates, "message": f"{len(dates)} date(s) found"})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc), "exams": []}), 500
+
+
 @bp.route("/start", methods=["POST"])
 @require_auth
 @swag_from({

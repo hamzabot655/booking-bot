@@ -27,6 +27,25 @@ Extracted `courseLevelData` from all three exam pages via Selenium. Added `API_L
 
 Previously only B1 (E006/ER) was hardcoded — A1/A2 would have gotten wrong results.
 
+### `db.py`, `database.py`, `webapp.py`, `frontend/index.html` — DB-based student management (no CSV required)
+
+**Step 1: Add/Delete students from frontend, stored in DB.**
+
+New API endpoints:
+- `GET /api/students` — list all DB students (password excluded)
+- `POST /api/students` — add a student with name, email, password, level, city, booking_datetime
+- `DELETE /api/students/<id>` — delete a student
+
+`_get_loaded_students()` now **merges** CSV students + DB students. `/api/start` reads the merged list. CSV upload still works as fallback.
+
+`db.py` & `database.py`: added `password` column via migration, `add_student()`, `delete_student()`, `_ensure_password_column()`.
+
+Frontend: "Add Student (via DB)" card in Settings tab with form fields + student list with delete buttons. Auto-refreshes on connect.
+
+**Step 2: Live exam dates from Goethe API.**
+
+`GET /api/exams?level=B1` — proxies Goethe's REST API via `check_slot_via_api()`, returns structured dates. Frontend "Fetch Dates" button populates a dropdown; selecting a date fills the `booking_datetime` field. Currently shows 0 dates (API maintenance mode), will work during booking windows.
+
 # Session Summary — June 18, 2026
 
 ## What Changed
