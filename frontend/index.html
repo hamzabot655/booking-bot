@@ -803,6 +803,13 @@
         <span id="scheduleStatus" style="font-size:11px;color:var(--text2);"></span>
       </div>
 
+      <div class="section-title fade-up" style="margin:20px 0 10px;">Google Sheets</div>
+      <div class="actions-bar fade-up fade-up-d1" style="gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="sheetsUpdateSchedule()" title="Fetch dates from Goethe and update Schedule tab">Update Schedule Tab</button>
+        <button class="btn btn-outline btn-sm" onclick="sheetsAutoFill()" title="Auto-fill booking_datetime for empty rows">Auto-Fill Dates</button>
+        <span id="sheetsResult" style="font-size:11px;color:var(--text2);margin-left:4px;"></span>
+      </div>
+
       <div class="section-title fade-up" style="margin:20px 0 10px;">Analytics</div>
       <div id="analyticsRow" class="grid grid-3" style="margin-bottom:14px;">
         <div class="card fade-up fade-up-d1"><div class="card-hd"><h3>Students</h3></div><div id="analyticsTotal" style="font-size:28px;font-weight:700;">—</div></div>
@@ -1607,6 +1614,30 @@ function setMode(mode) {
 
 
 // ── Schedule ──
+
+// ── Google Sheets ──
+async function sheetsUpdateSchedule() {
+  const el = document.getElementById("sheetsResult");
+  el.textContent = "Updating...";
+  try {
+    const resp = await apiFetch(`${BASE}/api/sheets/update-schedule`, {
+      method: "POST", signal: AbortSignal.timeout(30000)
+    });
+    el.textContent = data.ok ? `${data.schedule} | ${data.dropdown}` : data.error || "Failed";
+  } catch { el.textContent = "Request failed"; }
+}
+async function sheetsAutoFill() {
+  const el = document.getElementById("sheetsResult");
+  el.textContent = "Filling...";
+  try {
+    const resp = await apiFetch(`${BASE}/api/sheets/auto-fill`, {
+      method: "POST", signal: AbortSignal.timeout(30000)
+    });
+    el.textContent = data.ok ? data.message : data.error || "Failed";
+  } catch { el.textContent = "Request failed"; }
+}
+// ── End Google Sheets ──
+
 async function scheduleStart() {
   const dt = document.getElementById("scheduleDt").value;
   if (!dt) return showToast("Select a date/time", "error");

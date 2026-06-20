@@ -917,8 +917,15 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 - Only fills cells where `booking_datetime` is empty/invalid (preserves existing dates)
 - Service account needs **Editor** permission on the sheet (was Viewer)
 
+### Changes in this session
+- **`google_sheets.py`** — `update_schedule_tab()` creates "Schedule" tab with Level/City/BookingDateTime from Goethe scraper (26 entries). `setup_dropdown()` sets data validation (dropdown from range) on `booking_datetime` column pointing to Schedule tab.
+- **`webapp.py`** — new `POST /api/sheets/update-schedule` (runs both update_schedule_tab + setup_dropdown)
+- **Frontend** — "Google Sheets" section with "Update Schedule Tab" and "Auto-Fill Dates" buttons
+- **Service account** upgraded to Editor on the sheet
+
 ### Next Steps
 - `booking_datetime` auto-filled from Goethe scraper — client only needs to add `level` and `city`
+- Dates dropdown ab Google Sheets mein mile ga (booking_datetime cell select karein to dropdown show ho ga)
 - Remaining: Hetzner VPS, demo video, db.py migration (unchanged)
 
 

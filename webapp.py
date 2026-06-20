@@ -869,6 +869,18 @@ def api_sheets_auto_fill():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@bp.route("/sheets/update-schedule", methods=["POST"])
+@require_auth
+def api_sheets_update_schedule():
+    try:
+        import google_sheets
+        msg = google_sheets.update_schedule_tab()
+        msg2 = google_sheets.setup_dropdown()
+        return jsonify({"ok": True, "schedule": msg, "dropdown": msg2})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
 @bp.route("/heartbeat")
 def api_heartbeat():
     deadman.ping()
