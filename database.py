@@ -233,13 +233,21 @@ def clear_all_checkpoints():
 # ── Student management ──
 
 def save_students(students: List[Dict]):
+    import crypto_utils
+    _fernet_key = os.environ.get("FERNET_KEY", "")
     with SessionLocal() as session:
         session.query(StudentModel).delete()
         for s in students:
+            raw = s.get("password", "")
+            try:
+                crypto_utils.decrypt_password(raw, _fernet_key)
+                pw_enc = raw
+            except Exception:
+                pw_enc = crypto_utils.encrypt_password(raw, _fernet_key)
             session.add(StudentModel(
                 name=s.get("name", ""),
                 email=s.get("email", ""),
-                password=s.get("password", ""),
+                password=pw_enc,
                 level=s.get("level", ""),
                 city=s.get("city", ""),
                 booking_datetime=s.get("booking_datetime", ""),
