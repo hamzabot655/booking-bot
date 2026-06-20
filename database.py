@@ -233,7 +233,7 @@ def clear_all_checkpoints():
 # ── Student management ──
 
 def save_students(students: List[Dict]):
-    import crypto_utils
+    import crypto_utils, os
     _fernet_key = os.environ.get("FERNET_KEY", "")
     with SessionLocal() as session:
         session.query(StudentModel).delete()

@@ -167,7 +167,7 @@ def update_student_status(student_key: str, status: str, result: Optional[Dict] 
 
 
 def save_students(students: List[Dict]):
-    import crypto_utils
+    import crypto_utils, os
     _fernet_key = os.environ.get("FERNET_KEY", "")
     conn = _get_conn()
     conn.execute("DELETE FROM students")
