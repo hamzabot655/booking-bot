@@ -928,4 +928,46 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 - Dates dropdown ab Google Sheets mein mile ga (booking_datetime cell select karein to dropdown show ho ga)
 - Remaining: Hetzner VPS, demo video, db.py migration (unchanged)
 
+---
+
+## Session 10 — June 20, 2026 (Part 2)
+
+### What Changed
+
+#### Frontend — Full "Add Student" form (21 fields)
+- Expanded from 6 fields to complete 21-field form with 4 sections:
+  - **Login Credentials**: Name, Email, Password, Level, City, Booking DateTime
+  - **Personal Details**: First Name, Surname, DOB, Place of Birth, Contact Number, Phone Prefix, Phone
+  - **Address**: Country, Postal Code, Street, House Number, Additional Address, Location City
+  - **Exam Details**: Motivation (dropdown), Promo Code
+- Form submit now sends all fields to backend
+
+#### `webapp.py` — Backend accepts all fields + Sheets sync
+- `api_add_student()` now accepts all 21 fields
+- After DB save, calls `google_sheets.append_student()` to sync to Google Sheet automatically
+
+#### `google_sheets.py` — New `append_student()`
+- Appends a single student row to the sheet (matches template column order)
+- Called by `api_add_student()` after DB insert
+
+#### `db.py` — Schema migration for all extra columns
+- `_init_migrations()` replaces `_migrate_db()`, adds 16 new columns (first_name, surname, dob, contact_number, country, postal_code, street, house_number, additional_address, location_city, phone_prefix, phone, place_of_birth, motivation, promo_code)
+- Runs after table creation in `init_db()`
+- `add_student()` / `save_students()` updated with full column list
+- Removed `_ensure_password_column()` (handled by `_init_migrations`)
+
+#### `database.py` (PostgreSQL) — Columns + CRUD updated
+- `StudentModel` — 16 new columns added
+- `add_student()`, `save_students()`, `get_students()` — all include extra fields
+
+### Key Decisions
+- Form → DB → Google Sheets sync happens automatically on "Add Student"
+- Extra fields stored both in SQLite (db.py) and PostgreSQL (database.py)
+- Frontend form clears all fields on successful add
+
+### Remaining (unchanged)
+- Hetzner VPS setup (waiting on client)
+- Demo video (waiting on booking window)
+- Full db.py → database.py migration (deferred — high risk, low urgency)
+
 
