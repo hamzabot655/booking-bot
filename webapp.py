@@ -134,6 +134,7 @@ class WebSocketLogHandler(logging.Handler):
             pass
 
 # Attach to all loggers
+logging.getLogger().setLevel(logging.INFO)
 _ws_handler = WebSocketLogHandler()
 _ws_handler.setFormatter(logging.Formatter("%(message)s"))
 logging.getLogger().addHandler(_ws_handler)
