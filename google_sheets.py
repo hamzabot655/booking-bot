@@ -19,10 +19,10 @@ COLUMNS = [
 ]
 
 
-def get_client():
+def get_client(write: bool = False):
     import gspread
     from google.oauth2.service_account import Credentials
-    scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds = Credentials.from_service_account_file(str(SA_PATH), scopes=scopes)
     return gspread.authorize(creds)
 
@@ -61,6 +61,67 @@ def test_connection() -> str:
         students = load_sheet_data()
         if not students:
             return "Sheet connected but no data found (check headers match template)"
-        return f"✅ Connected! {len(students)} student(s) loaded: {', '.join(s['name'] for s in students)}"
+        return "Connected! %d student(s) loaded: %s" % (len(students), ", ".join(s["name"] for s in students))
     except Exception as e:
-        return f"❌ Connection failed: {e}"
+        return "Connection failed: %s" % e
+
+
+def get_sheet_headers() -> List[str]:
+    """Return current header row from the sheet."""
+    try:
+        gc = get_client()
+        sh = gc.open_by_key(SHEET_ID)
+        ws = sh.sheet1
+        return [h.strip().lower() for h in ws.row_values(1) if h.strip()]
+    except Exception:
+        return COLUMNS
+
+
+def auto_fill_booking_datetimes() -> str:
+    """For students missing booking_datetime, fetch from Goethe scraper and fill."""
+    try:
+        import goethe_scraper
+        schedule = goethe_scraper.get_schedule(force_refresh=True)
+    except Exception as e:
+        return "Failed to fetch Goethe schedule: %s" % e
+
+    try:
+        gc = get_client(write=True)
+        sh = gc.open_by_key(SHEET_ID)
+        ws = sh.sheet1
+        rows = ws.get_all_values()
+        if len(rows) < 2:
+            return "No data rows in sheet"
+        headers = [h.strip().lower() for h in rows[0]]
+        invalid = {"dt", "_", "n/a", "na", "none", "tbd", ""}
+        dt_col = None
+        for i, h in enumerate(headers):
+            if h == "booking_datetime":
+                dt_col = i
+                break
+        if dt_col is None:
+            return "booking_datetime column not found in sheet"
+
+        updates = 0
+        for row_idx, row in enumerate(rows[1:], start=2):
+            raw = row[dt_col].strip() if dt_col < len(row) else ""
+            if raw.lower() not in invalid:
+                continue
+            student = dict(zip(headers, row))
+            level = student.get("level", "").upper().strip()
+            city = student.get("city", "").strip()
+            if not level or not city:
+                continue
+            best = None
+            for entry in schedule:
+                if entry.level.upper() == level and entry.city.lower() == city.lower():
+                    dt_str = entry.reg_open + "T" + entry.reg_open_time if entry.reg_open_time else entry.reg_open
+                    if dt_str:
+                        best = dt_str
+                        break
+            if best:
+                ws.update_cell(row_idx, dt_col + 1, best)
+                updates += 1
+        return "Auto-filled %d student(s) with booking datetimes from Goethe schedule" % updates
+    except Exception as e:
+        return "Auto-fill failed: %s" % e
