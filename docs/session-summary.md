@@ -965,9 +965,32 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 - Extra fields stored both in SQLite (db.py) and PostgreSQL (database.py)
 - Frontend form clears all fields on successful add
 
-### Remaining (unchanged)
-- Hetzner VPS setup (waiting on client)
+## Session 11 — June 20, 2026 (Part 3)
+
+### What Changed
+
+#### `webapp.py` — Root logger level fix
+- `logging.getLogger().setLevel(logging.INFO)` added (was WARNING by default)
+- **Bug**: All INFO-level bot logs were silently dropped by root logger, never reaching WebSocket clients. Only WARNING/ERROR appeared.
+
+#### Frontend — Activity log display fixes
+- `startBot()` now clears `#liveLogBody` with "Waiting for logs..." message (was not clearing)
+- `pollLiveStatus()` no longer overwrites `#liveLogBody` — was destroying WebSocket entries every 3 seconds
+- SSE `onerror` shows warning in log box instead of silent no-op
+
+### Key Decisions
+- WebSocket handles real-time log feed; polling handles analytics + summary only
+- SSE serves as fallback log display in `#logBox`
+
+### Hetzner Setup Guide
+Client account created. Steps:
+1. Create CPX11 (Ubuntu 24.04, Nuremberg) — €3.99/mo
+2. SSH + install Chrome, Python, clone repo
+3. Copy env vars from Railway, add service account key
+4. Systemd service for auto-start
+5. Optional: Nginx + Certbot for HTTPS
+
+### Remaining
 - Demo video (waiting on booking window)
 - Full db.py → database.py migration (deferred — high risk, low urgency)
-
 
