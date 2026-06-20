@@ -30,11 +30,30 @@ def _get_conn() -> sqlite3.Connection:
     return _local.conn
 
 
-def _migrate_db(conn):
+def _init_migrations(conn):
     """Add missing columns for backward compatibility."""
     existing = {r["name"] for r in conn.execute("PRAGMA table_info(students)").fetchall()}
-    if "password" not in existing:
-        conn.execute("ALTER TABLE students ADD COLUMN password TEXT DEFAULT ''")
+    migs = {
+        "password": "ALTER TABLE students ADD COLUMN password TEXT DEFAULT ''",
+        "first_name": "ALTER TABLE students ADD COLUMN first_name TEXT DEFAULT ''",
+        "surname": "ALTER TABLE students ADD COLUMN surname TEXT DEFAULT ''",
+        "dob": "ALTER TABLE students ADD COLUMN dob TEXT DEFAULT ''",
+        "contact_number": "ALTER TABLE students ADD COLUMN contact_number TEXT DEFAULT ''",
+        "country": "ALTER TABLE students ADD COLUMN country TEXT DEFAULT ''",
+        "postal_code": "ALTER TABLE students ADD COLUMN postal_code TEXT DEFAULT ''",
+        "street": "ALTER TABLE students ADD COLUMN street TEXT DEFAULT ''",
+        "house_number": "ALTER TABLE students ADD COLUMN house_number TEXT DEFAULT ''",
+        "additional_address": "ALTER TABLE students ADD COLUMN additional_address TEXT DEFAULT ''",
+        "location_city": "ALTER TABLE students ADD COLUMN location_city TEXT DEFAULT ''",
+        "phone_prefix": "ALTER TABLE students ADD COLUMN phone_prefix TEXT DEFAULT ''",
+        "phone": "ALTER TABLE students ADD COLUMN phone TEXT DEFAULT ''",
+        "place_of_birth": "ALTER TABLE students ADD COLUMN place_of_birth TEXT DEFAULT ''",
+        "motivation": "ALTER TABLE students ADD COLUMN motivation TEXT DEFAULT ''",
+        "promo_code": "ALTER TABLE students ADD COLUMN promo_code TEXT DEFAULT ''",
+    }
+    for col, sql in migs.items():
+        if col not in existing:
+            conn.execute(sql)
 
 
 def init_db():
@@ -92,36 +111,34 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now'))
         );
     """)
+    _init_migrations(conn)
     conn.commit()
 
 
-def _ensure_password_column():
-    conn = _get_conn()
-    existing = {r["name"] for r in conn.execute("PRAGMA table_info(students)").fetchall()}
-    if "password" not in existing:
-        conn.execute("ALTER TABLE students ADD COLUMN password TEXT DEFAULT ''")
-        conn.commit()
-
-
-def save_students(students: List[Dict[str, str]]):
+def add_student(student: Dict[str, str]) -> int:
     conn = _get_conn()
     conn.execute("DELETE FROM students")
     for s in students:
         conn.execute(
-            "INSERT INTO students (name, email, password, level, city, booking_datetime, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (s.get("name", ""), s.get("email", ""), s.get("password", ""), s.get("level", s.get("exam_level", "")), s.get("city", ""), s.get("booking_datetime", ""), "pending"),
+            "INSERT INTO students (name, email, password, level, city, booking_datetime, status, first_name, surname, dob, contact_number, country, postal_code, street, house_number, additional_address, location_city, phone_prefix, phone, place_of_birth, motivation, promo_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (s.get("name", ""), s.get("email", ""), s.get("password", ""), s.get("level", s.get("exam_level", "")), s.get("city", ""), s.get("booking_datetime", ""), "pending",
+             s.get("first_name", ""), s.get("surname", ""), s.get("dob", ""), s.get("contact_number", ""), s.get("country", ""), s.get("postal_code", ""), s.get("street", ""), s.get("house_number", ""), s.get("additional_address", ""), s.get("location_city", ""), s.get("phone_prefix", ""), s.get("phone", ""), s.get("place_of_birth", ""), s.get("motivation", ""), s.get("promo_code", "")),
         )
     conn.commit()
 
 
 def add_student(student: Dict[str, str]) -> int:
-    _ensure_password_column()
     conn = _get_conn()
     cur = conn.execute(
-        "INSERT INTO students (name, email, password, level, city, booking_datetime, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')",
+        "INSERT INTO students (name, email, password, level, city, booking_datetime, status, first_name, surname, dob, contact_number, country, postal_code, street, house_number, additional_address, location_city, phone_prefix, phone, place_of_birth, motivation, promo_code) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (student.get("name", ""), student.get("email", ""), student.get("password", ""),
          student.get("level", student.get("exam_level", "")), student.get("city", ""),
-         student.get("booking_datetime", "")),
+         student.get("booking_datetime", ""),
+         student.get("first_name", ""), student.get("surname", ""), student.get("dob", ""),
+         student.get("contact_number", ""), student.get("country", ""), student.get("postal_code", ""),
+         student.get("street", ""), student.get("house_number", ""), student.get("additional_address", ""),
+         student.get("location_city", ""), student.get("phone_prefix", ""), student.get("phone", ""),
+         student.get("place_of_birth", ""), student.get("motivation", ""), student.get("promo_code", "")),
     )
     conn.commit()
     return cur.lastrowid

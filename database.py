@@ -76,6 +76,21 @@ class StudentModel(Base):
     city = Column(String(100), default="")
     booking_datetime = Column(String(50), default="")
     status = Column(String(50), default="pending")
+    first_name = Column(String(255), default="")
+    surname = Column(String(255), default="")
+    dob = Column(String(50), default="")
+    contact_number = Column(String(100), default="")
+    country = Column(String(100), default="")
+    postal_code = Column(String(50), default="")
+    street = Column(String(255), default="")
+    house_number = Column(String(50), default="")
+    additional_address = Column(String(255), default="")
+    location_city = Column(String(100), default="")
+    phone_prefix = Column(String(10), default="")
+    phone = Column(String(50), default="")
+    place_of_birth = Column(String(100), default="")
+    motivation = Column(String(100), default="")
+    promo_code = Column(String(100), default="")
     result_json = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -229,6 +244,21 @@ def save_students(students: List[Dict]):
                 city=s.get("city", ""),
                 booking_datetime=s.get("booking_datetime", ""),
                 status=s.get("status", "pending"),
+                first_name=s.get("first_name", ""),
+                surname=s.get("surname", ""),
+                dob=s.get("dob", ""),
+                contact_number=s.get("contact_number", ""),
+                country=s.get("country", ""),
+                postal_code=s.get("postal_code", ""),
+                street=s.get("street", ""),
+                house_number=s.get("house_number", ""),
+                additional_address=s.get("additional_address", ""),
+                location_city=s.get("location_city", ""),
+                phone_prefix=s.get("phone_prefix", ""),
+                phone=s.get("phone", ""),
+                place_of_birth=s.get("place_of_birth", ""),
+                motivation=s.get("motivation", ""),
+                promo_code=s.get("promo_code", ""),
                 result_json=json.dumps(s.get("result", {})),
             ))
         session.commit()
@@ -244,6 +274,21 @@ def add_student(student: Dict) -> int:
             city=student.get("city", ""),
             booking_datetime=student.get("booking_datetime", ""),
             status=student.get("status", "pending"),
+            first_name=student.get("first_name", ""),
+            surname=student.get("surname", ""),
+            dob=student.get("dob", ""),
+            contact_number=student.get("contact_number", ""),
+            country=student.get("country", ""),
+            postal_code=student.get("postal_code", ""),
+            street=student.get("street", ""),
+            house_number=student.get("house_number", ""),
+            additional_address=student.get("additional_address", ""),
+            location_city=student.get("location_city", ""),
+            phone_prefix=student.get("phone_prefix", ""),
+            phone=student.get("phone", ""),
+            place_of_birth=student.get("place_of_birth", ""),
+            motivation=student.get("motivation", ""),
+            promo_code=student.get("promo_code", ""),
         )
         session.add(m)
         session.commit()
@@ -272,6 +317,21 @@ def get_students() -> List[Dict]:
             "city": r.city,
             "booking_datetime": r.booking_datetime,
             "status": r.status,
+            "first_name": r.first_name or "",
+            "surname": r.surname or "",
+            "dob": r.dob or "",
+            "contact_number": r.contact_number or "",
+            "country": r.country or "",
+            "postal_code": r.postal_code or "",
+            "street": r.street or "",
+            "house_number": r.house_number or "",
+            "additional_address": r.additional_address or "",
+            "location_city": r.location_city or "",
+            "phone_prefix": r.phone_prefix or "",
+            "phone": r.phone or "",
+            "place_of_birth": r.place_of_birth or "",
+            "motivation": r.motivation or "",
+            "promo_code": r.promo_code or "",
             "result": json.loads(r.result_json) if r.result_json else {},
         } for r in rows]
 

@@ -218,3 +218,16 @@ def setup_dropdown() -> str:
         return "Dropdown set on booking_datetime from Schedule tab"
     except Exception as e:
         return "Setup dropdown failed: %s" % e
+
+
+def append_student(student: Dict[str, Any]) -> str:
+    """Append a single student row to the Google Sheet."""
+    try:
+        gc = get_client(write=True)
+        sh = gc.open_by_key(SHEET_ID)
+        ws = sh.sheet1
+        row = [student.get(c, "") for c in COLUMNS]
+        ws.append_row(row)
+        return "OK"
+    except Exception as e:
+        return "Append failed: %s" % e
