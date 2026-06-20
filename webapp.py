@@ -632,8 +632,8 @@ def api_config_upload():
 @require_auth
 def api_get_students():
     try:
-        students = db.get_students()
-        return jsonify({"ok": True, "students": _strip_sensitive(students)})
+        all_students = _get_loaded_students()
+        return jsonify({"ok": True, "students": _strip_sensitive(all_students)})
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
@@ -674,7 +674,9 @@ def api_add_student():
         sid = db.add_student(student)
         try:
             import google_sheets
-            google_sheets.append_student(student)
+            sheet_student = dict(student)
+            sheet_student["password"] = password_plain
+            google_sheets.append_student(sheet_student)
         except Exception:
             pass
         return jsonify({"ok": True, "id": sid})
