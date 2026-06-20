@@ -1641,6 +1641,7 @@ async function startBot() {
     const data = await resp.json();
     if (!data.ok) return showToast("Error: " + data.error, "error");
     document.getElementById("logBox").innerHTML = "";
+    document.getElementById("liveLogBody").innerHTML = '<div style="color:var(--text3);padding:8px;font-size:12px;">Waiting for logs...</div>';
     document.getElementById("resultsCard").style.display = "none";
     document.getElementById("resultsEmpty").style.display = "";
     startSSE();
@@ -1791,89 +1792,6 @@ async function pollLiveStatus() {
     document.getElementById("liveFailed").textContent = s.failed;
     document.getElementById("livePending").textContent = s.pending;
 
-    // Build combined log: student statuses + logs + results
-    const entries = [];
-
-    // 1. Student status entries
-    if (data.students) {
-      for (const st of data.students) {
-        const stat = (st.status || "").toLowerCase();
-        let icon, iconColor;
-        if (stat === "confirmed" || stat === "submitted") {
-          icon = "\u2705"; iconColor = "var(--green)";
-        } else if (stat === "failed") {
-          icon = "\u274C"; iconColor = "var(--red)";
-        } else {
-          icon = "\u23F3"; iconColor = "var(--accent)";
-        }
-        let detail = "";
-        if (st.reference) detail += `Ref: ${escHtml(st.reference)} `;
-        if (st.exam_date) detail += `Exam: ${escHtml(st.exam_date)}`;
-        if (st.error) detail += `Error: ${escHtml(st.error)}`;
-        entries.push({
-          time: st.updated_at || "",
-          html: `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--glass-border);">
-            <span style="font-size:16px;flex-shrink:0;">${icon}</span>
-            <div style="flex:1;min-width:0;">
-              <div><strong>${escHtml(st.name)}</strong> <span class="exam-tag exam-${(st.level||'A')[0]}">${escHtml(st.level)}</span> ${escHtml(st.city)}</div>
-              <div style="font-size:12px;color:var(--text2);margin-top:2px;">
-                <span style="color:${iconColor};font-weight:500;">${escHtml(st.status)}</span>
-                ${detail ? '<span style="color:var(--text3);margin-left:8px;">' + detail + '</span>' : ''}
-              </div>
-            </div>
-            <span style="font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap;">${escHtml(_fmtTime(st.updated_at))}</span>
-          </div>`
-        });
-      }
-    }
-
-    // 2. Log entries
-    if (data.logs) {
-      for (const log of data.logs) {
-        let icon = "\u2139\uFE0F";
-        const lv = (log.level || "").toLowerCase();
-        if (lv === "error" || lv === "critical") icon = "\u26A0\uFE0F";
-        else if (lv === "success" || lv === "booked") icon = "\u2705";
-        else if (lv === "warn" || lv === "warning") icon = "\u26A0\uFE0F";
-        entries.push({
-          time: log.time || "",
-          html: `<div style="display:flex;align-items:flex-start;gap:10px;padding:6px 14px;border-bottom:1px solid var(--glass-border);font-size:12px;">
-            <span style="font-size:13px;flex-shrink:0;">${icon}</span>
-            <div style="flex:1;min-width:0;color:var(--text2);">
-              ${log.student_key ? '<strong>' + escHtml(log.student_key) + '</strong>: ' : ''}${escHtml(log.message)}
-            </div>
-            <span style="font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap;">${_fmtTime(log.time)}</span>
-          </div>`
-        });
-      }
-    }
-
-    // 3. Results
-    if (data.results) {
-      for (const r of data.results) {
-        const stat = (r.status || "").toLowerCase();
-        let icon = stat === "confirmed" || stat === "submitted" ? "\u2705" : "\u274C";
-        entries.push({
-          time: r.updated_at || "",
-          html: `<div style="display:flex;align-items:flex-start;gap:10px;padding:6px 14px;border-bottom:1px solid var(--glass-border);font-size:12px;">
-            <span style="font-size:13px;flex-shrink:0;">${icon}</span>
-            <div style="flex:1;min-width:0;color:var(--text2);">
-              <strong>${escHtml(r.name)}</strong> — ${escHtml(r.status)}${r.reference ? ' (Ref: ' + escHtml(r.reference) + ')' : ''}
-            </div>
-            <span style="font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap;">${_fmtTime(r.updated_at)}</span>
-          </div>`
-        });
-      }
-    }
-
-    // Sort by time descending (newest first), then render
-    entries.sort((a, b) => b.time.localeCompare(a.time));
-    const container = document.getElementById("liveLogBody");
-    if (entries.length) {
-      container.innerHTML = entries.map(e => e.html).join("");
-    } else {
-      container.innerHTML = '<div style="text-align:center;padding:40px 14px;color:var(--text3);font-size:13px;">No activity for ' + (dateVal || 'today') + '</div>';
-    }
     updateSummary(data, dateVal || 'today');
   } catch { /* ignore */ }
 }
@@ -1980,7 +1898,15 @@ function startSSE() {
       appendLog(data);
     } catch { /* ignore */ }
   };
-  evtSource.onerror = function() {};
+  evtSource.onerror = function() {
+    const box = document.getElementById("logBox");
+    if (box && box.children.length === 0) {
+      const div = document.createElement("div");
+      div.className = "log-entry log-WARN";
+      div.textContent = "⚠ SSE disconnected — logs may be delayed";
+      box.appendChild(div);
+    }
+  };
 }
 
 function closeSSE() { if (evtSource) { evtSource.close(); evtSource = null; } }
