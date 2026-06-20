@@ -848,6 +848,16 @@ def api_goethe_schedule():
     return jsonify({"ok": True, "data": goethe_scraper.to_dict(entries), "cached": not force})
 
 
+@bp.route("/sheets/test", methods=["GET"])
+def api_sheets_test():
+    try:
+        import google_sheets
+        result = google_sheets.test_connection()
+        return jsonify({"ok": True, "message": result})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
 @bp.route("/heartbeat")
 def api_heartbeat():
     deadman.ping()
@@ -1219,6 +1229,18 @@ def _get_loaded_students() -> List[Dict]:
                 "booking_datetime": s.get("booking_datetime", ""),
                 "status": s.get("status", "pending"),
             })
+    except Exception:
+        pass
+    try:
+        import google_sheets
+        sheet_students = google_sheets.load_sheet_data()
+        seen_keys = {(s.get("name",""), s.get("level",""), s.get("city","")) for s in students}
+        for s in sheet_students:
+            key = (s.get("name",""), s.get("level",""), s.get("city",""))
+            if key not in seen_keys:
+                s.setdefault("status", "pending")
+                students.append(s)
+                seen_keys.add(key)
     except Exception:
         pass
     return students
