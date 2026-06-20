@@ -1063,5 +1063,6 @@ Client account created. Steps:
 | `33fd9c8` | fix: sync students bidirectionally between DB and Google Sheets |
 | `4c7f7a9` | fix: encrypt passwords in save_students to prevent plaintext storage from sheets merge |
 | `ddc86fd` | fix: add missing os import in save_students |
-| `9ca435a` | docs: session 12 — CORS fix, Sheets SA file missing on Railway |
+| `9a7e31d` | docs: update session 12/13 — full QA, db.py fixes, bidirectional sync |
+| `d3a5926` | docs: add critical plaintext password bug fix to session summary |
 
