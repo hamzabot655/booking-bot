@@ -167,13 +167,21 @@ def update_student_status(student_key: str, status: str, result: Optional[Dict] 
 
 
 def save_students(students: List[Dict]):
+    import crypto_utils
+    _fernet_key = os.environ.get("FERNET_KEY", "")
     conn = _get_conn()
     conn.execute("DELETE FROM students")
     for s in students:
+        raw = s.get("password", "")
+        try:
+            crypto_utils.decrypt_password(raw, _fernet_key)
+            pw_enc = raw
+        except Exception:
+            pw_enc = crypto_utils.encrypt_password(raw, _fernet_key)
         conn.execute(
             "INSERT INTO students (name, email, password, level, city, booking_datetime, status, first_name, surname, dob, contact_number, country, postal_code, street, house_number, additional_address, location_city, phone_prefix, phone, place_of_birth, motivation, promo_code, result_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                s.get("name", ""), s.get("email", ""), s.get("password", ""),
+                s.get("name", ""), s.get("email", ""), pw_enc,
                 s.get("level", ""), s.get("city", ""), s.get("booking_datetime", ""),
                 s.get("status", "pending"),
                 s.get("first_name", ""), s.get("surname", ""),
