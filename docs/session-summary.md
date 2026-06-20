@@ -993,10 +993,11 @@ Client account created. Steps:
 ### Remaining
 - Demo video (waiting on booking window)
 - Full db.py → database.py migration (deferred — high risk, low urgency)
+- PostgreSQL DATABASE_URL not set on Railway — 3 Postgres DBs attached but none auto-injecting `DATABASE_URL` env var. Currently falling back to SQLite (data lost on restart). Fix: remove extra Postgres DBs or set DATABASE_URL explicitly.
 
 ---
 
-## Session 12 — June 20, 2026 — CORS Fix + Sheets Service Account Missing on Railway
+## Session 12/13 — June 20, 2026 — CORS Fix, Sheets SA, db.py Compatibility, Bidirectional Sync
 
 ### Bug: CORS blocking new frontend on Netlify
 
@@ -1008,17 +1009,41 @@ Client account created. Steps:
 
 ### Google Sheets: Service account file missing on Railway
 
-`/api/sheets/update-schedule` fails with:
-```
-No such file or directory: '/app/goethe-bot-sa.json'
-```
+**Problem:** `/api/sheets/update-schedule` failed with `No such file or directory: '/app/goethe-bot-sa.json'`
+**Fix:** Added `GOOGLE_SERVICE_ACCOUNT_B64` env var support in `google_sheets.py` — reads base64-encoded service account JSON as fallback if file not on disk. Set via Railway CLI.
 
-The file exists locally at `goethe-bot-sa.json` but is gitignored (contains private key). Needs to be uploaded to Railway manually.
+### Bug: Bot crash on start — `db.save_students` missing
 
-### Commits
+**Root cause:** Railway uses `database.py` (PostgreSQL) when `DATABASE_URL` is set, but falls back to `db.py` (SQLite) otherwise. `db.py` had no `save_students()` function. Bot started → tried to save initial students → `AttributeError` → dead man switch triggered.
+
+**Fix:** Added `save_students()` to `db.py` with full column support.
+
+### Bug: `/api/live-status` returning 500
+
+**Root cause:** `api_live_status()` called `db.get_logs(limit=500, date_filter=...)`, but `db.py`'s `get_logs()` signature was `(student_key, limit)` — no `date_filter` param → `TypeError: unexpected keyword argument`.
+
+**Fix:** Updated `db.py.get_logs()` signature to `(student_key=None, limit=200, date_filter=None)` with date-filtered query support.
+
+### Bug: Students not syncing between Dashboard and Google Sheets
+
+**Dashboard → Sheets:** `api_add_student()` sent encrypted password to `append_student()`. Fixed: pass `password_plain` instead.
+
+**Sheets → Dashboard:** `/api/students` only read from DB, never merged Sheets data. Fixed: now calls `_get_loaded_students()` which merges DB + CSV + Sheets students (deduped by name+level+city).
+
+### QA Results (final)
+
+| Check | Result |
+|-------|--------|
+| Tests | 88 pass, 19 skip |
+| Railway logs | 0 errors |
+| All API endpoints | Working |
+
+### Commits (this session)
 
 | Commit | Message |
 |--------|---------|
-| `6f8532f` | Add new Netlify + Railway URLs to CORS whitelist and CSP connect-src |
-| `a9740c2` | fix: UnboundLocalError in websocket `_loop` — list() copy + discard |
+| `31b8600` | feat: support GOOGLE_SERVICE_ACCOUNT_B64 env var as file fallback for Railway |
+| `a846f75` | fix: add save_students + date_filter to db.py for SQLite fallback compatibility |
+| `33fd9c8` | fix: sync students bidirectionally between DB and Google Sheets |
+| `9ca435a` | docs: session 12 — CORS fix, Sheets SA file missing on Railway |
 
