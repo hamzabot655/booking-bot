@@ -199,7 +199,7 @@ def add_log(student_key: str, level: str, message: str):
     conn.commit()
 
 
-def get_logs(limit: int = 200, date_filter: Optional[str] = None, student_key: Optional[str] = None) -> List[Dict]:
+def get_logs(student_key: Optional[str] = None, limit: int = 200, date_filter: Optional[str] = None) -> List[Dict]:
     conn = _get_conn()
     if date_filter:
         from datetime import datetime, timedelta
