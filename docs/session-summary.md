@@ -899,10 +899,26 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 - Test badges: already updated to 88
 - README badges: already updated
 
-### Remaining after this session
+---
 
-- Hetzner VPS setup (waiting on client)
-- Demo video (waiting on booking window)
-- Full db.py → database.py migration (deferred — high risk, low urgency)
+## Session 9 — June 20, 2026
+
+### What Changed
+
+#### `google_sheets.py` — Auto-fill booking datetimes + write access
+- **`get_client(write=True)`** — scopes upgraded from `spreadsheets.readonly` to `spreadsheets` (read/write)
+- **`auto_fill_booking_datetimes()`** — new function: fetches Goethe schedule via scraper, iterates all sheet rows, fills empty `booking_datetime` cells by matching level+city against scraper data. Uses `ws.update_cell()` for row-level writes.
+- **`get_sheet_headers()`** — new helper: returns current header row from the sheet
+
+#### `webapp.py` — New endpoint
+- **`POST /api/sheets/auto-fill`** — requires auth. Calls `auto_fill_booking_datetimes()` and returns result.
+
+### Key Decisions
+- Only fills cells where `booking_datetime` is empty/invalid (preserves existing dates)
+- Service account needs **Editor** permission on the sheet (was Viewer)
+
+### Next Steps
+- `booking_datetime` auto-filled from Goethe scraper — client only needs to add `level` and `city`
+- Remaining: Hetzner VPS, demo video, db.py migration (unchanged)
 
 
