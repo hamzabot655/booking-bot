@@ -166,6 +166,30 @@ def update_student_status(student_key: str, status: str, result: Optional[Dict] 
     conn.commit()
 
 
+def save_students(students: List[Dict]):
+    conn = _get_conn()
+    conn.execute("DELETE FROM students")
+    for s in students:
+        conn.execute(
+            "INSERT INTO students (name, email, password, level, city, booking_datetime, status, first_name, surname, dob, contact_number, country, postal_code, street, house_number, additional_address, location_city, phone_prefix, phone, place_of_birth, motivation, promo_code, result_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                s.get("name", ""), s.get("email", ""), s.get("password", ""),
+                s.get("level", ""), s.get("city", ""), s.get("booking_datetime", ""),
+                s.get("status", "pending"),
+                s.get("first_name", ""), s.get("surname", ""),
+                s.get("dob", ""), s.get("contact_number", ""),
+                s.get("country", ""), s.get("postal_code", ""),
+                s.get("street", ""), s.get("house_number", ""),
+                s.get("additional_address", ""), s.get("location_city", ""),
+                s.get("phone_prefix", ""), s.get("phone", ""),
+                s.get("place_of_birth", ""), s.get("motivation", ""),
+                s.get("promo_code", ""),
+                json.dumps(s.get("result", {})),
+            ),
+        )
+    conn.commit()
+
+
 def add_log(student_key: str, level: str, message: str):
     conn = _get_conn()
     conn.execute(
@@ -175,9 +199,20 @@ def add_log(student_key: str, level: str, message: str):
     conn.commit()
 
 
-def get_logs(student_key: Optional[str] = None, limit: int = 200) -> List[Dict]:
+def get_logs(limit: int = 200, date_filter: Optional[str] = None, student_key: Optional[str] = None) -> List[Dict]:
     conn = _get_conn()
-    if student_key:
+    if date_filter:
+        from datetime import datetime, timedelta
+        try:
+            day = datetime.strptime(date_filter, "%Y-%m-%d")
+            next_day = day + timedelta(days=1)
+            rows = conn.execute(
+                "SELECT * FROM logs WHERE time >= ? AND time < ? ORDER BY id DESC LIMIT ?",
+                (day.isoformat(), next_day.isoformat(), limit),
+            ).fetchall()
+        except ValueError:
+            rows = []
+    elif student_key:
         rows = conn.execute("SELECT * FROM logs WHERE student_key = ? ORDER BY id DESC LIMIT ?", (student_key, limit)).fetchall()
     else:
         rows = conn.execute("SELECT * FROM logs ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
