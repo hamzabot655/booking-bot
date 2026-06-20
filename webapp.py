@@ -858,6 +858,17 @@ def api_sheets_test():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@bp.route("/sheets/auto-fill", methods=["POST"])
+@require_auth
+def api_sheets_auto_fill():
+    try:
+        import google_sheets
+        result = google_sheets.auto_fill_booking_datetimes()
+        return jsonify({"ok": True, "message": result})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
 @bp.route("/heartbeat")
 def api_heartbeat():
     deadman.ping()
