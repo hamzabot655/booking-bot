@@ -644,15 +644,36 @@ def api_add_student():
         return jsonify({"ok": False, "error": "Name is required"}), 400
     password_plain = data.get("password", "")
     password_enc = crypto_utils.encrypt_password(password_plain, FERNET_KEY)
+    student = {
+        "name": name,
+        "email": (data.get("email") or "").strip(),
+        "password": password_enc,
+        "level": (data.get("level") or "").strip().upper(),
+        "city": (data.get("city") or "").strip(),
+        "booking_datetime": (data.get("booking_datetime") or "").strip(),
+        "first_name": (data.get("first_name") or "").strip(),
+        "surname": (data.get("surname") or "").strip(),
+        "dob": (data.get("dob") or "").strip(),
+        "contact_number": (data.get("contact_number") or "").strip(),
+        "country": (data.get("country") or "").strip(),
+        "postal_code": (data.get("postal_code") or "").strip(),
+        "street": (data.get("street") or "").strip(),
+        "house_number": (data.get("house_number") or "").strip(),
+        "additional_address": (data.get("additional_address") or "").strip(),
+        "location_city": (data.get("location_city") or "").strip(),
+        "phone_prefix": (data.get("phone_prefix") or "").strip(),
+        "phone": (data.get("phone") or "").strip(),
+        "place_of_birth": (data.get("place_of_birth") or "").strip(),
+        "motivation": (data.get("motivation") or "").strip(),
+        "promo_code": (data.get("promo_code") or "").strip(),
+    }
     try:
-        sid = db.add_student({
-            "name": name,
-            "email": (data.get("email") or "").strip(),
-            "password": password_enc,
-            "level": (data.get("level") or "").strip().upper(),
-            "city": (data.get("city") or "").strip(),
-            "booking_datetime": (data.get("booking_datetime") or "").strip(),
-        })
+        sid = db.add_student(student)
+        try:
+            import google_sheets
+            google_sheets.append_student(student)
+        except Exception:
+            pass
         return jsonify({"ok": True, "id": sid})
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
