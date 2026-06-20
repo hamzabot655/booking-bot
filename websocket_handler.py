@@ -62,12 +62,13 @@ class LogBroadcaster:
                 payload = json.dumps(entry)
                 with _lock:
                     dead = set()
-                    for client in _clients:
+                    for client in list(_clients):
                         try:
                             client.send(payload)
                         except Exception:
                             dead.add(client)
-                    _clients -= dead
+                    for c in dead:
+                        _clients.discard(c)
             except queue.Empty:
                 continue
 
