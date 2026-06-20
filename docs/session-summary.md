@@ -994,3 +994,31 @@ Client account created. Steps:
 - Demo video (waiting on booking window)
 - Full db.py → database.py migration (deferred — high risk, low urgency)
 
+---
+
+## Session 12 — June 20, 2026 — CORS Fix + Sheets Service Account Missing on Railway
+
+### Bug: CORS blocking new frontend on Netlify
+
+**Problem:** New Netlify URL (`incredible-seahorse-66be2b.netlify.app`) and new Railway URL (`21af`) were missing from `_ALLOWED_ORIGINS`. Backend returned `Access-Control-Allow-Origin: ""` → browser blocked login requests.
+
+**Error shown:** `Connection error: Unexpected token 'O', "Offline" is not valid JSON` (service worker catch returning "Offline" on failed fetch).
+
+**Fix:** Added both URLs to `_ALLOWED_ORIGINS` + CSP `connect-src` in `webapp.py`
+
+### Google Sheets: Service account file missing on Railway
+
+`/api/sheets/update-schedule` fails with:
+```
+No such file or directory: '/app/goethe-bot-sa.json'
+```
+
+The file exists locally at `goethe-bot-sa.json` but is gitignored (contains private key). Needs to be uploaded to Railway manually.
+
+### Commits
+
+| Commit | Message |
+|--------|---------|
+| `6f8532f` | Add new Netlify + Railway URLs to CORS whitelist and CSP connect-src |
+| `a9740c2` | fix: UnboundLocalError in websocket `_loop` — list() copy + discard |
+
