@@ -17,6 +17,7 @@ except ImportError:
 
 SHEET_ID = os.environ.get("GOOGLE_SHEET_ID", "1C7VD_52VnGmJqYSQGtdNzBZGekvCRHWUrdZCgTvvhAY")
 SA_PATH = Path(__file__).parent / "goethe-bot-sa.json"
+SA_ENV_B64 = os.environ.get("GOOGLE_SERVICE_ACCOUNT_B64", "")
 
 COLUMNS = [
     "name", "email", "password", "level", "city", "booking_datetime",
@@ -26,17 +27,35 @@ COLUMNS = [
 ]
 
 
+def _get_creds(scopes):
+    from google.oauth2.service_account import Credentials
+    if SA_PATH.exists():
+        return Credentials.from_service_account_file(str(SA_PATH), scopes=scopes)
+    if SA_ENV_B64:
+        import base64
+        try:
+            raw = base64.b64decode(SA_ENV_B64).decode("utf-8")
+            info = json.loads(raw)
+            return Credentials.from_service_account_info(info, scopes=scopes)
+        except Exception:
+            logging.getLogger(__name__).exception("Failed to parse GOOGLE_SERVICE_ACCOUNT_B64")
+    raise FileNotFoundError(f"Service account not found at {SA_PATH} or in GOOGLE_SERVICE_ACCOUNT_B64 env var")
+
+
 def get_client(write: bool = False):
     import gspread
-    from google.oauth2.service_account import Credentials
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-    creds = Credentials.from_service_account_file(str(SA_PATH), scopes=scopes)
+    creds = _get_creds(scopes)
     return gspread.authorize(creds)
+
+
+def _has_credentials():
+    return SA_PATH.exists() or bool(SA_ENV_B64)
 
 
 def load_sheet_data(sheet_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Read all rows from Google Sheet, return list of student dicts."""
-    if not SA_PATH.exists():
+    if not _has_credentials():
         return []
     try:
         gc = get_client()
