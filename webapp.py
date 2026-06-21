@@ -1295,6 +1295,7 @@ def _get_loaded_students() -> List[Dict]:
         for s in db_students:
             raw_pw = s.get("password", "")
             students.append({
+                "id": s.get("id"),
                 "name": s.get("name", ""),
                 "email": s.get("email", ""),
                 "password": crypto_utils.decrypt_password(raw_pw, FERNET_KEY),
