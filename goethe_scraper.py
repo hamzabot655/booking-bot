@@ -1,42 +1,52 @@
-"""Scrape Goethe exam schedule + prices from goethe.de for Pakistan cities.
+"""Scrape Pakistan exam schedule from Goethe API per level (A1, A2, B1).
 
-Parses exam date blocks from the Goethe-Institut Pakistan registration page.
-Prices are NOT in static HTML — the Prüfungsfinder widget loads them via JS.
-The PRICE_MAP below is manually maintained (verified values only).
-For live prices, use Playwright to render the JS widget or capture the
-exam finder API call via browser DevTools Network tab.
-
-Caches results for 1 hour.
+Uses Exam Finder API directly with ScrapingBee for live fetching.
+Cache TTL: 1 hour. Falls back to Playwright -> curl_cffi -> cached data.
 """
 from __future__ import annotations
 
-import re
+import json
+import os
+import threading
 import time
 from dataclasses import dataclass, asdict
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, List
-from urllib.request import urlopen, Request
+
+import requests
+
+SCRAPINGBEE_API_KEY = os.environ.get("SCRAPINGBEE_API_KEY", "")
+
+try:
+    from curl_cffi import requests as curl_requests
+    HAS_CURL = True
+except Exception:
+    HAS_CURL = False
 
 CACHE_TTL = 3600
-GOETHE_URL = "https://www.goethe.de/ins/pk/en/spr/prf/anm.html"
 
-MONTHS = {
-    "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
-    "july": 7, "august": 8, "september": 9,     "october": 10, "november": 11, "december": 12,
-    "januar": 1, "februar": 2, "märz": 3, "mai": 5, "juni": 6,
-    "juli": 7, "august": 8, "september": 9, "oktober": 10, "november": 11, "dezember": 12,
+PK_LEVEL_URLS: Dict[str, str] = {
+    "A1": "https://www.goethe.de/ins/pk/en/spr/prf/gzsd1.cfm",
+    "A2": "https://www.goethe.de/ins/pk/en/spr/prf/gzsd2.cfm",
+    "B1": "https://www.goethe.de/ins/pk/en/spr/prf/gzb1.cfm",
 }
 
-PRICE_MAP = {
-    "A1": {"price_full": "PKR 25,000", "price_reduced": "PKR 16,500"},
-    "A2": {"price_full": "PKR 25,000", "price_reduced": "PKR 16,500"},
-    "B1": {"price_full": "PKR 30,000", "price_reduced": "PKR 25,000"},
+PK_CATEGORY_CODES: Dict[str, str] = {
+    "A1": "E004",
+    "A2": "E005",
+    "B1": "E006",
 }
 
-CITY_PATTERNS = [
-    ("Karachi", r'Goethe-Institut\s+Karachi'),
-    ("Lahore", r'Annemarie-Schimmel-Haus.*?Lahore'),
-    ("Islamabad", r'(?:NUML|National University of Modern Languages).*?Islamabad'),
-]
+PK_INSTITUTE_IDS = ["O%2010000366"]
+
+EXAM_API_URL = "https://www.goethe.de/rest/examfinderv3/exams/institute/" + ",".join(PK_INSTITUTE_IDS)
+
+CITY_MAP = {
+    "karachi": "Karachi",
+    "lahore": "Lahore",
+    "islamabad": "Islamabad",
+}
 
 
 @dataclass
@@ -46,113 +56,68 @@ class ExamEntry:
     exam_date: str
     reg_open: str
     reg_open_time: str = ""
+    exam_end_date: str = ""
     price_full: str = ""
     price_reduced: str = ""
-    url: str = GOETHE_URL
+    url: str = ""
+    button_link: str = ""
 
+
+SCRAPER_DIR = Path(__file__).parent.absolute()
 
 _last_cache: dict = {"data": None, "ts": 0}
+_scraping_in_progress = threading.Event()
 
 
-def _fetch_html(url: str) -> str:
-    req = Request(url, headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    })
-    with urlopen(req, timeout=30) as resp:
-        return resp.read().decode("utf-8", errors="replace")
-
-
-def _normalize_date(date_str: str) -> str:
-    date_str = date_str.replace("\u2013", "-").replace("\u2014", "-").strip()
-    m = re.match(r'(\d{1,2})[\.\-](\d{1,2})[\.\-](\d{4})', date_str)
-    if m:
-        return f"{m.group(1).zfill(2)}.{m.group(2).zfill(2)}.{m.group(3)}"
-    m = re.match(r'(\d{1,2})\s+([A-Za-zäöü]+)\s+(\d{4})', date_str)
-    if m:
-        day, month_str, year = m.group(1), m.group(2).lower(), m.group(3)
-        month = MONTHS.get(month_str)
-        if month:
-            return f"{day.zfill(2)}.{month:02d}.{year}"
-    return date_str
-
-
-def _detect_city(context: str) -> str | None:
-    for city, pattern in CITY_PATTERNS:
-        if re.search(pattern, context, re.IGNORECASE | re.DOTALL):
-            return city
-    return None
-
-
-def _parse_schedule(html: str) -> List[ExamEntry]:
-    levels_of_interest = {"A1", "A2", "B1"}
-    all_blocks = list(re.finditer(r'<strong>(.*?)</strong>', html, re.DOTALL))
-
-    # Filter to level-bearing blocks only, preserving their order
-    level_blocks = []
-    for m in all_blocks:
-        block_levels = set(re.findall(r'\b([A-C]\d)\b', m.group(1)))
-        if block_levels & levels_of_interest:
-            level_blocks.append((m, block_levels))
-
+def _load_fallback_data() -> List[ExamEntry]:
     entries: List[ExamEntry] = []
-    current_city = "Pakistan"
+    fp = SCRAPER_DIR / "pk_fallback.json"
+    if not fp.exists():
+        return entries
+    try:
+        data = json.loads(fp.read_text(encoding="utf-8"))
+        for exam in data.get("DATA", []):
+            level = exam.get("languageLevel", "").strip()
+            if level not in ("A1", "A2", "B1"):
+                continue
+            loc = (exam.get("locationName") or "").strip()
+            city = _map_city(loc)
+            start_date = (exam.get("startDate") or "").strip()
+            end_date = (exam.get("endDate") or "").strip()
+            book_from = (exam.get("bookFrom") or "").strip()
+            book_time = (exam.get("bookFromTimeFormatted") or "").strip()
+            price = (exam.get("price") or "").strip()
+            btn_link = (exam.get("buttonLink") or "").strip()
 
-    for idx, (match, block_levels) in enumerate(level_blocks):
-        inner = match.group(1)
-        matching = block_levels & levels_of_interest
+            if not start_date:
+                continue
+            date_str = start_date
+            if end_date and end_date != start_date:
+                date_str = f"{start_date} - {end_date}"
 
-        # Detect city: look in the gap since the previous level block
-        if idx == 0:
-            prev_end = 0
-        else:
-            prev_end = level_blocks[idx - 1][0].end()
-        ctx = html[prev_end:match.start()]
-        detected = _detect_city(ctx)
-        if detected:
-            current_city = detected
+            entries.append(ExamEntry(
+                level=level,
+                city=city or loc,
+                exam_date=date_str,
+                reg_open=book_from,
+                reg_open_time=book_time,
+                exam_end_date=end_date,
+                price_full=price,
+                url=PK_LEVEL_URLS.get(level, ""),
+                button_link=btn_link,
+            ))
+    except Exception as e:
+        print(f"[pk_scraper] Fallback load error: {e}")
+    return entries
 
-        br_split = re.split(r'<br\s*/?>', inner, flags=re.IGNORECASE)
-        if len(br_split) < 2:
-            continue
-        exam_date = _normalize_date(br_split[-1].strip())
-        if not exam_date:
-            continue
 
-        block_end = match.end()
-        if idx + 1 < len(level_blocks):
-            end = level_blocks[idx + 1][0].start()
-        else:
-            end = len(html)
-        between = html[block_end:end]
-
-        reg_lines = re.findall(
-            r'([A-C]\d(?:,\s*[A-C]\d)*)\s*:\s*from\s+(\d{1,2}\.\d{1,2}\.\d{4})\s+at\s+(\d{1,2}:\d{2})',
-            between, re.IGNORECASE,
-        )
-
-        for levels_str, reg_date, reg_time in reg_lines:
-            parsed_levels = re.findall(r'[A-C]\d', levels_str.upper())
-            for lv in parsed_levels:
-                if lv in levels_of_interest:
-                    prices = PRICE_MAP.get(lv, {})
-                    entries.append(ExamEntry(
-                        level=lv,
-                        city=current_city,
-                        exam_date=exam_date,
-                        reg_open=reg_date,
-                        reg_open_time=reg_time,
-                        price_full=prices.get("price_full", ""),
-                        price_reduced=prices.get("price_reduced", ""),
-                    ))
-
-    seen = set()
-    unique = []
-    for e in entries:
-        key = (e.level, e.city, e.exam_date, e.reg_open)
-        if key not in seen:
-            seen.add(key)
-            unique.append(e)
-    return unique
+def _save_to_fallback(data: dict):
+    try:
+        fp = SCRAPER_DIR / "pk_fallback.json"
+        fp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        print(f"[pk_scraper] Saved fallback ({data.get('RECORDCOUNT', 0)} entries)")
+    except Exception as e:
+        print(f"[pk_scraper] Fallback save error: {e}")
 
 
 def get_schedule(force_refresh: bool = False) -> List[ExamEntry]:
@@ -160,16 +125,246 @@ def get_schedule(force_refresh: bool = False) -> List[ExamEntry]:
     if not force_refresh and _last_cache["data"] and (now - _last_cache["ts"]) < CACHE_TTL:
         return _last_cache["data"]
 
+    if not _scraping_in_progress.is_set():
+        _scraping_in_progress.set()
+        t = threading.Thread(target=_refresh_in_background, daemon=True)
+        t.start()
+
+    return _last_cache["data"] if _last_cache["data"] else _load_fallback_data()
+
+
+def _refresh_in_background():
     try:
-        html = _fetch_html(GOETHE_URL)
-        entries = _parse_schedule(html)
-        if entries:
-            _last_cache["data"] = entries
-            _last_cache["ts"] = now
-        return entries or _last_cache.get("data") or []
+        all_entries: List[ExamEntry] = []
+        for level in ("A1", "A2", "B1"):
+            try:
+                entries = _scrape_level(level)
+                print(f"[pk_scraper] {level}: {len(entries)} exams")
+                all_entries.extend(entries)
+            except Exception as e:
+                print(f"[pk_scraper] Error scraping {level}: {e}")
+            time.sleep(2)
+        if all_entries:
+            _last_cache["data"] = all_entries
+            _last_cache["ts"] = time.time()
+            print(f"[pk_scraper] Refresh complete: {len(all_entries)} entries")
+        else:
+            print(f"[pk_scraper] Refresh got 0 entries, keeping cache")
     except Exception as e:
-        print(f"Scraper error: {e}")
-        return _last_cache.get("data") or []
+        print(f"[pk_scraper] Background refresh error: {e}")
+    finally:
+        _scraping_in_progress.clear()
+
+
+def _scrape_level(level: str) -> List[ExamEntry]:
+    category = PK_CATEGORY_CODES.get(level, "")
+    if not category:
+        return []
+    url = PK_LEVEL_URLS.get(level, "")
+    params = {
+        "sortField": "startDate",
+        "hasJUGroup": "true",
+        "dataMode": "0",
+        "langId": "1",
+        "langIsoCodes": "en",
+        "countryIsoCode": "pk",
+        "count": "50",
+        "start": "1",
+        "hasERGroup": "true",
+        "isODP": "0",
+        "category": category,
+        "type": "ER",
+        "timezone": "47",
+        "sortOrder": "ASC",
+    }
+
+    if SCRAPINGBEE_API_KEY:
+        entries = _scrape_via_scrapingbee(level, url, params)
+        if entries:
+            return entries
+
+    if HAS_CURL:
+        entries = _scrape_via_curl_cffi(level, url, params)
+        if entries:
+            return entries
+
+    try:
+        from playwright.sync_api import sync_playwright
+        entries = _scrape_with_pw(level, url)
+        if entries:
+            return entries
+    except ImportError:
+        pass
+    except Exception as e:
+        print(f"[pk_scraper] Playwright error for {level}: {e}")
+
+    return entries
+
+
+def _scrape_via_scrapingbee(level: str, url: str, params: dict) -> List[ExamEntry]:
+    import urllib.parse
+    try:
+        target_url = f"{EXAM_API_URL}?{urllib.parse.urlencode(params)}"
+        encoded = urllib.parse.quote(target_url, safe='')
+        bee_url = f"https://app.scrapingbee.com/api/v1?url={encoded}&render_js=false&country_code=pk"
+        print(f"[pk_scraper] ScrapingBee request for {level}...")
+        resp = requests.get(
+            bee_url,
+            headers={"Authorization": f"Bearer {SCRAPINGBEE_API_KEY}"},
+            timeout=60,
+        )
+        if resp.status_code == 200:
+            try:
+                data = resp.json()
+                if isinstance(data, dict) and data.get("SUCCESS"):
+                    entries = _parse_api_response(data, level, url)
+                    if entries:
+                        _save_to_fallback(data)
+                        print(f"[pk_scraper] ScrapingBee {level}: {len(entries)} entries")
+                        return entries
+                else:
+                    print(f"[pk_scraper] ScrapingBee {level}: unexpected response shape")
+            except json.JSONDecodeError as je:
+                print(f"[pk_scraper] ScrapingBee {level} not JSON: {je}")
+        else:
+            print(f"[pk_scraper] ScrapingBee {level} HTTP {resp.status_code}: {resp.text[:200]}")
+    except Exception as e:
+        print(f"[pk_scraper] ScrapingBee error for {level}: {e}")
+    return []
+
+
+def _scrape_via_curl_cffi(level: str, url: str, params: dict) -> List[ExamEntry]:
+    try:
+        headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": url,
+            "Origin": "https://www.goethe.de",
+            "DNT": "1",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "Pragma": "no-cache",
+            "Cache-Control": "no-cache",
+        }
+        resp = curl_requests.get(
+            EXAM_API_URL,
+            params=params,
+            headers=headers,
+            impersonate="chrome131",
+            timeout=30,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if isinstance(data, dict) and data.get("SUCCESS"):
+                entries = _parse_api_response(data, level, url)
+                if entries:
+                    _save_to_fallback(data)
+                    print(f"[pk_scraper] curl_cffi {level}: {len(entries)} entries")
+                    return entries
+    except Exception as e:
+        print(f"[pk_scraper] curl_cffi error for {level}: {e}")
+    return []
+
+
+def _scrape_with_pw(level: str, url: str) -> List[ExamEntry]:
+    from playwright.sync_api import sync_playwright
+    entries: List[ExamEntry] = []
+    api_responses: List[dict] = []
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=True)
+        ctx = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/149.0.0.0 Safari/537.36",
+            locale="en-PK",
+        )
+        page = ctx.new_page()
+
+        def on_response(resp):
+            if resp.status == 200 and "/rest/examfinderv3/exams" in resp.url:
+                try:
+                    body = resp.json()
+                    if isinstance(body, dict) and body.get("SUCCESS"):
+                        api_responses.append(body)
+                except Exception:
+                    pass
+
+        page.on("response", on_response)
+        page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        page.wait_for_timeout(5000)
+        browser.close()
+
+    if api_responses:
+        data = api_responses[0]
+        entries = _parse_api_response(data, level, url)
+        if entries:
+            _save_to_fallback(data)
+    return entries
+
+
+def _parse_api_response(data: dict, level: str, url: str) -> List[ExamEntry]:
+    entries: List[ExamEntry] = []
+    seen: set = set()
+    for exam in data.get("DATA", []):
+        loc = (exam.get("locationName") or "").strip()
+        city = _map_city(loc)
+        start_date = (exam.get("startDate") or "").strip()
+        end_date = (exam.get("endDate") or "").strip()
+        book_from = (exam.get("bookFrom") or "").strip()
+        book_time = (exam.get("bookFromTimeFormatted") or "").strip()
+        price = (exam.get("price") or "").strip()
+        btn_link = (exam.get("buttonLink") or "").strip()
+
+        if not start_date:
+            continue
+
+        date_str = start_date
+        if end_date and end_date != start_date:
+            date_str = f"{start_date} - {end_date}"
+
+        dedup_key = f"{city}|{date_str}|{btn_link}"
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
+
+        entries.append(ExamEntry(
+            level=level,
+            city=city or loc,
+            exam_date=date_str,
+            reg_open=book_from,
+            reg_open_time=book_time,
+            exam_end_date=end_date,
+            price_full=price,
+            url=url,
+            button_link=btn_link,
+        ))
+    return entries
+
+
+def _map_city(location: str) -> str:
+    loc_lower = location.lower()
+    for key, val in CITY_MAP.items():
+        if key in loc_lower:
+            return val
+    return location
+
+
+def classify_dates(entries: List[ExamEntry]) -> dict:
+    """Classify entries into past and coming dates."""
+    now = datetime.now()
+    past: List[ExamEntry] = []
+    coming: List[ExamEntry] = []
+    for e in entries:
+        try:
+            parts = e.exam_date.split(" - ")[0].split(".")
+            d = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+            if d < now:
+                past.append(e)
+            else:
+                coming.append(e)
+        except (IndexError, ValueError):
+            coming.append(e)
+    return {"past": past, "coming": coming, "all": entries}
 
 
 def to_dict(entries: List[ExamEntry]) -> List[Dict]:

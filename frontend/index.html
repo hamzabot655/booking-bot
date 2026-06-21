@@ -851,10 +851,17 @@
       <div class="section-title fade-up fade-up-d4" style="margin:20px 0 10px;">Activity Log</div>
       <div class="log-box fade-up fade-up-d4" id="logBox"><div class="skeleton skel-card"></div></div>
 
-      <div class="section-title fade-up fade-up-d5" style="margin:20px 0 10px;">
-        Goethe Exam Schedule
-        <button class="btn btn-outline btn-sm" onclick="refreshSchedule()" style="margin-left:auto;font-size:11px;">Refresh</button>
+      <div class="section-title fade-up fade-up-d5" style="margin:20px 0 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span>Pakistan Exam Schedule</span>
+        <select id="pkLevel" onchange="refreshSchedule()" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;color:var(--text);font-size:12px;outline:none;cursor:pointer;">
+          <option value="">All Levels</option>
+          <option value="A1">A1</option>
+          <option value="A2">A2</option>
+          <option value="B1">B1</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="refreshSchedule()" style="font-size:11px;">Refresh</button>
       </div>
+      <div id="scheduleSummary" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;gap:10px;"></div>
       <div class="card fade-up fade-up-d5">
         <div id="scheduleBody" style="font-size:12px;color:var(--text2);padding:8px 0;">
           <div class="skeleton skel-line wide"></div>
@@ -1846,25 +1853,51 @@ function _fmtTime(iso) {
 // ── Goethe Schedule ──
 async function refreshSchedule() {
   document.getElementById("scheduleBody").innerHTML = '<div style="color:var(--text3);">Loading...</div>';
+  const level = document.getElementById("pkLevel").value;
   try {
-    const resp = await apiFetch(`${BASE}/api/goethe-schedule`, { signal: AbortSignal.timeout(15000) });
+    let url = `${BASE}/api/goethe-schedule?refresh=1`;
+    if (level) url += `&level=${level}`;
+    const resp = await apiFetch(url, { signal: AbortSignal.timeout(15000) });
     const data = await resp.json();
     if (!data.ok || !data.data.length) {
       document.getElementById("scheduleBody").innerHTML = '<span style="color:var(--text3);">No schedule data</span>'; return;
     }
-    const levels = ["A1","A2","B1"];
+    const now = new Date();
+    const past = [], coming = [];
+    data.data.forEach(e => {
+      try {
+        const p = e.exam_date.split(" - ")[0].split(".");
+        const d = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+        if (d < now) past.push(e); else coming.push(e);
+      } catch { coming.push(e); }
+    });
+    const summaryEl = document.getElementById("scheduleSummary");
+    if (data.summary) {
+      summaryEl.style.display = "flex";
+      summaryEl.innerHTML = `<span>Total: <strong>${data.summary.total}</strong></span><span style="color:var(--green);">Coming: <strong>${data.summary.coming}</strong></span><span style="color:var(--text3);">Past: <strong>${data.summary.past}</strong></span>`;
+    } else {
+      summaryEl.style.display = "none";
+    }
     let html = "";
-    for (const lv of levels) {
-      const items = data.data.filter(s => s.level === lv);
-      if (!items.length) continue;
-      const accentVar = lv === "A1" ? "var(--accent)" : lv === "A2" ? "var(--green)" : "var(--yellow)";
-      html += `<div class="sched-group" style="margin-bottom:16px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="width:8px;height:8px;border-radius:50%;background:${accentVar};"></span><h4 style="font-size:14px;font-weight:600;color:var(--text);">Level ${lv}</h4></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">`;
-      for (const e of items) {
-        html += `<div style="background:var(--surface);border:1px solid var(--glass-border);border-radius:var(--radius);padding:14px;backdrop-filter:blur(12px);">`;
-        html += `<div style="font-weight:600;color:var(--text);margin-bottom:6px;">${escHtml(e.city)}</div>`;
+    if (coming.length) {
+      html += `<div style="margin-bottom:14px;"><h4 style="font-size:13px;font-weight:600;color:var(--green);display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span>&#9711;</span> Coming Dates</h4><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">`;
+      for (const e of coming) {
+        html += `<div style="background:var(--surface);border:1px solid var(--glass-border);border-left:3px solid var(--green);border-radius:var(--radius);padding:12px;">`;
+        html += `<div style="font-weight:600;color:var(--text);margin-bottom:4px;">${escHtml(e.city)}</div>`;
         html += `<div style="font-size:12px;color:var(--text2);">${escHtml(e.exam_date)}</div>`;
-        html += `<div style="font-size:11px;color:var(--text3);margin-top:4px;">Reg opens: ${escHtml(e.reg_open)} ${escHtml(e.reg_open_time)}</div>`;
-        html += `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${escHtml(e.price_full)}${e.price_reduced ? ` <span style="color:var(--text3);font-size:10px;">(reduced: ${escHtml(e.price_reduced)})</span>` : ''}</div>`;
+        html += `<div style="font-size:11px;color:var(--text3);margin-top:4px;">Reg: ${escHtml(e.reg_open||'')} ${escHtml(e.reg_open_time||'')}</div>`;
+        html += `${e.price_full ? `<div style="font-size:11px;color:var(--accent);margin-top:2px;">${escHtml(e.price_full)}</div>` : ''}`;
+        html += `</div>`;
+      }
+      html += `</div></div>`;
+    }
+    if (past.length) {
+      html += `<div><h4 style="font-size:13px;font-weight:600;color:var(--text3);display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span>&#9719;</span> Past Dates</h4><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">`;
+      for (const e of past) {
+        html += `<div style="background:var(--surface);border:1px solid var(--glass-border);border-left:3px solid var(--text3);border-radius:var(--radius);padding:12px;opacity:0.55;">`;
+        html += `<div style="font-weight:600;color:var(--text);margin-bottom:4px;">${escHtml(e.city)}</div>`;
+        html += `<div style="font-size:12px;color:var(--text2);">${escHtml(e.exam_date)}</div>`;
+        html += `<div style="font-size:11px;color:var(--text3);margin-top:4px;">Reg: ${escHtml(e.reg_open||'')} ${escHtml(e.reg_open_time||'')}</div>`;
         html += `</div>`;
       }
       html += `</div></div>`;
