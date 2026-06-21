@@ -251,7 +251,7 @@ def setup_dropdown() -> str:
                             "type": "ONE_OF_RANGE",
                             "values": [{"userEnteredValue": "='%s'!C2:C" % SCHEDULE_TAB}]
                         },
-                        "strict": True,
+                        "strict": False,
                         "showCustomUi": True
                     }
                 }
