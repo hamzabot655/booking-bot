@@ -9,6 +9,7 @@ import json
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
@@ -139,14 +140,17 @@ def get_schedule(force_refresh: bool = False) -> List[ExamEntry]:
 
 def _refresh_sync():
     all_entries: List[ExamEntry] = []
-    for level in ("A1", "A2", "B1"):
-        try:
-            entries = _scrape_level(level)
-            print(f"[pk_scraper] {level}: {len(entries)} exams")
-            all_entries.extend(entries)
-        except Exception as e:
-            print(f"[pk_scraper] Error scraping {level}: {e}")
-        time.sleep(2)
+    levels = ("A1", "A2", "B1")
+    with ThreadPoolExecutor(max_workers=len(levels)) as exe:
+        fut = {exe.submit(_scrape_level, lv): lv for lv in levels}
+        for f in as_completed(fut):
+            lv = fut[f]
+            try:
+                entries = f.result()
+                print(f"[pk_scraper] {lv}: {len(entries)} exams")
+                all_entries.extend(entries)
+            except Exception as e:
+                print(f"[pk_scraper] Error scraping {lv}: {e}")
     if all_entries:
         _last_cache["data"] = all_entries
         _last_cache["ts"] = time.time()
