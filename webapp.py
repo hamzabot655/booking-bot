@@ -870,8 +870,32 @@ def api_live_status():
 @bp.route("/goethe-schedule")
 def api_goethe_schedule():
     force = request.args.get("refresh", "").lower() == "1"
+    level = request.args.get("level", "").strip().upper()
+    section = request.args.get("section", "all").strip().lower()
     entries = goethe_scraper.get_schedule(force_refresh=force)
-    return jsonify({"ok": True, "data": goethe_scraper.to_dict(entries), "cached": not force})
+
+    if level and level in ("A1", "A2", "B1"):
+        entries = [e for e in entries if e.level == level]
+
+    classified = goethe_scraper.classify_dates(entries)
+
+    if section == "past":
+        data = goethe_scraper.to_dict(classified["past"])
+    elif section == "coming":
+        data = goethe_scraper.to_dict(classified["coming"])
+    else:
+        data = goethe_scraper.to_dict(entries)
+
+    return jsonify({
+        "ok": True,
+        "data": data,
+        "cached": not force,
+        "summary": {
+            "past": len(classified["past"]),
+            "coming": len(classified["coming"]),
+            "total": len(classified["all"]),
+        },
+    })
 
 
 @bp.route("/sheets/test", methods=["GET"])
