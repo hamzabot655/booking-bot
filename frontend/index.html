@@ -1857,7 +1857,7 @@ async function refreshSchedule() {
   try {
     let url = `${BASE}/api/goethe-schedule?refresh=1`;
     if (level) url += `&level=${level}`;
-    const resp = await apiFetch(url, { signal: AbortSignal.timeout(15000) });
+    const resp = await apiFetch(url, { signal: AbortSignal.timeout(180000) });
     const data = await resp.json();
     if (!data.ok || !data.data.length) {
       document.getElementById("scheduleBody").innerHTML = '<span style="color:var(--text3);">No schedule data</span>'; return;

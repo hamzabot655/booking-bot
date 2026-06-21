@@ -125,12 +125,34 @@ def get_schedule(force_refresh: bool = False) -> List[ExamEntry]:
     if not force_refresh and _last_cache["data"] and (now - _last_cache["ts"]) < CACHE_TTL:
         return _last_cache["data"]
 
+    if force_refresh:
+        _refresh_sync()
+        return _last_cache["data"] or _load_fallback_data()
+
     if not _scraping_in_progress.is_set():
         _scraping_in_progress.set()
         t = threading.Thread(target=_refresh_in_background, daemon=True)
         t.start()
 
     return _last_cache["data"] if _last_cache["data"] else _load_fallback_data()
+
+
+def _refresh_sync():
+    all_entries: List[ExamEntry] = []
+    for level in ("A1", "A2", "B1"):
+        try:
+            entries = _scrape_level(level)
+            print(f"[pk_scraper] {level}: {len(entries)} exams")
+            all_entries.extend(entries)
+        except Exception as e:
+            print(f"[pk_scraper] Error scraping {level}: {e}")
+        time.sleep(2)
+    if all_entries:
+        _last_cache["data"] = all_entries
+        _last_cache["ts"] = time.time()
+        print(f"[pk_scraper] Sync refresh: {len(all_entries)} entries")
+    else:
+        print(f"[pk_scraper] Sync refresh got 0 entries")
 
 
 def _refresh_in_background():
