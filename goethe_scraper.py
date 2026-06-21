@@ -206,13 +206,13 @@ def _scrape_via_scrapingbee(level: str, url: str, params: dict) -> List[ExamEntr
     try:
         target_url = f"{EXAM_API_URL}?{urllib.parse.urlencode(params)}"
         encoded = urllib.parse.quote(target_url, safe='')
-        bee_url = f"https://app.scrapingbee.com/api/v1?url={encoded}&render_js=false&country_code=pk"
+        bee_url = (f"https://app.scrapingbee.com/api/v1"
+                    f"?api_key={SCRAPINGBEE_API_KEY}"
+                    f"&url={encoded}"
+                    f"&render_js=false"
+                    f"&premium_proxy=true")
         print(f"[pk_scraper] ScrapingBee request for {level}...")
-        resp = requests.get(
-            bee_url,
-            headers={"Authorization": f"Bearer {SCRAPINGBEE_API_KEY}"},
-            timeout=60,
-        )
+        resp = requests.get(bee_url, timeout=60)
         if resp.status_code == 200:
             try:
                 data = resp.json()
