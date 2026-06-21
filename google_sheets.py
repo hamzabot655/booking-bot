@@ -51,7 +51,7 @@ def get_client(write: bool = False):
     return gspread.authorize(creds)
 
 
-def _retry_gsheet(fn, max_retries=3, base_delay=1.0):
+def _retry_gsheet(fn, max_retries=4, base_delay=5.0):
     for attempt in range(max_retries):
         try:
             return fn()
@@ -59,7 +59,7 @@ def _retry_gsheet(fn, max_retries=3, base_delay=1.0):
             err = str(exc)
             if attempt + 1 < max_retries and "429" in err:
                 delay = base_delay * (2 ** attempt)
-                logging.getLogger("google_sheets").warning(f"GSheet 429, retry {attempt+1}/{max_retries} in {delay:.1f}s")
+                logging.getLogger("google_sheets").warning(f"GSheet 429 retry {attempt+1}/{max_retries} in {delay:.0f}s")
                 time.sleep(delay)
             else:
                 raise
@@ -68,11 +68,17 @@ def _retry_gsheet(fn, max_retries=3, base_delay=1.0):
 def _has_credentials():
     return SA_PATH.exists() or bool(SA_ENV_B64)
 
+_sheet_cache: dict = {"data": None, "ts": 0}
+SHEET_CACHE_TTL = 15  # seconds
+
 
 def load_sheet_data(sheet_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Read all rows from Google Sheet, return list of student dicts."""
     if not _has_credentials():
         return []
+    now = time.time()
+    if _sheet_cache["data"] and (now - _sheet_cache["ts"]) < SHEET_CACHE_TTL:
+        return _sheet_cache["data"]
     try:
         gc = get_client()
         sh = _retry_gsheet(lambda: gc.open_by_key(sheet_id or SHEET_ID))
@@ -91,6 +97,8 @@ def load_sheet_data(sheet_id: Optional[str] = None) -> List[Dict[str, Any]]:
                     student[headers[i]] = val.strip()
             if student.get("name"):
                 students.append(student)
+        _sheet_cache["data"] = students
+        _sheet_cache["ts"] = now
         return students
     except Exception as e:
         logging.getLogger("google_sheets").warning("Google Sheets read error: %s", e)
