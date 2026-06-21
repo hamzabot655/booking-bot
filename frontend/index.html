@@ -812,36 +812,7 @@
 
       <div id="countdownBar" class="countdown-bar" style="display:none;"></div>
 
-    </div>
 
-    <div id="sectionControls" style="display:none;">
-      <div class="section-title fade-up" style="margin-bottom:10px;">Bot Controls</div>
-      <div class="actions-bar fade-up fade-up-d1">
-        <button id="btnStart" class="btn btn-primary" onclick="startBot()">Start Bot</button>
-        <button id="btnStop" class="btn btn-danger" disabled onclick="stopBot()">Stop</button>
-        <select id="examLevel" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-size:13px;outline:none;cursor:pointer;">
-          <option value="">All Levels</option>
-          <option value="A1">A1</option>
-          <option value="A2">A2</option>
-          <option value="B1">B1</option>
-        </select>
-        <div class="mode-toggle">
-          <button id="modeNow" class="active" onclick="setMode('now')">Run Now</button>
-          <button id="modeLater" onclick="setMode('later')">Schedule</button>
-        </div>
-        <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:4px;">
-          <input type="checkbox" id="headlessMode" style="accent-color:var(--accent);"> Headless
-        </label>
-      </div>
-      <div id="scheduleRow" class="schedule-row show">
-        <input type="datetime-local" id="scheduleDt" style="flex:1;max-width:240px;">
-        <button class="btn btn-outline btn-sm" onclick="scheduleStart()">Set schedule</button>
-        <button class="btn btn-outline btn-sm" onclick="cancelSchedule()">Cancel</button>
-        <span id="scheduleStatus" style="font-size:11px;color:var(--text2);"></span>
-      </div>
-    </div>
-
-    <div id="sectionDashboard">
       <div class="grid grid-3" style="margin-bottom:14px;">
         <div class="card fade-up"><div class="card-hd"><h3>Students</h3></div><div id="analyticsTotal" style="font-size:28px;font-weight:700;">—</div></div>
         <div class="card fade-up fade-up-d1"><div class="card-hd"><h3>Success Rate</h3></div><div id="analyticsSuccess" style="font-size:28px;font-weight:700;color:var(--green);">—</div></div>
@@ -870,6 +841,33 @@
         <div id="summaryBody" style="font-size:12px;color:var(--text2);">
           <div class="skeleton skel-line wide"></div>
         </div>
+      </div>
+    </div>
+
+    <div id="sectionControls" style="display:none;">
+      <div class="section-title fade-up" style="margin-bottom:10px;">Bot Controls</div>
+      <div class="actions-bar fade-up fade-up-d1">
+        <button id="btnStart" class="btn btn-primary" onclick="startBot()">Start Bot</button>
+        <button id="btnStop" class="btn btn-danger" disabled onclick="stopBot()">Stop</button>
+        <select id="examLevel" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-size:13px;outline:none;cursor:pointer;">
+          <option value="">All Levels</option>
+          <option value="A1">A1</option>
+          <option value="A2">A2</option>
+          <option value="B1">B1</option>
+        </select>
+        <div class="mode-toggle">
+          <button id="modeNow" class="active" onclick="setMode('now')">Run Now</button>
+          <button id="modeLater" onclick="setMode('later')">Schedule</button>
+        </div>
+        <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:4px;">
+          <input type="checkbox" id="headlessMode" style="accent-color:var(--accent);"> Headless
+        </label>
+      </div>
+      <div id="scheduleRow" class="schedule-row show">
+        <input type="datetime-local" id="scheduleDt" style="flex:1;max-width:240px;">
+        <button class="btn btn-outline btn-sm" onclick="scheduleStart()">Set schedule</button>
+        <button class="btn btn-outline btn-sm" onclick="cancelSchedule()">Cancel</button>
+        <span id="scheduleStatus" style="font-size:11px;color:var(--text2);"></span>
       </div>
     </div>
 
