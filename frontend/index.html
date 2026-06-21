@@ -903,44 +903,18 @@
 
     <div id="sectionStudents" style="display:none;">
       <div class="section-title fade-up" style="margin-bottom:10px;">Student Roster</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-outline btn-sm" onclick="loadDBStudents()">Refresh</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFile').click()">Upload CSV</button>
+        <span style="font-size:11px;color:var(--text3);">from Settings</span>
+      </div>
       <div id="studentGrid" class="student-grid">
         <div class="skeleton skel-student"></div>
         <div class="skeleton skel-student"></div>
         <div class="skeleton skel-student"></div>
       </div>
-    </div>
 
-    <div id="sectionLogs" style="display:none;">
-      <div class="section-title fade-up" style="margin-bottom:10px;">Activity Log</div>
-      <div class="log-box fade-up" id="logBox" style="height:400px;"><div class="skeleton skel-card"></div></div>
-    </div>
-
-    <div id="sectionSettings" style="display:none;">
-      <div class="section-title">Configuration</div>
-      <div class="card" style="margin-bottom:14px;">
-        <div class="input-group" style="margin-bottom:10px;">
-          <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFile').click()">Upload CSV</button>
-          <input type="file" id="csvFile" accept=".csv" onchange="uploadConfig(event)">
-          <button class="btn btn-outline btn-sm" onclick="loadConfigFromBackend()">From Server</button>
-          <button class="btn btn-outline btn-sm" onclick="toggleConfigPreview()">Preview</button>
-          <button class="btn btn-outline btn-sm" onclick="slotPreCheck()">Slot Pre-check</button>
-          <button class="btn btn-outline btn-sm" onclick="formScan()">Form Scanner</button>
-          <input type="email" id="goetheEmail" placeholder="Goethe email" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface1);color:var(--text1);font-size:12px;width:160px;">
-          <input type="password" id="goethePassword" placeholder="Goethe password" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface1);color:var(--text1);font-size:12px;width:140px;">
-          <button class="btn btn-outline btn-sm" onclick="checkCookieStatus()" id="cookieStatusBtn" style="font-size:11px;">Cookies: ?</button>
-        </div>
-        <div id="configInfo" style="font-size:13px;color:var(--text2);"></div>
-        <div id="configPreview" class="cfg-preview"></div>
-        <div id="preflightResult" style="font-size:13px;color:var(--text2);margin-top:8px;padding:8px;background:var(--surface2);border-radius:6px;display:none;white-space:pre-wrap;font-family:monospace;"></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;">
-          <span style="font-size:13px;color:var(--text2);">Theme</span>
-          <label class="toggle"><input type="checkbox" id="themeToggle" onchange="toggleTheme(event.target.checked)"><span class="slider"></span></label>
-          <span class="toggle-label" id="themeLabel">Dark</span>
-          <button class="btn btn-outline btn-sm" onclick="document.getElementById('themeToggle').click()" aria-label="Toggle theme" style="margin-left:auto;font-size:11px;">Keyboard: <kbd style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-family:inherit;">T</kbd></button>
-        </div>
-      </div>
-
-      <div class="section-title" style="margin-top:20px;">Add Student (via DB) <span style="font-size:11px;color:var(--text3);font-weight:400;">— syncs to Google Sheets</span></div>
+      <div class="section-title fade-up" style="margin:24px 0 10px;">Add Student <span style="font-size:11px;color:var(--text3);font-weight:400;">— syncs to Google Sheets</span></div>
       <div class="card" style="margin-bottom:14px;">
         <div class="settings-grid" style="grid-template-columns:1fr 1fr;">
           <span class="field-label" style="font-weight:600;color:var(--accent);">Login Credentials</span><span></span>
@@ -1012,6 +986,37 @@
         </div>
         <div id="dbStudentList" style="margin-top:10px;font-size:13px;color:var(--text2);"></div>
         <div id="dbStudentError" style="color:var(--red);font-size:12px;margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <div id="sectionLogs" style="display:none;">
+      <div class="section-title fade-up" style="margin-bottom:10px;">Activity Log</div>
+      <div class="log-box fade-up" id="logBox" style="height:400px;"><div class="skeleton skel-card"></div></div>
+    </div>
+
+    <div id="sectionSettings" style="display:none;">
+      <div class="section-title">Configuration</div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="input-group" style="margin-bottom:10px;">
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFile').click()">Upload CSV</button>
+          <input type="file" id="csvFile" accept=".csv" onchange="uploadConfig(event)">
+          <button class="btn btn-outline btn-sm" onclick="loadConfigFromBackend()">From Server</button>
+          <button class="btn btn-outline btn-sm" onclick="toggleConfigPreview()">Preview</button>
+          <button class="btn btn-outline btn-sm" onclick="slotPreCheck()">Slot Pre-check</button>
+          <button class="btn btn-outline btn-sm" onclick="formScan()">Form Scanner</button>
+          <input type="email" id="goetheEmail" placeholder="Goethe email" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface1);color:var(--text1);font-size:12px;width:160px;">
+          <input type="password" id="goethePassword" placeholder="Goethe password" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface1);color:var(--text1);font-size:12px;width:140px;">
+          <button class="btn btn-outline btn-sm" onclick="checkCookieStatus()" id="cookieStatusBtn" style="font-size:11px;">Cookies: ?</button>
+        </div>
+        <div id="configInfo" style="font-size:13px;color:var(--text2);"></div>
+        <div id="configPreview" class="cfg-preview"></div>
+        <div id="preflightResult" style="font-size:13px;color:var(--text2);margin-top:8px;padding:8px;background:var(--surface2);border-radius:6px;display:none;white-space:pre-wrap;font-family:monospace;"></div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+          <span style="font-size:13px;color:var(--text2);">Theme</span>
+          <label class="toggle"><input type="checkbox" id="themeToggle" onchange="toggleTheme(event.target.checked)"><span class="slider"></span></label>
+          <span class="toggle-label" id="themeLabel">Dark</span>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('themeToggle').click()" aria-label="Toggle theme" style="margin-left:auto;font-size:11px;">Keyboard: <kbd style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-family:inherit;">T</kbd></button>
+        </div>
       </div>
 
       <div class="section-title">Notifications</div>
