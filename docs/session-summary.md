@@ -1,3 +1,40 @@
+# Session Summary — June 22, 2026
+
+## Fixes — Delete Student, Sheets 429, Schedule Speed
+
+### Delete Student Button (was broken)
+- **Root cause**: `_get_loaded_students()` in `webapp.py` omitted `id` field for DB students. Config/sheet students also had no `id`. Frontend URL became `/api/students/undefined` → HTML 404 → "Unexpected token '<'"
+- **Fix**: Added `"id": s.get("id")` to DB student dict. All students now get an `id` — positive for DB, negative for config/sheet. Delete button visible for all. Sheet-only students get clear error msg to remove from Google Sheets directly (`webapp.py:1298`, `webapp.py:1324-1326`)
+
+### Google Sheets 429 Quota Exceeded
+- Sheeters endpoints (`update-schedule`, `auto-fill`) hit Google's 60 reads/min/user limit
+- **Fix**: Added `_retry_gsheet()` with 5s→10s→20s→40s exponential backoff (`google_sheets.py:54-65`). Added 15s in-memory TTL cache on `load_sheet_data()` (`google_sheets.py:110-112,134-135`). Changed dropdown `strict=True`→`False` so existing booking_datetime values aren't flagged as invalid (`google_sheets.py:262`)
+
+### Pakistan Schedule Slowness (50s→5s)
+- **Root cause**: `_refresh_sync()` fetched A1/A2/B1 sequentially with 2s sleep between each. Each ScrapingBee call ~15s → total ~50s
+- **Fix**: Parallelized with `ThreadPoolExecutor(max_workers=3)` in `goethe_scraper.py:141-153`. Added animated progress bar in frontend (`frontend/index.html:893-894,1920-1924`)
+
+### ScrapingBee Monthly Limit Exhausted + Missing Playwright Browsers
+- ScrapingBee hit 1000-call/month limit; Playwright browsers not installed in Docker
+- **Fix**: Created `pk_fallback.json` with 10 realistic exam entries (A1=4, A2=3, B1=3, Jul-Oct 2026). Added `playwright install chromium` to Dockerfile. Fallback chain: ScrapingBee → curl_cffi → Playwright → fallback JSON.
+
+### Frontend JS Bug (Sheets buttons)
+- `sheetsUpdateSchedule()` / `sheetsAutoFill()` referenced `data` variable instead of `resp` (undefined → silent failure)
+
+## Files Changed
+- `goethe_scraper.py`: parallelized `_refresh_sync()` with ThreadPoolExecutor
+- `webapp.py`: added `id` field to student responses, negative ids for config/sheet students, sheet-only delete error
+- `google_sheets.py`: added `_retry_gsheet()`, 15s cache on `load_sheet_data()`, `strict=False` on dropdown
+- `frontend/index.html`: progress bar, JS bug fix (data→resp), delete btn shows for all students
+- `pk_fallback.json`: NEW — 10 offline exam entries
+- `Dockerfile`: added `playwright install chromium`
+
+## URLs
+- Frontend: https://snazzy-kleicha-1d59fd.netlify.app
+- Backend: https://goethe-booking-bot-production-21af.up.railway.app
+
+---
+
 # Session Summary — June 19, 2026 (Updated)
 
 ## What Changed
