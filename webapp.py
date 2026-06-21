@@ -689,6 +689,8 @@ def api_add_student():
 @require_auth
 def api_delete_student(student_id: int):
     try:
+        if student_id < 0:
+            return jsonify({"ok": False, "error": "Sheet-only students cannot be deleted via API. Remove from Google Sheets directly."}), 400
         ok = db.delete_student(student_id)
         if not ok:
             return jsonify({"ok": False, "error": "Student not found"}), 404
@@ -1287,7 +1289,9 @@ def _get_loaded_students() -> List[Dict]:
     students = []
     if config_path and Path(config_path).exists():
         try:
-            students.extend(bot.load_all_students(config_path))
+            for s in bot.load_all_students(config_path):
+                s.setdefault("id", None)
+                students.append(s)
         except Exception:
             pass
     try:
@@ -1314,10 +1318,14 @@ def _get_loaded_students() -> List[Dict]:
             key = (s.get("name",""), s.get("level",""), s.get("city",""))
             if key not in seen_keys:
                 s.setdefault("status", "pending")
+                s["id"] = None
                 students.append(s)
                 seen_keys.add(key)
     except Exception:
         pass
+    for i, s in enumerate(students):
+        if s.get("id") is None:
+            s["id"] = -(i + 1)
     return students
 
 

@@ -1510,6 +1510,8 @@ async function deleteDBStudent(id, name) {
       showToast(`"${name}" deleted`, "success");
       await loadDBStudents();
       await loadConfigFromBackend();
+    } else {
+      showToast(data.error || "Delete failed", "error");
     }
   } catch (e) {
     showToast("Delete failed: " + e.message, "error");
@@ -1585,7 +1587,7 @@ async function loadDBStudents() {
     listEl.innerHTML = data.students.map(s =>
       `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
         <span style="flex:1;">${escHtml(s.name)} <span style="color:var(--text3);font-size:11px;">${escHtml(s.level)} ${escHtml(s.city)} ${s.booking_datetime ? '| ' + escHtml(s.booking_datetime) : ''}</span></span>
-        ${s.id != null ? `<button class="btn btn-outline btn-sm" style="font-size:11px;color:var(--red);" onclick="deleteDBStudent(${s.id},'${escHtml(s.name).replace(/'/g, "\\'")}')">Delete</button>` : ''}
+        <button class="btn btn-outline btn-sm" style="font-size:11px;color:var(--red);" onclick="deleteDBStudent(${s.id},'${escHtml(s.name).replace(/'/g, "\\'")}')">Delete</button>
       </div>`
     ).join("");
   } catch (e) {
