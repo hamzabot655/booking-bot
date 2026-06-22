@@ -32,6 +32,7 @@
 ## URLs
 - Frontend: https://snazzy-kleicha-1d59fd.netlify.app
 - Backend: https://goethe-booking-bot-production-21af.up.railway.app
+- GitHub: https://github.com/abeermeer/goethe-booking-bot (public)
 
 ## ScrapingBee API Key — Replaced
 - Old key exhausted (1000 calls/month limit hit during testing)

@@ -29,7 +29,8 @@ railway service redeploy --yes
 |---------|-----|
 | Frontend | https://snazzy-kleicha-1d59fd.netlify.app |
 | Backend | https://goethe-booking-bot-production-21af.up.railway.app |
-| GitHub | https://github.com/hamzabot655/goethe-booking-bot |
+| GitHub | https://github.com/abeermeer/goethe-booking-bot (public, new home) |
+| Old GitHub (fork) | https://github.com/hamzabot655/goethe-booking-bot (private fork, may be stale) |
 
 ## Credentials
 - **Auth login**: AUTH_EMAIL=`hamzarafiq655@gmail.com` / AUTH_PASSWORD=`Hamza@123` (Railway env vars)
