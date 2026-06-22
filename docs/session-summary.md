@@ -1,4 +1,4 @@
-# Session Summary — June 22, 2026
+# Session Summary — June 22, 2026 (Updated)
 
 ## Fixes — Delete Student, Sheets 429, Schedule Speed
 
@@ -32,6 +32,26 @@
 ## URLs
 - Frontend: https://snazzy-kleicha-1d59fd.netlify.app
 - Backend: https://goethe-booking-bot-production-21af.up.railway.app
+
+## ScrapingBee API Key — Replaced
+- Old key exhausted (1000 calls/month limit hit during testing)
+- New key set via `railway variable set SCRAPINGBEE_API_KEY=<key>` — RQS2P8K2SVGO15HH5X9C17P006KS9RCULD3M3X4URWZ7XEPVFU4GMG5B3U6DK2470PUG0XREZKVKSN3P
+- Live data fetching confirmed working with new key (10 entries)
+
+## Akamai Detection — Pakistan vs India
+- Bot hardcoded for Pakistan (`/ins/pk/` in all URLs)
+- **Pakistan**: Akamai WAF is light/low-config — Selenium works without undetected-chromedriver, curl_cffi TLS bypass works for REST API
+- **India**: Stricter Akamai — same bot fails on `/ins/in/` because:
+  - Higher traffic region → stricter WAF rules
+  - Selenium fingerprint (navigator.webdriver, headless flags) triggered
+  - CAS login flow may be protected with additional challenges
+- **To adapt for India**: change `/ins/pk/` → `/ins/in/`, add `undetected-chromedriver`, use Indian residential proxies, more human-like delays in CAS login flow
+
+## Bot Timing
+- 1 student: ~1.5–2 min (when booking open)
+- Multiple students: parallel threads (1 thread per student, each with own browser)
+- Deliberate delays (0.3–1.0s `random_human_delay`) to avoid Akamai detection
+- 5 wizard steps: Personal Data 1 → Personal Data 2 → Payment (Invoice) → Promo Code → Review & Confirm
 
 ---
 
