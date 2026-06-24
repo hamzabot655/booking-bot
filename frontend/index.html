@@ -1294,7 +1294,7 @@ let wsReconnectTimer = null;
 function connectWebSocket() {
   if (ws) try { ws.close(); } catch(e) {}
   if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
-  const url = BASE.replace(/^http/, "ws") + "/api/ws/logs";
+  const url = BASE.replace(/^http/, "ws") + "/ws/logs";
   try {
     ws = new WebSocket(url);
     ws.onmessage = function(e) {
