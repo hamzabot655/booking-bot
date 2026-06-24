@@ -125,6 +125,8 @@ class WebSocketLogHandler(logging.Handler):
     """Logging handler that pushes all log records to WebSocket clients."""
     def emit(self, record):
         try:
+            if record.name.startswith(("werkzeug", "flask", "urllib", "gspread")):
+                return
             ws_broadcaster.push({
                 "type": "log",
                 "time": self.formatter.formatTime(record) if self.formatter else record.created,
@@ -133,10 +135,11 @@ class WebSocketLogHandler(logging.Handler):
         except Exception:
             pass
 
-# Attach to all loggers
+# Attach WebSocket handler to root, but filter out noise
 logging.getLogger().setLevel(logging.INFO)
 _ws_handler = WebSocketLogHandler()
 _ws_handler.setFormatter(logging.Formatter("%(message)s"))
+_ws_handler.addFilter(lambda r: not r.name.startswith(("werkzeug", "flask", "urllib", "gspread")))
 logging.getLogger().addHandler(_ws_handler)
 
 # ── Graceful shutdown ──
