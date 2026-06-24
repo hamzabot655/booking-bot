@@ -59,7 +59,7 @@ def _retry_gsheet(fn, max_retries=4, base_delay=5.0):
             err = str(exc)
             if attempt + 1 < max_retries and "429" in err:
                 delay = base_delay * (2 ** attempt)
-                logging.getLogger("google_sheets").warning(f"GSheet 429 retry {attempt+1}/{max_retries} in {delay:.0f}s")
+                logging.getLogger("google_sheets").debug(f"GSheet 429 retry {attempt+1}/{max_retries} in {delay:.0f}s")
                 time.sleep(delay)
             else:
                 raise
@@ -101,7 +101,7 @@ def load_sheet_data(sheet_id: Optional[str] = None) -> List[Dict[str, Any]]:
         _sheet_cache["ts"] = now
         return students
     except Exception as e:
-        logging.getLogger("google_sheets").warning("Google Sheets read error: %s", e)
+        logging.getLogger("google_sheets").debug("Google Sheets read error: %s", e)
         return []
 
 

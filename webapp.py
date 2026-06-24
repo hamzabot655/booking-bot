@@ -562,9 +562,18 @@ def health():
     })
 
 
+_student_list_cache: list = []
+_student_list_ts: float = 0
+STUDENT_LIST_TTL = 30
+
 @bp.route("/status")
 @require_auth
 def api_status():
+    global _student_list_cache, _student_list_ts
+    now = time.time()
+    if not _student_list_cache or (now - _student_list_ts) > STUDENT_LIST_TTL:
+        _student_list_cache = _get_loaded_students()
+        _student_list_ts = now
     return jsonify({
         "running": bot_running,
         "students": [
@@ -577,9 +586,9 @@ def api_status():
                 "color": student_status.get(_student_key(s), {}).get("color", "secondary"),
                 "details": student_status.get(_student_key(s), {}).get("details", ""),
             }
-            for s in _get_loaded_students()
+            for s in _student_list_cache
         ],
-        "config_loaded": len(_get_loaded_students()) > 0,
+        "config_loaded": len(_student_list_cache) > 0,
     })
 
 
