@@ -34,8 +34,8 @@ export default function () {
 
   // Login
   const loginRes = http.post(`${BASE_URL}/login`, JSON.stringify({
-    email: 'hamzarafiq655@gmail.com',
-    password: 'Hamza@123',
+    email: __ENV.AUTH_EMAIL || '',
+    password: __ENV.AUTH_PASSWORD || '',
   }), { headers: { 'Content-Type': 'application/json' } });
   check(loginRes, {
     'login status is 200': (r) => r.status === 200,

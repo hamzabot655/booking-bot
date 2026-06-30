@@ -1,0 +1,39 @@
+name: Postgres Backup
+
+# Automated daily pg_dump of the Railway Postgres DB.
+# Requires repo secret DATABASE_URL_EXTERNAL = Railway's PUBLIC connection string
+# (the internal postgres.railway.internal host is NOT reachable from GitHub runners).
+# Railway → Postgres service → Connect → "Public Network" connection string.
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # 01:00 UTC daily (~06:00 PKT)
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump database
+        env:
+          DATABASE_URL_EXTERNAL: ${{ secrets.DATABASE_URL_EXTERNAL }}
+        run: |
+          if [ -z "$DATABASE_URL_EXTERNAL" ]; then
+            echo "::error::DATABASE_URL_EXTERNAL secret is not set. Add Railway's public Postgres URL as a repo secret."
+            exit 1
+          fi
+          mkdir -p backups
+          STAMP="$(date -u +%Y%m%d_%H%M%S)"
+          # gzip the custom-format dump for compact, restorable archives.
+          pg_dump --no-owner --no-privileges --format=plain "$DATABASE_URL_EXTERNAL" | gzip > "backups/pg_${STAMP}.sql.gz"
+          ls -lh backups/
+
+      - name: Upload dump artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-backup-${{ github.run_id }}
+          path: backups/*.sql.gz
+          retention-days: 30

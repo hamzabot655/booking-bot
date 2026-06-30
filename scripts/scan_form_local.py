@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("form_scan")
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--email", default="abeermeer7979@gmail.com")
-parser.add_argument("--password", default="hf?3Ru8UkhfKw*X")
+parser.add_argument("--email", default=os.environ.get("GOETHE_EMAIL", ""))
+parser.add_argument("--password", default=os.environ.get("GOETHE_PASSWORD", ""))
 args = parser.parse_args()
 
 student = {
