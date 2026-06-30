@@ -641,6 +641,11 @@ def api_config_upload():
         return jsonify({"ok": False, "error": str(exc)}), 400
 
 
+@bp.errorhandler(404)
+def api_404(e):
+    return jsonify({"ok": False, "error": "Not found"}), 404
+
+
 @bp.route("/students", methods=["GET"])
 @require_auth
 def api_get_students():
@@ -1336,7 +1341,8 @@ def _get_loaded_students() -> List[Dict]:
     except Exception:
         pass
     for i, s in enumerate(students):
-        if s.get("id") is None:
+        sid = s.get("id")
+        if sid is None or sid == "" or sid == 0:
             s["id"] = -(i + 1)
     return students
 

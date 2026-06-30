@@ -1501,6 +1501,10 @@ async function addDBStudent() {
 
 async function deleteDBStudent(id, name) {
   if (!confirm(`Delete student "${name}"?`)) return;
+  if (id == null || id === '' || isNaN(Number(id))) {
+    showToast("Cannot delete: student has no valid ID", "error");
+    return;
+  }
   try {
     const resp = await apiFetch(`${BASE}/api/students/${id}`, {
       method: "DELETE", signal: AbortSignal.timeout(5000),
@@ -1584,12 +1588,13 @@ async function loadDBStudents() {
       listEl.textContent = "No students in DB. Add one above.";
       return;
     }
-    listEl.innerHTML = data.students.map(s =>
-      `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
+    listEl.innerHTML = data.students.map(s => {
+      const validId = s.id != null && s.id !== '' && !isNaN(Number(s.id));
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
         <span style="flex:1;">${escHtml(s.name)} <span style="color:var(--text3);font-size:11px;">${escHtml(s.level)} ${escHtml(s.city)} ${s.booking_datetime ? '| ' + escHtml(s.booking_datetime) : ''}</span></span>
-        <button class="btn btn-outline btn-sm" style="font-size:11px;color:var(--red);" onclick="deleteDBStudent(${s.id},'${escHtml(s.name).replace(/'/g, "\\'")}')">Delete</button>
-      </div>`
-    ).join("");
+        ${validId ? `<button class="btn btn-outline btn-sm" style="font-size:11px;color:var(--red);" onclick="deleteDBStudent(${s.id},'${escHtml(s.name).replace(/'/g, "\\'")}')">Delete</button>` : '<span style="font-size:11px;color:var(--text3);">No ID</span>'}
+      </div>`;
+    }).join("");
   } catch (e) {
     listEl.textContent = "Error loading students: " + e.message;
   }
