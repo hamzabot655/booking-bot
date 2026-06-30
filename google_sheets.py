@@ -264,13 +264,13 @@ def setup_dropdown() -> str:
 
 
 def append_student(student: Dict[str, Any]) -> str:
-    """Append a single student row to the Google Sheet."""
+    """Append a single student row to the Google Sheet with retry on 429."""
     try:
         gc = get_client(write=True)
-        sh = gc.open_by_key(SHEET_ID)
+        sh = _retry_gsheet(lambda: gc.open_by_key(SHEET_ID))
         ws = sh.sheet1
         row = [student.get(c, "") for c in COLUMNS]
-        ws.append_row(row)
+        _retry_gsheet(lambda: ws.append_row(row))
         return "OK"
     except Exception as e:
         return "Append failed: %s" % e
