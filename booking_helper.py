@@ -330,7 +330,7 @@ def _apply_stealth(driver: webdriver.Chrome) -> None:
         pass
 
 
-def create_driver(use_headless: bool, logger: logging.Logger, proxy: Optional[str] = None) -> webdriver.Chrome:
+def create_driver(use_headless: bool, logger: logging.Logger, proxy: Optional[str] = None, profile_name: str = "default") -> webdriver.Chrome:
     global _driver_counter
     _driver_counter += 1
     options = Options()
@@ -383,7 +383,8 @@ def create_driver(use_headless: bool, logger: logging.Logger, proxy: Optional[st
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_argument("--lang=en-US,en")
     options.add_experimental_option("prefs", {"intl.accept_languages": "en-US,en"})
-    profile_dir = Path.home() / "goethe-bot-profiles" / f"profile_{_driver_counter}"
+    safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', profile_name)[:64]
+    profile_dir = Path.home() / "goethe-bot-profiles" / safe_name
     profile_dir.mkdir(parents=True, exist_ok=True)
     options.add_argument(f"--user-data-dir={profile_dir}")
 
@@ -691,7 +692,8 @@ def check_slot_availability(student: Dict[str, str], logger: logging.Logger) -> 
     driver = None
     try:
         from bs4 import BeautifulSoup
-        driver = create_driver(use_headless=True, logger=logger)
+        pname = f"{student.get('name','')}_{student.get('level','')}_{student.get('city','')}"
+        driver = create_driver(use_headless=True, logger=logger, profile_name=pname)
         exam_url = get_exam_url(student.get("level", student.get("exam_level", "A1")))
         logger.info("Slot pre-check: loading %s", exam_url)
         driver.get(exam_url)
@@ -807,7 +809,8 @@ def scan_booking_form(student: Dict[str, str], logger: logging.Logger, cookies: 
     driver = None
     try:
         from selector_fallbacks import ELEMENT_SELECTORS
-        driver = create_driver(use_headless=True, logger=logger)
+        pname = f"{student.get('name','')}_{student.get('level','')}_{student.get('city','')}"
+        driver = create_driver(use_headless=True, logger=logger, profile_name=pname)
         from selenium.webdriver.common.by import By
         from selenium.common.exceptions import NoSuchElementException
 
@@ -1789,7 +1792,8 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
     result = {"name": name, "email": email, "level": level, "city": city, "status": "failed"}
 
     try:
-        driver = create_driver(use_headless, logger, proxy=assigned_proxy)
+        pname = f"{name}_{level}_{city}"
+        driver = create_driver(use_headless, logger, proxy=assigned_proxy, profile_name=pname)
         logger.info("Monitoring URL: %s", exam_url)
         logger.info("Booking time: %s", booking_time_str)
         logger.info("Burst window: %s to %s",
