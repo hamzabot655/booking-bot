@@ -1,3 +1,44 @@
+# Session Summary — June 30, 2026 — All 5 Critical Fixes, psycopg2 Deploy Fix
+
+## Summary
+- **Postgres connected**: `DATABASE_URL` set to internal Railway Postgres URL. App uses `database.py` (SQLAlchemy + Postgres) instead of `db.py` (SQLite). Data persists across restarts.
+- **All 5 Critical todos completed and deployed on Railway**:
+  1. **Post-booking verification** — `verify_booking()` navigates to `mein.goethe.de` profile after booking, searches for booking reference/keywords, takes profile screenshot. Sets status to `"verified"` if ref found. `_is_cas_login_page()` helper.
+  2. **Session refresh before each student** — `_ensure_session()` re-logs in via CAS if login page detected. Called at start of every `_fill_step_*()` (steps 1-5).
+  3. **Screenshot on failure** — `save_failure_evidence()` saves both `.png` screenshot + `.html` page source at every failure point.
+  4. **Individual student retry** — `run_students_web()` re-queues failed students up to 3x with 5-min delay. WebSocket broadcasts requeue status.
+  5. **Scheduled booking window check** — `is_active_hours()` with `ACTIVE_HOURS_START/END` (default 7am-8pm PKT). Outside hours, polls every 5 min instead of ~20s.
+- **psycopg2-binary** added to `requirements.txt` — root cause of all 14 failed Railway deploys. Latest deploy (`f480baf5`) **SUCCESS** at 13:53 PKT.
+- **Railway API token** fixed (old OAuth token expired). New long-lived token: `REDACTED`.
+- **Netlify token** fixed but **deploys blocked** — account credit usage exceeded. Need to add credits at Netlify dashboard.
+- **Remaining 8 todos**: not started (Priority Queue, Slot Pre-check, Browser Profiles, Confirmation Capture, Notifications, Concurrent Booking, Selector Health Check, Postgres Backups).
+
+## Files Changed
+| File | Action |
+|------|--------|
+| `booking_helper.py` | Added `verify_booking()`, `_ensure_session()`, `_is_cas_login_page()`, `save_failure_evidence()`, `is_active_hours()`, `PROFILE_URLS`; session refresh in all `_fill_step_*()`; scheduled polling with quiet hours |
+| `webapp.py` | Re-queue logic in `run_students_web()` with `REQUEUE_MAX_RETRIES`, `REQUEUE_DELAY_SECONDS` env vars |
+| `requirements.txt` | Added `psycopg2-binary>=2.9` for Postgres |
+| `.github/workflows/deploy.yml` | Updated Railway API and Netlify auth tokens |
+
+## Commits
+| Commit | Message |
+|--------|---------|
+| `165cf2e` | fix: add psycopg2-binary for Postgres support in Docker |
+
+## URLs
+| Service | URL |
+|---------|-----|
+| Frontend | https://snazzy-kleicha-1d59fd.netlify.app |
+| Backend | https://goethe-booking-bot-production-21af.up.railway.app |
+| GitHub | https://github.com/hamzabot655/booking-bot |
+
+## Railway Deploy Status
+- Latest: `f480baf5` — **SUCCESS** (with psycopg2-binary)
+- Previous 14 deploys: all **FAILED** (psycopg2 missing)
+
+---
+
 # Session Summary — June 24, 2026 — Railway Paid Plan Confirmed, Auto-Connect Fix
 
 ## Railway Paid Plan — Up Time Confirmed

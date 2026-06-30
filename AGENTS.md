@@ -1,7 +1,14 @@
 # AGENTS.md — Goethe Booking Bot
 
+## Session Context (June 30, 2026)
+- **All 5 Critical fixes deployed**: verification, session refresh, failure evidence, retry, scheduled polling
+- **Postgres connected**: `DATABASE_URL` set to Railway Postgres internal URL — data persists across restarts
+- **psycopg2-binary deployed**: Railway builds now succeed (was missing from requirements.txt, caused 14 failed deploys)
+- **Netlix blocked**: Account credit exceeded — frontend deploys won't work until credits added
+- **Next**: 8 remaining todos (Priority Queue, Slot Pre-check, Browser Profiles, Confirmation Capture, Notifications, Concurrent Booking, Selector Health Check, Postgres Backups)
+
 ## Project Overview
-Selenium bot that auto-books Goethe Institut exam slots for Pakistan region. Web control panel (Flask) + dashboard frontend. Students loaded from Google Sheets or SQLite DB.
+Selenium bot that auto-books Goethe Institut exam slots for Pakistan region. Web control panel (Flask) + dashboard frontend. Students loaded from Google Sheets or SQLite/Postgres DB.
 
 ## Quick Commands
 ```bash
@@ -42,7 +49,8 @@ railway service redeploy --yes
 - **Service**: goethe-booking-bot (ID: f568e242-4d2a-4b44-8205-07899abfbd26)
 - **Environment**: production (ID: 20945f76-1cfa-4e38-b50b-a5cb8d5f47cd)
 - **Region**: sfo
-- **Databases**: Postgres-ZHgW, Postgres, Postgres-3Fwo (unused by the main app; uses SQLite)
+- **Database**: Postgres — internal URL `postgresql://postgres:REDACTED@postgres.railway.internal:5432/railway` set via `DATABASE_URL` env var
+- **API Token**: `REDACTED` (long-lived, set as GitHub secret)
 
 ## File Map
 | File | Purpose |
@@ -117,14 +125,43 @@ railway service redeploy --yes
 **Reality**: ~1.5-2 min per student when booking open. Parallel for multiple students (same total time).
 
 ## Deployment Notes
-- Railway auto-deploys from GitHub `main` branch pushes
-- Railway env vars are picked up on next deploy (not hot-reloaded)
-- Netlify deploys are manual via CLI (`npx netlify deploy --prod --dir=frontend`)
+- Railway auto-deploys from GitHub `main` branch pushes (uses Railway API token from GitHub secret)
+- Railway env vars picked up on next deploy (not hot-reloaded)
+- **Netlify blocked** — account credit exceeded, no frontend deploys until credits added
 - Frontend is pure HTML/CSS/JS — no build step needed
-- Backend SQLite DB resets on each Railway deploy (data persists only in Google Sheet or GitHub config)
+- Backend uses **Postgres** (`database.py`) via `DATABASE_URL` — data persists across restarts
+- Local dev uses SQLite (`db.py`) when `DATABASE_URL` not set
+
+## Env Vars (Railway)
+| Var | Value/Purpose |
+|-----|---------------|
+| `DATABASE_URL` | `postgresql://postgres:REDACTED@postgres.railway.internal:5432/railway` |
+| `SCRAPINGBEE_API_KEY` | `REDACTED` |
+| `AUTH_EMAIL` | `hamzarafiq655@gmail.com` |
+| `AUTH_PASSWORD` | `REDACTED` |
+| `GOOGLE_SERVICE_ACCOUNT_B64` | Base64-encoded service account JSON |
+| `NETLIFY_AUTH_TOKEN` | `nfp_va8j6vHyZvxRpkU2cajqn4MhRBkcAGvU87f1` |
+| `ACTIVE_HOURS_START` | `07:00` (PKT, default) |
+| `ACTIVE_HOURS_END` | `20:00` (PKT, default) |
+| `REQUEUE_MAX_RETRIES` | `3` (default) |
+| `REQUEUE_DELAY_SECONDS` | `300` (5 min, default) |
+| `RAILWAY_API_TOKEN` | `REDACTED` (CI/CD) |
 
 ## Todo / Known Gaps
+- [x] **Postgres connected** (June 30) — `DATABASE_URL` set, `psycopg2-binary` in requirements
+- [x] **Post-booking verification** — `verify_booking()` checks mein.goethe.de profile
+- [x] **Session refresh** — `_ensure_session()` before each wizard step
+- [x] **Failure evidence** — `save_failure_evidence()` captures screenshot + HTML
+- [x] **Student retry** — re-queue failed students up to 3 times
+- [x] **Scheduled polling** — `is_active_hours()` quiet hours (7pm-7am PKT)
+- [ ] Priority Queue — order students by booking_datetime proximity
+- [ ] Slot Pre-check — fast API/selenium check before full booking flow
+- [ ] Browser Profiles — persistent Chrome profiles to avoid re-login
+- [ ] Confirmation Capture — extract PTN/booking ref from confirmation page
+- [ ] Notifications — Telegram/email on successful booking
+- [ ] Concurrent Booking — rate-limit parallel students
+- [ ] Selector Health Check — auto-detect stale CSS selectors
+- [ ] Postgres Backups — automated DB snapshots
 - [ ] India adaptation: change `/ins/pk/` to `/ins/in/`, add `undetected-chromedriver`, Indian proxies
 - [ ] Google Sheets append_student doesn't retry on 429
-- [ ] Config file students lack DB ids (can't be deleted via API)
 - [ ] No automated tests for the booking flow (only scrapers and helpers tested)
