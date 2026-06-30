@@ -642,9 +642,10 @@ def api_config_upload():
         return jsonify({"ok": False, "error": str(exc)}), 400
 
 
-@bp.errorhandler(404)
+@app.errorhandler(404)
 def api_404(e):
-    return jsonify({"ok": False, "error": "Not found"}), 404
+    if request.path.startswith("/api/"):
+        return jsonify({"ok": False, "error": "Not found"}), 404
 
 
 @bp.route("/students", methods=["GET"])
