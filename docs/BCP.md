@@ -8,7 +8,7 @@ This plan ensures the Goethe Booking Bot can recover from disruptions and contin
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Railway outage | App unreachable | Auto-redeploy from Git; Railway SLA 99.95% |
-| Netlify outage | Dashboard unreachable | Netlify CDN; fallback to direct Railway URL |
+| Vercel outage | Dashboard unreachable | Vercel CDN; fallback to direct Railway URL |
 | Goethe website changes | Booking fails | SELENIUM selectors fallback system (3 levels) |
 | Database corruption | Lost state | Daily backups via `scripts/backup.py` |
 | CAPTCHA service down | Cannot login | 2Captcha backup; manual override option |

@@ -3,7 +3,7 @@
 ## Service Description
 The Goethe Booking Bot automates the booking of exam slots at Goethe-Institut Pakistan. The system consists of:
 - **Backend API** (Railway): Booking engine, queue management, authentication
-- **Frontend Dashboard** (Netlify): Web UI for monitoring and control
+- **Frontend Dashboard** (Vercel): Web UI for monitoring and control
 - **Telegram Bot**: Notifications and alerts
 
 ## Availability Targets
@@ -11,7 +11,7 @@ The Goethe Booking Bot automates the booking of exam slots at Goethe-Institut Pa
 | Component | Target | Measurement |
 |-----------|--------|-------------|
 | Backend API | 99.5% uptime (monthly) | Health endpoint every 60s |
-| Frontend Dashboard | 99.9% uptime (monthly) | Netlify CDN SLA |
+| Frontend Dashboard | 99.9% uptime (monthly) | Vercel CDN SLA |
 | Telegram Notifications | 99% delivery within 5 min | End-to-end ping |
 
 ## Performance Targets

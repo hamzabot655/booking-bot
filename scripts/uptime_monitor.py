@@ -11,7 +11,7 @@ import time
 import urllib.request
 import json
 
-HEALTH_URL = "https://goethe-booking-bot-production-092f.up.railway.app/api/v1/health"
+HEALTH_URL = "https://goethe-booking-bot-production-21af.up.railway.app/api/v1/health"
 
 
 def check(url: str) -> dict:

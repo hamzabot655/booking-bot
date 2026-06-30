@@ -18,7 +18,7 @@ export const options = {
   },
 };
 
-const BASE_URL = 'https://goethe-booking-bot-production-092f.up.railway.app/api/v1';
+const BASE_URL = 'https://goethe-booking-bot-production-21af.up.railway.app/api/v1';
 const FAILURE_RATE = new Rate('failed_requests');
 const HEALTH_DURATION = new Trend('health_duration');
 

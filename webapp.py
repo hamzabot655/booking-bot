@@ -193,7 +193,6 @@ if SENTRY_DSN:
 # ── Allowed origins for CORS ──
 _ALLOWED_ORIGINS = {
     "https://goethe-frontend-v3.vercel.app",
-    "https://goethe-booking-bot-production-092f.up.railway.app",
     "https://goethe-booking-bot-production-21af.up.railway.app",
     "http://localhost:3000",
     "http://localhost:5000",
@@ -214,8 +213,23 @@ _raw_password = os.environ.get("AUTH_PASSWORD", "change-me-in-production")
 AUTH_PASSWORD_HASHED = crypto_utils.hash_password(_raw_password)
 FERNET_KEY = os.environ.get("FERNET_KEY", "")
 if not FERNET_KEY:
-    FERNET_KEY = crypto_utils.generate_fernet_key()
-    print("WARNING: No FERNET_KEY env var set. Generated ephemeral key. Student passwords will be lost on restart.")
+    # No env key — fall back to a key persisted in the DB so it survives restarts
+    # (an ephemeral per-boot key would make stored student passwords undecryptable).
+    try:
+        FERNET_KEY = db.get_state("fernet_key", "")
+    except Exception:
+        FERNET_KEY = ""
+    if FERNET_KEY:
+        print("INFO: FERNET_KEY not set in env; reusing the key persisted in the DB.")
+    else:
+        FERNET_KEY = crypto_utils.generate_fernet_key()
+        try:
+            db.set_state("fernet_key", FERNET_KEY)
+            print("WARNING: No FERNET_KEY env var set. Generated a key and persisted it in the DB. "
+                  "Set FERNET_KEY explicitly for portability across environments.")
+        except Exception:
+            print("WARNING: No FERNET_KEY env var set and DB persist failed. Using an ephemeral key "
+                  "— student passwords will be lost on restart. Set FERNET_KEY.")
 AUTH_SALT = os.environ.get("AUTH_SALT", "goethe-bot-salt-2026")
 SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "admin@example.com")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")

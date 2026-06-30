@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Goethe Booking Bot API",
-    "description": "Automated exam booking backend for Goethe-Institut Pakistan\n\nBase URL: https://goethe-booking-bot-production-092f.up.railway.app/api/v1\nAuth: Bearer token from /login",
+    "description": "Automated exam booking backend for Goethe-Institut Pakistan\n\nBase URL: https://goethe-booking-bot-production-21af.up.railway.app/api/v1\nAuth: Bearer token from /login",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "2.0.0"
   },
@@ -10,7 +10,7 @@
     "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
   },
   "variable": [
-    { "key": "base_url", "value": "https://goethe-booking-bot-production-092f.up.railway.app/api/v1" },
+    { "key": "base_url", "value": "https://goethe-booking-bot-production-21af.up.railway.app/api/v1" },
     { "key": "email", "value": "" },
     { "key": "password", "value": "" },
     { "key": "token", "value": "" }

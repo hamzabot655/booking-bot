@@ -6,14 +6,14 @@ pytestmark = pytest.mark.skip(reason="Requires Playwright: python -m pytest test
 
 def test_frontend_loads_correctly(page):
     """Verify the dashboard loads without visual regression."""
-    page.goto("https://goethe-booking-dashboard.netlify.app")
+    page.goto("https://goethe-frontend-v3.vercel.app")
     page.wait_for_load_state("networkidle")
     page.screenshot(path="artifacts/screenshots/dashboard.png", full_page=True)
 
 
 def test_login_form_renders(page):
     """Verify login form is visible."""
-    page.goto("https://goethe-booking-dashboard.netlify.app")
+    page.goto("https://goethe-frontend-v3.vercel.app")
     page.wait_for_selector("input[type='email']", timeout=10000)
     page.wait_for_selector("input[type='password']", timeout=10000)
     page.wait_for_selector("button[type='submit']", timeout=10000)
@@ -22,7 +22,7 @@ def test_login_form_renders(page):
 
 def test_dark_mode_toggle(page):
     """Verify dark mode CSS variables are applied."""
-    page.goto("https://goethe-booking-dashboard.netlify.app")
+    page.goto("https://goethe-frontend-v3.vercel.app")
     page.evaluate("localStorage.setItem('theme', 'dark')")
     page.reload()
     page.wait_for_load_state("networkidle")

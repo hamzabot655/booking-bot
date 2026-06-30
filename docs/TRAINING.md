@@ -6,7 +6,7 @@ The Goethe Booking Bot automates exam slot booking at Goethe-Institut Pakistan. 
 ## Admin Role
 
 ### Access
-- URL: https://goethe-booking-dashboard.netlify.app
+- URL: https://goethe-frontend-v3.vercel.app
 - Login with admin email/password (provided separately)
 - Bookmark the URL; it also works as a PWA (install from browser menu)
 

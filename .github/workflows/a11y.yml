@@ -15,10 +15,10 @@ jobs:
           node-version: "20"
       - name: Install axe-core CLI
         run: npm install -g @axe-core/cli
-      - name: Run axe on Netlify frontend
+      - name: Run axe on Vercel frontend
         run: |
           mkdir -p artifacts
-          npx @axe-core/cli https://goethe-booking-dashboard.netlify.app --exit --save artifacts/a11y-report.json || true
+          npx @axe-core/cli https://goethe-frontend-v3.vercel.app --exit --save artifacts/a11y-report.json || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:

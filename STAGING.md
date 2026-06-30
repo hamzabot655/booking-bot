@@ -32,11 +32,11 @@
            RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
    ```
 
-## Netlify Staging Deploy
+## Vercel Preview Deploys
 
-Netlify supports branch deploys out of the box:
-- Push to `develop` → auto-deploys to `https://develop--goethe-booking-dashboard.netlify.app`
-- Set in Netlify: Site settings → Build & deploy → Deploy contexts → `develop`
+Vercel creates a preview deployment for every branch/PR automatically:
+- Push to a branch → Vercel builds a unique preview URL (shown in the PR / Vercel dashboard).
+- Production (`goethe-frontend-v3`) only updates from `main` via the deploy workflow.
 
 ## Smoke Tests (Post-Deploy)
 

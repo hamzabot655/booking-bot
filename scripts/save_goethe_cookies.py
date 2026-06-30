@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--email", default="")
 parser.add_argument("--password", default="")
 parser.add_argument("--token", default="")
-parser.add_argument("--railway", default="https://goethe-booking-bot-production-092f.up.railway.app")
+parser.add_argument("--railway", default="https://goethe-booking-bot-production-21af.up.railway.app")
 args = parser.parse_args()
 
 EMAIL = args.email or os.environ.get("GOETHE_EMAIL", "") or input("Goethe email: ").strip()

@@ -1,5 +1,5 @@
 # Goethe Booking Bot - Deploy Script
-# Run this in PowerShell to deploy to GitHub + Railway + Netlify
+# Run this in PowerShell to deploy to GitHub + Railway + Vercel
 
 param(
     [string]$GitHubRepo = "goethe-booking-bot",
@@ -72,13 +72,13 @@ $gotRailwayUrl = Read-Host "Did you get the Railway URL? (y/n)"
 if ($gotRailwayUrl -eq "y") {
     $railwayUrl = Read-Host "Paste your Railway URL (e.g., https://xxx.up.railway.app)"
     Write-Host ""
-    Write-Host "── Step 3: Frontend → Netlify (Free) ───────" -ForegroundColor Yellow
+    Write-Host "── Step 3: Frontend → Vercel (Free) ────────" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "  1. Go to https://app.netlify.com/drop" -ForegroundColor White
-    Write-Host "  2. Drag the 'frontend' folder onto the page:" -ForegroundColor White
-    Write-Host "     $projectDir\frontend" -ForegroundColor Cyan
-    Write-Host "  3. Netlify deploys instantly" -ForegroundColor White
-    Write-Host "  4. Open your Netlify URL" -ForegroundColor White
+    Write-Host "  1. Install: npm i -g vercel" -ForegroundColor White
+    Write-Host "  2. Deploy:  vercel deploy --prod --cwd frontend --token <VERCEL_TOKEN>" -ForegroundColor White
+    Write-Host "     (from: $projectDir\frontend)" -ForegroundColor Cyan
+    Write-Host "  3. Vercel returns your production URL" -ForegroundColor White
+    Write-Host "  4. Open the Vercel URL" -ForegroundColor White
     Write-Host "  5. Enter your backend URL in the input box:" -ForegroundColor White
     Write-Host "     $railwayUrl" -ForegroundColor Green
     Write-Host "  6. Click 'Connect'" -ForegroundColor White
@@ -88,7 +88,7 @@ if ($gotRailwayUrl -eq "y") {
     Write-Host "  DEPLOYMENT COMPLETE!" -ForegroundColor Green
     Write-Host "==============================================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  Frontend: https://your-site.netlify.app" -ForegroundColor Green
+    Write-Host "  Frontend: https://goethe-frontend-v3.vercel.app" -ForegroundColor Green
     Write-Host "  Backend:  $railwayUrl" -ForegroundColor Green
     Write-Host ""
 } else {
@@ -98,7 +98,7 @@ if ($gotRailwayUrl -eq "y") {
     Write-Host "  Run this in another PowerShell window:" -ForegroundColor White
     Write-Host "  powershell -File ngrok_setup.ps1" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  Then open the Netlify frontend and enter" -ForegroundColor White
+    Write-Host "  Then open the Vercel frontend and enter" -ForegroundColor White
     Write-Host "  the ngrok URL as your backend." -ForegroundColor White
 }
 
