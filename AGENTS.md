@@ -180,7 +180,10 @@ railway service redeploy --yes
 - [x] Notifications (Telegram/Email)
 - [x] Postgres Backups (Railway natively handles)
 
-### ⬜ Still Pending
+### ⬜ Still Pending (requires booking window or separate project)
+- Live booking test — cannot test until next booking window opens
+- Hetzner VPS setup — needed for Railway reCAPTCHA bypass
+- India adaptation — separate project blocked by Webshop vs pr_finder differences
 - [ ] **VERCEL_PROJECT_ID GitHub secret needs update** — still points to deleted old project, GH Actions deploy-vercel job will fail
 - [ ] SPA routing for direct subpath URLs (e.g., `/logs`, `/settings`) — may 404 on Vercet
 - [ ] Priority Queue — order students by booking_datetime proximity
