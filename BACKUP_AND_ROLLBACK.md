@@ -12,6 +12,26 @@ python scripts/backup.py --restore   # restore latest
 
 Backups are stored under `backups/backup_YYYYMMDD_HHMMSS/`.
 
+## Postgres Backups (production)
+
+Production data lives in Railway Postgres, **not** in the local SQLite file — so
+`scripts/backup.py` (SQLite-only) does not protect it. Automated dumps run via
+`.github/workflows/pg-backup.yml` (daily 01:00 UTC + manual `workflow_dispatch`).
+
+**Setup:** add a repo secret `DATABASE_URL_EXTERNAL` = Railway's **public** Postgres
+connection string (Railway → Postgres → Connect → Public Network). The internal
+`postgres.railway.internal` host is not reachable from GitHub runners.
+
+**Where dumps go:** uploaded as workflow artifacts (`pg-backup-<run_id>`), 30-day retention.
+
+**Restore:**
+```bash
+gunzip -c pg_YYYYMMDD_HHMMSS.sql.gz | psql "$DATABASE_URL_EXTERNAL"
+```
+
+> Note: Railway's own automated backups only exist on paid plans. This workflow is the
+> portable fallback regardless of plan.
+
 ## Railway Deploy Rollback
 
 1. Open [Railway Dashboard](https://railway.app/dashboard)

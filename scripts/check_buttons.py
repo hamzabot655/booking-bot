@@ -11,8 +11,8 @@ from selenium.webdriver.support import expected_conditions as EC
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("check")
 
-EMAIL = "REDACTED"
-PASSWORD = "REDACTED"
+EMAIL = os.environ.get("GOETHE_EMAIL", "")
+PASSWORD = os.environ.get("GOETHE_PASSWORD", "")
 
 level_urls = {
     "A1": "https://www.goethe.de/ins/pk/en/spr/prf/gzsd1.cfm",

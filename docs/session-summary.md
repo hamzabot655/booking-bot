@@ -122,7 +122,7 @@
   4. **Individual student retry** — `run_students_web()` re-queues failed students up to 3x with 5-min delay. WebSocket broadcasts requeue status.
   5. **Scheduled booking window check** — `is_active_hours()` with `ACTIVE_HOURS_START/END` (default 7am-8pm PKT). Outside hours, polls every 5 min instead of ~20s.
 - **psycopg2-binary** added to `requirements.txt` — root cause of all 14 failed Railway deploys. Latest deploy (`f480baf5`) **SUCCESS** at 13:53 PKT.
-- **Railway API token** fixed (old OAuth token expired). New long-lived token: `REDACTED`.
+- **Railway API token** fixed (old OAuth token expired). New long-lived token: `[REDACTED — rotate]`.
 - **Netlify token** fixed but **deploys blocked** — account credit usage exceeded. Need to add credits at Netlify dashboard.
 - **Remaining 8 todos**: not started (Priority Queue, Slot Pre-check, Browser Profiles, Confirmation Capture, Notifications, Concurrent Booking, Selector Health Check, Postgres Backups).
 
@@ -206,7 +206,7 @@
 
 ## ScrapingBee API Key — Replaced
 - Old key exhausted (1000 calls/month limit hit during testing)
-- New key set via `railway variable set SCRAPINGBEE_API_KEY=<key>` — REDACTED
+- New key set via `railway variable set SCRAPINGBEE_API_KEY=<key>` — `[REDACTED — rotate]`
 - Live data fetching confirmed working with new key (10 entries)
 
 ## Akamai Detection — Pakistan vs India
@@ -1110,7 +1110,7 @@ Fix `booking_datetime` in `config.csv`: `2026-08-07T11:11` (4-digit year, not 6)
 
 | # | Issue | Fix | Status |
 |---|-------|-----|--------|
-| 1 | **Credentials in smoke.yml** | Replaced plaintext `hamzarafiq655`/`REDACTED` with `${{ secrets.AUTH_EMAIL }}`/`${{ secrets.AUTH_PASSWORD }}`. Set secrets via `gh secret set`. | ✅ |
+| 1 | **Credentials in smoke.yml** | Replaced plaintext admin email/password with `${{ secrets.AUTH_EMAIL }}`/`${{ secrets.AUTH_PASSWORD }}`. Set secrets via `gh secret set`. | ✅ |
 | 2 | **pytest-asyncio missing** | Added `pytest-asyncio>=0.21.0` to `requirements.txt` | ✅ |
 | 3 | **loginBtn bug** | Added `id="loginBtn"` to Sign In button (Ctrl+Enter shortcut was broken) | ✅ |
 | 4 | **Binary assets in repo** | Removed 7 files from `presentation/` (42MB MP4, 2.5MB PPTX, 5 PDFs including invoices) from git history via `git filter-repo` | ✅ |

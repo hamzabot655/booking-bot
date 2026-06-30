@@ -11,8 +11,8 @@
   },
   "variable": [
     { "key": "base_url", "value": "https://goethe-booking-bot-production-092f.up.railway.app/api/v1" },
-    { "key": "email", "value": "hamzarafiq655@gmail.com" },
-    { "key": "password", "value": "REDACTED" },
+    { "key": "email", "value": "" },
+    { "key": "password", "value": "" },
     { "key": "token", "value": "" }
   ],
   "item": [

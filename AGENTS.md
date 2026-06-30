@@ -1,201 +1,145 @@
 # AGENTS.md — Goethe Booking Bot
 
-## Session Context (June 30, 2026 — Part 4 — Full Cleanup)
-- **CRITICAL BUG FIXED**: Login returned HTML (`"Unexpected token '<'"`) because `database.py` defined `init_db()` but NEVER called it — PostgreSQL tables (sessions, audit_log) didn't exist, login crashed on first DB write → unhandled 500 → Flask HTML error page
-- **Fixes applied**: Added `init_db()` call in `database.py` at module level; added `@app.errorhandler(500)` and `@app.errorhandler(405)` to return JSON for API routes; fixed service worker to skip cross-origin API calls
-- **Vercel fully cleaned**: ALL projects deleted from Hamza's Vercel account. Fresh project `goethe-frontend-v2` created from scratch. SPA routing fixed with `vercel.json` rewrites. Old domain `goethe-booking-dashboard.vercel.app` cannot be re-used (Vercel SSO intercepts deleted project names) — using `goethe-frontend-v2.vercel.app` as primary URL.
-- **All changes pushed to GitHub** with classic token.
-- **GitHub secret updated**: `VERCEL_PROJECT_ID` = `prj_jRIrDFcw3I2SDoAWEW78OGpIB0LY`
+## Session Context (latest — maintenance + secret hygiene pass)
+- **Production-breaking bugs fixed in `database.py`** (the Postgres path used in prod):
+  `save_checkpoint`/`get_checkpoint` and `update_student_status` had signatures that
+  did NOT match how `booking_helper.py`/`webapp.py` call them. A prior commit message
+  (`2b90919`) claimed these were fixed but the code still had the broken versions.
+  Now genuinely fixed: `save_checkpoint(key, step:int)`, `get_checkpoint(key)->int`,
+  `update_student_status(student_key, ...)` matching `name|level|city`.
+- **`db.py` cleanup**: removed a broken duplicate `add_student` (referenced an undefined
+  `students` var and did `DELETE FROM students`).
+- **`scripts/backup.py`** pointed at `booking_bot.db`; real file is `bot_data.db` — fixed
+  (now also copies WAL/SHM sidecars). Local-SQLite only; Postgres backups are separate.
+- **Secrets purged from the repo**: hardcoded Goethe credentials, Railway/dashboard tokens,
+  ScrapingBee key, and admin login were removed from tracked files (scripts, `tests/k6_load.js`,
+  `postman_collection.json`, `add_postgres.py`, this file) and replaced with env-var reads.
+  **All previously-committed secrets must be rotated at their providers — see below.**
+- **Regression tests added**: `tests/test_database.py` (checkpoint/status on the SQLAlchemy
+  layer) and `tests/test_booking_wizard.py` (wizard helper logic).
+
+> ⚠️ **Do not put live secrets in this file or any tracked file.** Use env vars / `.env`
+> (gitignored) and GitHub Actions / Railway secrets.
+
+## Secrets to Rotate (were exposed in git history and/or chat)
+| Secret | Where it was | Action |
+|--------|--------------|--------|
+| Goethe account password | scripts/*.py | Rotate the Goethe account password |
+| Railway API token | AGENTS.md, add_postgres.py, CI | Revoke + reissue in Railway → set as GH secret `RAILWAY_API_TOKEN` |
+| Postgres password | AGENTS.md | Rotate the Railway Postgres credentials, update `DATABASE_URL` |
+| ScrapingBee API key | AGENTS.md | Rotate in ScrapingBee, set `SCRAPINGBEE_API_KEY` |
+| Admin `AUTH_PASSWORD` | k6_load.js, postman, AGENTS.md | Rotate via `scripts/rotate_secrets.py`, set Railway env |
+| Vercel token | shared in chat | Revoke in Vercel account settings, reissue |
+| GitHub classic tokens | embedded in git remote + chat | Revoke at github.com/settings/tokens, reissue fine-scoped |
 
 ## Project Overview
-Selenium bot that auto-books Goethe Institut exam slots for Pakistan region. Web control panel (Flask) + dashboard frontend. Students loaded from Google Sheets or SQLite/Postgres DB.
+Selenium bot that auto-books Goethe Institut exam slots for Pakistan region. Web control
+panel (Flask) + dashboard frontend. Students loaded from Google Sheets or SQLite/Postgres DB.
 
 ## Quick Commands
 ```bash
-# Deploy backend to Railway (auto-deploys from GitHub main; manual)
+# Deploy backend to Railway (auto-deploys from GitHub main; manual below)
 railway up -d C:\Users\brosp\Downloads\goethe-bot
 
-# Deploy frontend to Vercel
-vercel deploy --prod --cwd frontend --token $VERCEL_TOKEN
+# Deploy frontend to Vercel (token via env, never inline)
+vercel deploy --prod --cwd frontend --token "$VERCEL_TOKEN"
 
 # Set Railway env var
-railway variable set KEY=VALUE
+railway variables set KEY=VALUE
 
 # Check Railway logs
 railway logs --service goethe-booking-bot -n 100
 
 # Trigger Railway redeploy
-railway service redeploy --yes
-# or: git commit --allow-empty -m "redeploy" && git push origin main
+git commit --allow-empty -m "redeploy" && git push origin main
 ```
 
 ## URLs
 | Service | URL |
 |---------|-----|
-| Frontend | https://goethe-frontend-v2.vercel.app |
+| Frontend | Vercel project (regenerated — see current `frontend/.vercel/project.json`) |
 | Backend | https://goethe-booking-bot-production-21af.up.railway.app |
 | GitHub | https://github.com/hamzabot655/booking-bot |
 
-## Credentials
-- **Auth login**: AUTH_EMAIL=`hamzarafiq655@gmail.com` / AUTH_PASSWORD=`REDACTED` (Railway env vars)
-- **ScrapingBee API**: REDACTED (set via `SCRAPINGBEE_API_KEY` env var)
-- **Google Sheet ID**: `1C7VD_52VnGmJqYSQGtdNzBZGekvCRHWUrdZCgTvvhAY` (`GOOGLE_SHEET_ID` env var)
-- **Google Service Account**: Base64 in `GOOGLE_SERVICE_ACCOUNT_B64` env var
+## Credentials & Config (values live in env / secret stores, NOT here)
+- **Auth login**: `AUTH_EMAIL` / `AUTH_PASSWORD` (Railway env vars)
+- **ScrapingBee**: `SCRAPINGBEE_API_KEY`
+- **Google Sheet**: `GOOGLE_SHEET_ID` (the public sheet id is non-secret; the service
+  account is `GOOGLE_SERVICE_ACCOUNT_B64`)
+- **Student password encryption**: `FERNET_KEY` (set a stable value or passwords are lost on restart)
+- **Railway deploy**: `RAILWAY_API_TOKEN` (GitHub Actions secret)
+- **Vercel deploy**: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (GitHub Actions secrets)
 
 ## Railway Project
 - **Project**: hospitable-heart (ID: 520adb72-b1f4-4021-8c4b-21ca81f8a901)
 - **Service**: goethe-booking-bot (ID: f568e242-4d2a-4b44-8205-07899abfbd26)
-- **Environment**: production (ID: 20945f76-1cfa-4e38-b50b-a5cb8d5f47cd)
-- **Region**: sfo
-- **Database**: Postgres — internal URL `postgresql://postgres:REDACTED@postgres.railway.internal:5432/railway` set via `DATABASE_URL` env var
-- **API Token**: `REDACTED` (long-lived, set as GitHub secret)
+- **Environment**: production (ID: 20945f76-1cfa-4e38-b50b-a5cb8d5f47cd) · Region: sfo
+- **Database**: Postgres via `DATABASE_URL` (internal Railway URL; credentials in env only)
 
 ## File Map
 | File | Purpose |
 |------|---------|
-| `webapp.py` | Flask backend — API endpoints, CORS, auth, bot control |
+| `webapp.py` | Flask backend — API endpoints, CORS, auth, bot control, WS, scheduler |
 | `booking_helper.py` | Core Selenium bot — login, 5-step wizard, smart_retry, polling |
 | `goethe_scraper.py` | Pakistan exam schedule scraper — ScrapingBee → curl_cffi → Playwright → fallback |
-| `google_sheets.py` | Google Sheets integration — read/write students, auto-fill dates, update schedule tab |
-| `database.py` | Postgres DB via SQLAlchemy — runs `init_db()` on import (critical bug fixed June 30) |
-| `db.py` | SQLite DB — students, logs, settings tables (local dev only) |
-| `frontend/index.html` | Single-page dashboard — 6 sections (Dashboard, Controls, Schedule, Students, Logs, Settings) |
-| `frontend/sw.js` | Service worker — fixed to skip cross-origin + `/api/` requests (was intercepting API calls) |
+| `google_sheets.py` | Google Sheets integration — read/write students, auto-fill dates |
+| `database.py` | Postgres/SQLite via SQLAlchemy — used when `DATABASE_URL` is set; calls `init_db()` on import |
+| `db.py` | SQLite layer — used when `DATABASE_URL` unset (local dev) |
+| `crypto_utils.py` | bcrypt password hashing + Fernet encryption of student passwords |
+| `frontend/index.html` | Single-page dashboard (6 sections) |
+| `frontend/vercel.json` | SPA rewrites (`/*` → `/index.html`) — no build step |
+| `frontend/sw.js` | Service worker — same-origin non-API GET only |
 | `Dockerfile` | Railway deployment — Python + Chrome + Playwright |
-| `pk_fallback.json` | Offline exam schedule data (10 entries, Jul-Oct 2026) |
-| `.vercel/` | Vercel project link config |
+| `pk_fallback.json` | Offline exam schedule data |
 
 ## Architecture
 
-### API Endpoints (all prefixed with `/api`)
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/login` | POST | No | Returns JWT token |
-| `/students` | GET | Yes | List all students (DB + sheet + config merged) |
-| `/students` | POST | Yes | Add student to DB + Google Sheet |
-| `/students/<id>` | DELETE | Yes | Delete DB student (negative id = sheet-only, returns 400) |
-| `/goethe-schedule` | GET | Yes | Pakistan exam schedule (`?refresh=1` for live, `?level=A1` to filter) |
-| `/sheets/update-schedule` | POST | Yes | Update Google Sheets Schedule tab from Goethe data |
-| `/sheets/auto-fill` | POST | Yes | Auto-fill booking_datetime for empty students |
-| `/schedule` | GET | Yes | Load students from Google Sheet |
-| `/start` | POST | Yes | Start bot on all students |
-| `/stop` | POST | Yes | Stop bot |
-| `/config` | GET/POST | Yes | Bot configuration |
-| `/live-status` | GET | Yes | Live booking status per student |
-| `/heartbeat` | GET | Yes | Dead man switch heartbeat |
-
-### Student ID System
-- **DB students**: positive `id` (SQLite auto-increment)
-- **Sheet/config students**: negative `id` (e.g., -1, -2) assigned in `_get_loaded_students()`
-- Delete button visible for all, but sheet-only delete returns error msg
-
 ### Bot Flow
-1. Load students (DB + Sheet merged via `_get_loaded_students()`)
-2. Each student gets own `threading.Thread` + own Chrome browser (parallel)
-3. For each student: navigate to level URL → wait/poll for booking button → CAS login → 5-step wizard
-4. Wizard steps: Personal Data 1 → Personal Data 2 → Payment (Invoice) → Promo Code → Review & Confirm
-5. Status pushed via WebSocket to frontend live dashboard
+1. Load + merge students (DB + Sheet + CSV) via `_get_loaded_students()`, sorted by `booking_datetime`.
+2. Each student → own thread + own Chrome profile (parallel, capped by `MAX_CONCURRENT` semaphore).
+3. Navigate to level URL → poll for "Select modules" (burst mode near booking time) → CAS login.
+4. 5-step Wicket wizard: Personal Data 1 → Personal Data 2 → Payment (Invoice) → Promo → Review & Confirm.
+5. Checkpoint after each step (resume on restart); confirmation parse + profile verify; status pushed via WebSocket.
 
 ### Schedule Fetch Chain
-1. **ScrapingBee** (premium_proxy=true) — primary, ~15s per 3 levels parallel
-2. **curl_cffi** (chrome131 impersonate) — fallback if ScrapingBee fails
-3. **Playwright** (headless Chromium) — fallback if curl_cffi unavailable
-4. **pk_fallback.json** — last resort offline data
+ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright (headless) → `pk_fallback.json`.
 
 ### Google Sheets 429 Handling
-- `_retry_gsheet()`: 5s → 10s → 20s → 40s exponential backoff
-- 15s TTL in-memory cache on `load_sheet_data()` to reduce read frequency
-- `strict=False` on data validation dropdown to avoid red dot on existing values
+`_retry_gsheet()` 5→10→20→40s backoff; 15s TTL cache on `load_sheet_data()`; `strict=False` dropdown.
 
 ## Common Issues
-
-### "Delete failed: Unexpected token '<'"
-**Cause**: Student missing `id` field → URL `/api/students/undefined` → HTML 404
-**Fix**: All students now get an id (positive for DB, negative for sheet/config). Already fixed.
-
-### "Quota exceeded for quota metric 'Read requests'"
-**Cause**: Google Sheets 60 reads/min/user limit exceeded
-**Fix**: Retry with backoff + 15s cache. If persistent, wait 1 min.
-
-### Schedule returns 0 entries
-**Cause**: ScrapingBee monthly limit, Playwright browsers not installed, or Goethe API blocking
-**Fix**: Fallback to `pk_fallback.json`. If ScrapingBee exhausted, replace API key.
-
-### Bot timing — "5-10 min per student?"
-**Reality**: ~1.5-2 min per student when booking open. Parallel for multiple students (same total time).
+- **"Unexpected token '<'" on any API call** → backend returned HTML (a 500 before the JSON
+  error handlers, or a missing route). Check `/api/health`; error handlers now return JSON for `/api/*`.
+- **Google Sheets "Quota exceeded"** → 60 reads/min/user; retry+cache handle it, else wait 1 min.
+- **Schedule returns 0 entries** → ScrapingBee limit / Playwright not installed / Goethe block → falls back to `pk_fallback.json`.
+- **Login fails only from Railway** → datacenter IP triggers reCAPTCHA on Goethe CAS. Needs VPS/residential proxy/2Captcha (see pending).
 
 ## Deployment Notes
-- Railway auto-deploys from GitHub `main` branch pushes (uses Railway API token from GitHub secret)
-- Railway env vars picked up on next deploy (not hot-reloaded)
-- **Vercel frontend** — https://goethe-frontend-v2.vercel.app (was goethe-booking-dashboard.vercel.app — domain not reusable after project deletion)
-- Frontend is pure HTML/CSS/JS — no build step needed. SPA routing via `vercel.json` rewrites.
-- Backend uses **Postgres** (`database.py`) via `DATABASE_URL` — data persists across restarts
-- Local dev uses SQLite (`db.py`) when `DATABASE_URL` not set
-
-## Env Vars (Railway)
-| Var | Value/Purpose |
-|-----|---------------|
-| `DATABASE_URL` | `postgresql://postgres:REDACTED@postgres.railway.internal:5432/railway` |
-| `SCRAPINGBEE_API_KEY` | `REDACTED` |
-| `AUTH_EMAIL` | `hamzarafiq655@gmail.com` |
-| `AUTH_PASSWORD` | `REDACTED` |
-| `GOOGLE_SERVICE_ACCOUNT_B64` | Base64-encoded service account JSON |
-| `VERCEL_ORG_ID` | `team_e9xBdY5fOoQQDcyJtoPIkfAW` |
-| `VERCEL_PROJECT_ID` | `prj_jRIrDFcw3I2SDoAWEW78OGpIB0LY` (current — goethe-frontend-v2) |
-| `ACTIVE_HOURS_START` | `07:00` (PKT, default) |
-| `ACTIVE_HOURS_END` | `20:00` (PKT, default) |
-| `REQUEUE_MAX_RETRIES` | `3` (default) |
-| `REQUEUE_DELAY_SECONDS` | `300` (5 min, default) |
-| `RAILWAY_API_TOKEN` | `REDACTED` (CI/CD) |
+- Railway auto-deploys from GitHub `main` (uses `RAILWAY_API_TOKEN` GH secret).
+- Vercel frontend is static + `vercel.json` rewrites — no build step (a build step previously caused a 0-file outage).
+- Backend uses Postgres (`database.py`) when `DATABASE_URL` is set; SQLite (`db.py`) otherwise.
 
 ## Todo / Known Gaps
 
-### ✅ Done (Part 4 — this session)
-- [x] **All local fixes pushed to GitHub** (init_db, checkpoint/status fix, db.py cleanup)
-- [x] **All Vercel projects deleted** (goethe-frontend-v2, frontend), fresh project created
-- [x] **SPA routing fixed** — `vercel.json` rewrites handle subpaths (settings, logs, etc. → index.html)
-- [x] **Frontend deployed** at https://goethe-frontend-v2.vercel.app
-- [x] **GitHub secret `VERCEL_PROJECT_ID` updated** to new project ID
+### ✅ Done (verified against code)
+- Login HTML bug — `database.py` calls `init_db()`; `/api/*` 404/405/500 return JSON
+- Service worker scoped to same-origin non-API GET
+- `vercel.json` SPA rewrites; WebSocket token auth (`validate_token`)
+- **database.py checkpoint/status signatures fixed** (this pass)
+- **db.py duplicate `add_student` removed** (this pass)
+- **backup.py DB path fixed** (this pass)
+- **Secrets purged from tracked files** (this pass)
+- Priority queue (sort by datetime); browser profiles; concurrent booking (semaphore);
+  selector health check in `/api/health`; gsheets retry/backoff; post-booking verification;
+  session refresh per step; failure evidence (screenshot+HTML); student re-queue ×3;
+  scheduled active-hours polling; confirmation capture; slot pre-check; Telegram/email notifications
+- Regression tests: `tests/test_database.py`, `tests/test_booking_wizard.py`
 
-### ✅ Done (Part 3 — previous session)
-- [x] **Login HTML bug fixed** — `database.py` now calls `init_db()` at module level
-- [x] **Service worker fixed** — no longer intercepts cross-origin or `/api/` fetch requests
-- [x] **Vercel restored** after corruption
-
-### ✅ Done (earlier sessions)
-- [x] Priority Queue — sort students by booking_datetime
-- [x] Browser Profiles — reuse Chrome profile per student
-- [x] Concurrent Booking — semaphore max 2 parallel
-- [x] Selector Health Check — /api/health
-- [x] Google Sheets retry — _retry_gsheet with backoff
-- [x] Vercel migration from Netlify
-- [x] Postgres connected
-- [x] Post-booking verification
-- [x] Session refresh before each wizard step
-- [x] Failure evidence (screenshot + HTML)
-- [x] Student retry up to 3x
-- [x] Scheduled booking window check
-- [x] Confirmation Capture
-- [x] Slot Pre-check
-- [x] Notifications (Telegram/Email)
-- [x] Postgres Backups (Railway natively handles)
-
-### ⬜ Still Pending (requires booking window or separate project)
-- Live booking test — cannot test until next booking window opens
-- Hetzner VPS setup — needed for Railway reCAPTCHA bypass
-- India adaptation — separate project blocked by Webshop vs pr_finder differences
-- [ ] **VERCEL_PROJECT_ID GitHub secret needs update** — still points to deleted old project, GH Actions deploy-vercel job will fail
-- [ ] SPA routing for direct subpath URLs (e.g., `/logs`, `/settings`) — may 404 on Vercet
-- [ ] Priority Queue — order students by booking_datetime proximity
-- [ ] Slot Pre-check — fast API/selenium check before full booking flow
-- [ ] Browser Profiles — persistent Chrome profiles to avoid re-login
-- [ ] Confirmation Capture — extract PTN/booking ref from confirmation page
-- [ ] Notifications — Telegram/email on successful booking
-- [ ] Concurrent Booking — rate-limit parallel students
-- [ ] Selector Health Check — auto-detect stale CSS selectors
-- [ ] Postgres Backups — automated DB snapshots
-- [ ] India adaptation: change `/ins/pk/` to `/ins/in/`, add `undetected-chromedriver`, Indian proxies
-- [ ] Google Sheets append_student doesn't retry on 429
-- [ ] No automated tests for the booking flow (only scrapers and helpers tested)
-- [ ] Live booking test — cannot test until next booking window opens
-- [ ] No automated tests for the booking flow (only scrapers and helpers tested)
+### ⬜ Pending
+- [ ] Rotate all leaked secrets at their providers (see table above) — values removed from repo, but they were public
+- [ ] Automated Postgres backups (pg_dump cron) — Railway only auto-backs-up on paid plan
+- [ ] Railway reCAPTCHA bypass for Goethe login — Hetzner VPS (≈€3.99/mo) or residential proxy / 2Captcha
+- [ ] Live booking test — blocked until the next registration window opens
+- [ ] Auto-connect: hide the connect bar when already authenticated (claimed before, not in UI)
+- [ ] India adaptation — separate Webshop-based engine (different from Pakistan `pr_finder`)
+- [ ] No automated tests for the *full* live booking flow (helpers + scrapers + db layer are covered)

@@ -9,10 +9,10 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 
-EMAIL = "REDACTED"
-PASSWORD = "REDACTED"
-TOKEN = "REDACTED"
-RAILWAY = "https://goethe-booking-bot-production-092f.up.railway.app"
+EMAIL = os.environ.get("GOETHE_EMAIL", "")
+PASSWORD = os.environ.get("GOETHE_PASSWORD", "")
+TOKEN = os.environ.get("DASHBOARD_AUTH_TOKEN", "")
+RAILWAY = os.environ.get("BACKEND_URL", "https://goethe-booking-bot-production-21af.up.railway.app")
 
 options = Options()
 options.add_argument("--no-sandbox")
