@@ -763,12 +763,26 @@ def api_add_student():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
-@bp.route("/students/<int:student_id>", methods=["DELETE"])
+@bp.route("/students/<int(signed=True):student_id>", methods=["DELETE"])
 @require_auth
 def api_delete_student(student_id: int):
     try:
         if student_id < 0:
-            return jsonify({"ok": False, "error": "Sheet-only students cannot be deleted via API. Remove from Google Sheets directly."}), 400
+            # Negative id = sheet/config-backed student (assigned in _get_loaded_students).
+            # Resolve it back to its name/level/city and delete the matching Google Sheet row.
+            match = next((s for s in _get_loaded_students() if s.get("id") == student_id), None)
+            if not match:
+                return jsonify({"ok": False, "error": "Student not found"}), 404
+            try:
+                import google_sheets
+                res = google_sheets.delete_student(
+                    match.get("name", ""), match.get("level", match.get("exam_level", "")), match.get("city", "")
+                )
+            except Exception as exc:
+                return jsonify({"ok": False, "error": f"Google Sheet delete failed: {exc}"}), 500
+            if res.get("ok"):
+                return jsonify({"ok": True})
+            return jsonify({"ok": False, "error": res.get("error", "Could not delete from Google Sheet")}), 400
         ok = db.delete_student(student_id)
         if not ok:
             return jsonify({"ok": False, "error": "Student not found"}), 404

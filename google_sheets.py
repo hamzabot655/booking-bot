@@ -263,6 +263,55 @@ def setup_dropdown() -> str:
         return "Setup dropdown failed: %s" % e
 
 
+def delete_student(name: str, level: str = "", city: str = "") -> Dict[str, Any]:
+    """Delete the first sheet row matching name (+ optional level/city).
+
+    Returns {"ok": True} on success, or {"ok": False, "error": "..."}.
+    """
+    if not name.strip():
+        return {"ok": False, "error": "Name required to delete a sheet student"}
+    try:
+        gc = get_client(write=True)
+        sh = _retry_gsheet(lambda: gc.open_by_key(SHEET_ID))
+        ws = sh.sheet1
+        rows = _retry_gsheet(lambda: ws.get_all_values())
+        if len(rows) < 2:
+            return {"ok": False, "error": "Sheet has no data rows"}
+        headers = [h.strip().lower() for h in rows[0]]
+
+        def cidx(col: str) -> int:
+            return headers.index(col) if col in headers else -1
+
+        ni, li, ci = cidx("name"), cidx("level"), cidx("city")
+        if ni < 0:
+            return {"ok": False, "error": "Sheet has no 'name' column"}
+
+        def cell(row, i):
+            return row[i].strip() if 0 <= i < len(row) else ""
+
+        target_row = None
+        for sheet_row_num, row in enumerate(rows[1:], start=2):  # 1-based, row 1 = header
+            if cell(row, ni).lower() != name.strip().lower():
+                continue
+            if level and cell(row, li).lower() != level.strip().lower():
+                continue
+            if city and cell(row, ci).lower() != city.strip().lower():
+                continue
+            target_row = sheet_row_num
+            break
+
+        if target_row is None:
+            return {"ok": False, "error": "Matching row not found in Google Sheet"}
+
+        _retry_gsheet(lambda: ws.delete_rows(target_row))
+        # Bust the in-memory cache so the next read reflects the deletion.
+        _sheet_cache["data"] = None
+        _sheet_cache["ts"] = 0
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 def append_student(student: Dict[str, Any]) -> str:
     """Append a single student row to the Google Sheet with retry on 429."""
     try:
