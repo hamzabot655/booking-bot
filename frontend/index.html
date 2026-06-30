@@ -805,7 +805,7 @@
     <div id="sectionDashboard">
       <div class="conn-bar">
         <input type="text" id="backendUrl" placeholder="Backend URL">
-        <button class="btn btn-outline btn-sm" onclick="connectBackend()">Connect</button>
+        <button class="btn btn-outline btn-sm" id="connectBtn" onclick="connectBackend()">Connect</button>
         <span id="backendStatus" class="status-text">Not connected</span>
         <button class="btn btn-outline btn-sm" onclick="doLogout()" style="color:var(--red);border-color:rgba(240,74,90,0.3);">Logout</button>
       </div>
@@ -1151,6 +1151,8 @@ async function doLogout() {
   authToken = "";
   localStorage.removeItem("auth_token");
   document.getElementById("loginOverlay").classList.remove("hidden");
+  document.getElementById("backendUrl").style.display = "";
+  document.getElementById("connectBtn").style.display = "";
 }
 
 // ── Auth helpers ──
@@ -1225,6 +1227,8 @@ document.getElementById("loginBackendUrl").value = BASE;
 loadNotificationSettings();
 if (authToken) {
   document.getElementById("loginOverlay").classList.add("hidden");
+  document.getElementById("backendUrl").style.display = "none";
+  document.getElementById("connectBtn").style.display = "none";
   connectBackend();
 }
 
@@ -1243,6 +1247,8 @@ async function connectBackend(retries = 2) {
       statusEl.innerHTML = "";
       statusEl.textContent = "Connected";
       statusEl.className = "status-text ok";
+      document.getElementById("backendUrl").style.display = "none";
+      document.getElementById("connectBtn").style.display = "none";
       updateBadge(false);
       await loadConfigFromBackend();
       await loadDBStudents();
@@ -1260,6 +1266,8 @@ async function connectBackend(retries = 2) {
   statusEl.innerHTML = "";
   statusEl.textContent = "Cannot connect";
   statusEl.className = "status-text err";
+  document.getElementById("backendUrl").style.display = "";
+  document.getElementById("connectBtn").style.display = "";
   document.getElementById("statusBadge").innerHTML = '<span class="dot dot-disconnected"></span> Disconnected';
 }
 
@@ -1297,6 +1305,9 @@ function connectWebSocket() {
   const url = BASE.replace(/^http/, "ws") + "/ws/logs";
   try {
     ws = new WebSocket(url);
+    ws.onopen = function() {
+      ws.send(JSON.stringify({token: authToken}));
+    };
     ws.onmessage = function(e) {
       try {
         const msg = JSON.parse(e.data);

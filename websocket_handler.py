@@ -10,12 +10,6 @@ Usage:
 Dependencies (optional):
   - flask-sock: pip install flask-sock
   - Or use a standalone WebSocket server with gevent-websocket
-
-TODO:
-  - Add authentication for WebSocket connections
-  - Add log filtering by student/level
-  - Add reconnection handling
-  - Add rate limiting
 """
 from __future__ import annotations
 
@@ -85,12 +79,30 @@ def setup_websocket(app):
 
         @sock.route("/ws/logs")
         def logs_ws(ws):
+            msg = ws.receive(timeout=5)
+            if not msg:
+                ws.close(4001, "Unauthorized")
+                return
+            try:
+                data = json.loads(msg)
+                token = data.get("token", "")
+            except Exception:
+                ws.close(4001, "Unauthorized")
+                return
+            from webapp import validate_token
+            if not validate_token(token):
+                ws.close(4001, "Unauthorized")
+                return
             broadcaster.register(ws)
             try:
                 while True:
-                    ws.receive(timeout=30)  # keep alive
+                    ws.receive(timeout=30)
             except Exception:
                 pass
+            finally:
+                broadcaster.unregister(ws)
+    except ImportError:
+        pass
             finally:
                 broadcaster.unregister(ws)
     except ImportError:
