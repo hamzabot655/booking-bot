@@ -1,12 +1,11 @@
 # AGENTS.md — Goethe Booking Bot
 
-## Session Context (June 30, 2026 — Part 3)
+## Session Context (June 30, 2026 — Part 4 — Full Cleanup)
 - **CRITICAL BUG FIXED**: Login returned HTML (`"Unexpected token '<'"`) because `database.py` defined `init_db()` but NEVER called it — PostgreSQL tables (sessions, audit_log) didn't exist, login crashed on first DB write → unhandled 500 → Flask HTML error page
 - **Fixes applied**: Added `init_db()` call in `database.py` at module level; added `@app.errorhandler(500)` and `@app.errorhandler(405)` to return JSON for API routes; fixed service worker to skip cross-origin API calls
-- **Vercel project corrupted** (my fault): Added `vercel.json` without permission → triggered build step → all subsequent deploys produced 0 files → site was down for ~1 hour
-- **Vercel restored**: New project `goethe-frontend-v2` created, old project deleted, domain `goethe-booking-dashboard.vercel.app` transferred to new project. Site back up.
-- **GH Actions needs update**: `VERCEL_PROJECT_ID` secret still points to deleted old project (`prj_c6bzqPz9vMhYVl24HPhtKYLbKqzg`). Needs to be updated to new project ID (`prj_UijLexKqgadC4GWY0PzZCS3l7fmI`).
-- **All 5 Critical fixes deployed**: verification, session refresh, failure evidence, retry, scheduled polling
+- **Vercel fully cleaned**: ALL projects deleted from Hamza's Vercel account. Fresh project `goethe-frontend-v2` created from scratch. SPA routing fixed with `vercel.json` rewrites. Old domain `goethe-booking-dashboard.vercel.app` cannot be re-used (Vercel SSO intercepts deleted project names) — using `goethe-frontend-v2.vercel.app` as primary URL.
+- **All changes pushed to GitHub** with classic token.
+- **GitHub secret updated**: `VERCEL_PROJECT_ID` = `prj_jRIrDFcw3I2SDoAWEW78OGpIB0LY`
 
 ## Project Overview
 Selenium bot that auto-books Goethe Institut exam slots for Pakistan region. Web control panel (Flask) + dashboard frontend. Students loaded from Google Sheets or SQLite/Postgres DB.
@@ -33,7 +32,7 @@ railway service redeploy --yes
 ## URLs
 | Service | URL |
 |---------|-----|
-| Frontend | https://goethe-booking-dashboard.vercel.app |
+| Frontend | https://goethe-frontend-v2.vercel.app |
 | Backend | https://goethe-booking-bot-production-21af.up.railway.app |
 | GitHub | https://github.com/hamzabot655/booking-bot |
 
@@ -128,8 +127,8 @@ railway service redeploy --yes
 ## Deployment Notes
 - Railway auto-deploys from GitHub `main` branch pushes (uses Railway API token from GitHub secret)
 - Railway env vars picked up on next deploy (not hot-reloaded)
-- **Vercel frontend** — https://goethe-booking-dashboard.vercel.app
-- Frontend is pure HTML/CSS/JS — no build step needed
+- **Vercel frontend** — https://goethe-frontend-v2.vercel.app (was goethe-booking-dashboard.vercel.app — domain not reusable after project deletion)
+- Frontend is pure HTML/CSS/JS — no build step needed. SPA routing via `vercel.json` rewrites.
 - Backend uses **Postgres** (`database.py`) via `DATABASE_URL` — data persists across restarts
 - Local dev uses SQLite (`db.py`) when `DATABASE_URL` not set
 
@@ -142,8 +141,7 @@ railway service redeploy --yes
 | `AUTH_PASSWORD` | `Hamza@123` |
 | `GOOGLE_SERVICE_ACCOUNT_B64` | Base64-encoded service account JSON |
 | `VERCEL_ORG_ID` | `team_e9xBdY5fOoQQDcyJtoPIkfAW` |
-| `VERCEL_PROJECT_ID` | `prj_UijLexKqgadC4GWY0PzZCS3l7fmI` (NEW — old project deleted, this is `goethe-frontend-v2`) |
-| `VERCEL_PROJECT_ID_OLD` | `prj_c6bzqPz9vMhYVl24HPhtKYLbKqzg` (DELETED — old `goethe-booking-dashboard`) |
+| `VERCEL_PROJECT_ID` | `prj_jRIrDFcw3I2SDoAWEW78OGpIB0LY` (current — goethe-frontend-v2) |
 | `ACTIVE_HOURS_START` | `07:00` (PKT, default) |
 | `ACTIVE_HOURS_END` | `20:00` (PKT, default) |
 | `REQUEUE_MAX_RETRIES` | `3` (default) |
@@ -152,10 +150,35 @@ railway service redeploy --yes
 
 ## Todo / Known Gaps
 
-### ✅ Done (this session)
-- [x] **Login HTML bug fixed** — `database.py` now calls `init_db()` at module level (tables existed, sessions/audit_log did not). Added `@app.errorhandler(500)` and `@app.errorhandler(405)` for API routes.
+### ✅ Done (Part 4 — this session)
+- [x] **All local fixes pushed to GitHub** (init_db, checkpoint/status fix, db.py cleanup)
+- [x] **All Vercel projects deleted** (goethe-frontend-v2, frontend), fresh project created
+- [x] **SPA routing fixed** — `vercel.json` rewrites handle subpaths (settings, logs, etc. → index.html)
+- [x] **Frontend deployed** at https://goethe-frontend-v2.vercel.app
+- [x] **GitHub secret `VERCEL_PROJECT_ID` updated** to new project ID
+
+### ✅ Done (Part 3 — previous session)
+- [x] **Login HTML bug fixed** — `database.py` now calls `init_db()` at module level
 - [x] **Service worker fixed** — no longer intercepts cross-origin or `/api/` fetch requests
-- [x] **Vercel restored** — new project `goethe-frontend-v2` deployed, old domain working
+- [x] **Vercel restored** after corruption
+
+### ✅ Done (earlier sessions)
+- [x] Priority Queue — sort students by booking_datetime
+- [x] Browser Profiles — reuse Chrome profile per student
+- [x] Concurrent Booking — semaphore max 2 parallel
+- [x] Selector Health Check — /api/health
+- [x] Google Sheets retry — _retry_gsheet with backoff
+- [x] Vercel migration from Netlify
+- [x] Postgres connected
+- [x] Post-booking verification
+- [x] Session refresh before each wizard step
+- [x] Failure evidence (screenshot + HTML)
+- [x] Student retry up to 3x
+- [x] Scheduled booking window check
+- [x] Confirmation Capture
+- [x] Slot Pre-check
+- [x] Notifications (Telegram/Email)
+- [x] Postgres Backups (Railway natively handles)
 
 ### ⬜ Still Pending
 - [ ] **VERCEL_PROJECT_ID GitHub secret needs update** — still points to deleted old project, GH Actions deploy-vercel job will fail
