@@ -27,6 +27,19 @@
   `add_student` removal, and `backup.py` DB path were already committed in `2b90919`; confirmed
   against HEAD and locked in with the new tests.
 
+### Cleanup pass (`b5688b0`)
+- **FERNET_KEY now persists**: if not set in env, `webapp.py` generates a key once and stores it
+  in the DB (`bot_state`), reusing it on later boots — student passwords no longer break on restart.
+- **Dead Netlify references removed**: a11y workflow + docs (SLA/BCP/TRAINING/STAGING) + `deploy.ps1`
+  + `alexa.py` now reference Vercel; unused GitHub secrets `NETLIFY_AUTH_TOKEN`/`NETLIFY_SITE_ID` deleted.
+- **Stale Railway URL fixed**: `...-092f...` → live `...-21af...` across scripts/tests/postman; stale
+  origin dropped from the CORS whitelist.
+- **Alexa system prompt** corrected (Vercel + right URLs, no hardcoded admin email).
+- **Connect bar hides when authenticated** (shows again on logout/401/connect failure).
+- **VPS prep**: `docs/VPS_SETUP.md` + `deploy/vps_setup.sh` (turnkey clean-IP host to bypass
+  Railway reCAPTCHA). Provisioning still needs the owner.
+- **More tests**: `tests/test_smart_retry.py` (retry/backoff + `_classify_error`). **111 unit tests pass.**
+
 > ⚠️ **Do not put live secrets in this file or any tracked file.** Use env vars / `.env`
 > (gitignored) and GitHub Actions / Railway secrets.
 
@@ -144,13 +157,19 @@ ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright
   selector health check in `/api/health`; gsheets retry/backoff; post-booking verification;
   session refresh per step; failure evidence (screenshot+HTML); student re-queue ×3;
   scheduled active-hours polling; confirmation capture; slot pre-check; Telegram/email notifications
-- Regression tests: `tests/test_database.py`, `tests/test_booking_wizard.py` (100 unit tests pass)
+- **FERNET_KEY persists in DB** (`b5688b0`); **dead Netlify refs removed** + GH `NETLIFY_*` secrets deleted;
+  **stale `092f`→`21af`** URL fix; **Alexa prompt** corrected; **connect bar hides when authed**;
+  **VPS runbook** (`docs/VPS_SETUP.md` + `deploy/vps_setup.sh`)
+- Regression tests: `tests/test_database.py`, `tests/test_booking_wizard.py`, `tests/test_smart_retry.py` (111 unit tests pass)
 
 ### ⬜ Pending
-- [ ] Rotate all leaked secrets at their providers (see table above) — values removed from repo, but they were public
+- [ ] **Rotate all leaked secrets at their providers** (see table above) — removed from the tree, but they
+      were public in git history/chat; rotation is the only real fix (GitHub tokens, Vercel token, Goethe pw,
+      Railway API token, Postgres pw, ScrapingBee key, admin `AUTH_PASSWORD`)
 - [ ] Set repo secret `DATABASE_URL_EXTERNAL` (Railway public Postgres URL) so the pg-backup workflow can run
-- [ ] Railway reCAPTCHA bypass for Goethe login — Hetzner VPS (≈€3.99/mo) or residential proxy / 2Captcha
-- [ ] Live booking test — blocked until the next registration window opens
-- [ ] Auto-connect: hide the connect bar when already authenticated (claimed before, not in UI)
+- [ ] Railway reCAPTCHA bypass — provision the VPS (runbook ready) / residential proxy / 2Captcha. **Owner action.**
+- [ ] Live booking test — blocked until the next registration window opens (and depends on the reCAPTCHA fix)
+- [ ] (Optional) Scrub secrets from git history (`git filter-repo` + force-push) — destructive, rewrites all
+      SHAs; only defense-in-depth since rotation is the real fix. Awaiting owner go-ahead.
 - [ ] India adaptation — separate Webshop-based engine (different from Pakistan `pr_finder`)
-- [ ] No automated tests for the *full* live booking flow (helpers + scrapers + db layer are covered)
+- [ ] No automated tests for the *full* live booking flow (helpers + scrapers + db layer + retry are covered)

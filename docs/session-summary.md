@@ -1,3 +1,52 @@
+# Session Summary — July 1, 2026 (Part 6) — Cleanup Pass: FERNET Persistence, Stale-Ref Removal, VPS Runbook, Tests
+
+## Summary
+Worked a 10-item "is it really 100%?" list. Honest outcome: 8 done, 1 blocked on owner infra,
+1 informational.
+- **FERNET_KEY now survives restarts** (`b5688b0`): if the env var isn't set, `webapp.py` generates
+  a key once and persists it in the DB (`bot_state`), reusing it on later boots. Previously each boot
+  made a new ephemeral key → stored student passwords became undecryptable after any restart.
+- **Dead Netlify references removed**: a11y workflow now scans the Vercel URL; SLA/BCP/TRAINING/STAGING
+  docs and `deploy.ps1` say Vercel; `alexa.py` system prompt updated. Deleted unused GitHub secrets
+  `NETLIFY_AUTH_TOKEN` / `NETLIFY_SITE_ID`.
+- **Stale Railway URL fixed**: `...-092f...` → live `...-21af...` in `alexa.py`, `scripts/uptime_monitor.py`,
+  `scripts/save_goethe_cookies.py`, `postman_collection.json`, `tests/k6_load.js`; removed the stale
+  `092f` origin from the CORS whitelist.
+- **Alexa system prompt** corrected (Vercel + right URLs, no hardcoded admin email).
+- **Connect bar hides when authenticated** (whole `#connBar`, not just the input) and reappears on
+  logout / 401 / connect failure. Frontend redeployed to Vercel.
+- **VPS prep**: `docs/VPS_SETUP.md` + `deploy/vps_setup.sh` — turnkey clean-IP host (Hetzner CPX11) to
+  bypass Railway's reCAPTCHA on Goethe login. Provisioning still needs the owner.
+- **Tests**: added `tests/test_smart_retry.py` (transient-vs-permanent retry budget, backoff stop,
+  `_classify_error`). **111 unit tests pass.**
+
+## Not done (and why)
+- **Live booking test** — needs a real registration window AND a working login (depends on the reCAPTCHA
+  fix above). Can't be done from here.
+- **Secret rotation** — only the owner can rotate at the providers; values are already burned (history/chat).
+- **Git-history secret scrub** — offered but NOT executed: it's a destructive `filter-repo` + force-push
+  that rewrites every SHA and is only defense-in-depth (rotation is the real fix). Awaiting owner go-ahead.
+- **TOS** — informational only; the disclaimer already exists in README + the frontend bar.
+
+## Commits This Part
+| Commit | Message |
+|--------|---------|
+| `b5688b0` | chore: cleanup pass — FERNET persistence, stale URL/Netlify removal, VPS runbook, conn-bar, tests |
+
+## Files Changed (this part)
+| File | Change |
+|------|--------|
+| `webapp.py` | Persist generated FERNET_KEY in DB; drop stale `092f` CORS origin |
+| `frontend/index.html` | Hide whole `#connBar` when authed (+ redeployed) |
+| `alexa.py` | System prompt → Vercel + correct URLs, no admin email |
+| `.github/workflows/a11y.yml`, `docs/{SLA,BCP,TRAINING}.md`, `STAGING.md`, `deploy.ps1` | Netlify → Vercel |
+| `scripts/uptime_monitor.py`, `scripts/save_goethe_cookies.py`, `postman_collection.json`, `tests/k6_load.js` | `092f` → `21af` |
+| `docs/VPS_SETUP.md`, `deploy/vps_setup.sh` | NEW — VPS runbook + bootstrap |
+| `tests/test_smart_retry.py` | NEW — retry/backoff + `_classify_error` tests |
+| GitHub secrets | Deleted `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID` |
+
+---
+
 # Session Summary — July 1, 2026 (Part 5) — Maintenance Pass: Backend-Crash Fix, Delete Bug, Secret Purge, Vercel Rebuild
 
 ## Summary
