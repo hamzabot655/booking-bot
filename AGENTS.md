@@ -57,7 +57,7 @@ git commit --allow-empty -m "redeploy" && git push origin main
 ## URLs
 | Service | URL |
 |---------|-----|
-| Frontend | Vercel project (regenerated — see current `frontend/.vercel/project.json`) |
+| Frontend | https://goethe-frontend-v3.vercel.app (project `prj_n3wa6LvxRTU36YhfUCfw0349fgc0`) |
 | Backend | https://goethe-booking-bot-production-21af.up.railway.app |
 | GitHub | https://github.com/hamzabot655/booking-bot |
 
