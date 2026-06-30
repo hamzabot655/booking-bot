@@ -822,6 +822,8 @@ def api_start(data: StartRequest):
         if not students:
             return jsonify({"ok": False, "error": f"No students found for level {level_filter}"}), 400
 
+    students = sorted(students, key=lambda s: s.get("booking_datetime", "") or "9999-12-31T23:59")
+
     headless = data.headless
     if not headless and not os.environ.get("DISPLAY"):
         headless = True
@@ -1386,7 +1388,7 @@ def _get_loaded_students() -> List[Dict]:
         sid = s.get("id")
         if sid is None or sid == "" or sid == 0:
             s["id"] = -(i + 1)
-    return students
+    return sorted(students, key=lambda s: s.get("booking_datetime", "") or "9999-12-31T23:59")
 
 
 # ── Alexa AI Assistant ──
