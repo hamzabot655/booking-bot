@@ -27,6 +27,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
+from werkzeug.exceptions import NotFound
 
 from collections import defaultdict
 
