@@ -59,7 +59,7 @@
 
 ```
 ┌──────────────────────────────────────┐     ┌──────────────────────────────────────┐
-│  Frontend (Netlify - FREE)           │     │  Backend (Railway/VPS)               │
+│  Frontend (Vercel - FREE)            │     │  Backend (Railway/VPS)               │
 │                                      │     │                                      │
 │  frontend/index.html                 │────▶│  /api/v1/*  (35+ authenticated routes)│
 │  PWA offline (Service Worker)        │     │  /api/* (legacy backward compat)     │
@@ -99,7 +99,7 @@
 ```bash
 pip install -r requirements.txt
 python webapp.py
-# Frontend: drag & drop frontend/ folder to Netlify
+# Frontend: deployed to Vercel (auto from GitHub Actions)
 ```
 
 ### Everything Local
@@ -187,7 +187,7 @@ The dashboard includes a built-in AI assistant powered by Google Gemini 2.5 Flas
 - **Auth:** Server-side sessions with 24hr expiry. Logout invalidates immediately. Token rotation via `/api/refresh`.
 - **Rate Limiting:** 5 login attempts per 5 minutes per IP (returns 429 with `Retry-After` + `X-RateLimit-Remaining` headers).
 - **Headers:** CSP (`default-src 'self'`), HSTS (`max-age=31536000; preload`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`.
-- **CORS:** Whitelist-based — only Netlify + Railway + localhost allowed.
+- **CORS:** Whitelist-based — only Vercel + Railway + localhost allowed.
 - **HTTPS:** Optional enforcement via `ENFORCE_HTTPS` env var.
 - **Monitoring:** Sentry error tracking (via `SENTRY_DSN` env var).
 - **Audit:** `/api/audit-log` tracks all logins, bot starts/stops, token refreshes.
@@ -200,7 +200,7 @@ The dashboard includes a built-in AI assistant powered by Google Gemini 2.5 Flas
 | File | Purpose |
 |------|---------|
 | `webapp.py` | Backend API (Flask) — 35+ authenticated routes at `/api/v1/` + `/api/` |
-| `frontend/index.html` | Dashboard UI — deploy on Netlify |
+| `frontend/index.html` | Dashboard UI — deploy on Vercel |
 | `goethe_scraper.py` | Live exam schedule scraper — parses goethe.de for exam dates, reg openings & prices (A1/B1) across Karachi, Lahore, Islamabad. Prices are JS-rendered, uses maintained PRICE_MAP |
 | `booking_helper.py` | Core bot engine — Selenium automation |
 | `circuit_breaker.py` | Stops hammering on 503/block — 15 min cooldown |
@@ -254,10 +254,10 @@ k6 run tests/k6_load.js        # load testing (requires k6)
 | Workflow | Trigger | What It Does |
 |----------|---------|-------------|
 | Smoke | push + PR | Starts server, checks health + login |
-| Accessibility | weekly (Mon) | axe-core scan of Netlify frontend |
+| Accessibility | weekly (Mon) | axe-core scan of Vercel frontend |
 | pip-audit | on PR | Security vulnerability scan |
 | Dependabot | weekly | Auto-opens PRs for outdated deps |
-| Deploy | push to main | Deploys to Railway + Netlify with health gate |
+| Deploy | push to main | Deploys to Railway + Vercel with health gate |
 
 | Module | Tests |
 |--------|-------|
@@ -273,10 +273,10 @@ k6 run tests/k6_load.js        # load testing (requires k6)
 
 ## Deploy Online
 
-### Frontend → Netlify (Free)
-**Live:** [goethe-booking-dashboard.netlify.app](https://goethe-booking-dashboard.netlify.app)
+### Frontend → Vercel (Free)
+**Live:** [goethe-booking-dashboard.vercel.app](https://goethe-booking-dashboard.vercel.app)
 
-Drag & drop `frontend/` folder to https://app.netlify.com/drop
+Auto-deploys from GitHub `main` branch via GitHub Actions. Vercel GitHub app recommended for automatic deploy on push.
 
 ### Backend → Railway ($5/mo recommended)
 Push to GitHub → Railway → New Project → Deploy from GitHub repo. Includes Dockerfile.

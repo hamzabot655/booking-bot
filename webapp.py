@@ -5,7 +5,7 @@ Goethe Booking Bot - API Backend
 Flask-based API for the standalone frontend.
 
 Deploy backend anywhere (Railway, Render, Fly.io, VPS).
-Frontend (frontend/index.html) deploys on Netlify.
+Frontend (frontend/index.html) deploys on Vercel.
 
 Usage:
   pip install flask
@@ -192,9 +192,7 @@ if SENTRY_DSN:
 
 # ── Allowed origins for CORS ──
 _ALLOWED_ORIGINS = {
-    "https://goethe-booking-dashboard.netlify.app",
-    "https://incredible-seahorse-66be2b.netlify.app",
-    "https://snazzy-kleicha-1d59fd.netlify.app",
+    "https://goethe-booking-dashboard.vercel.app",
     "https://goethe-booking-bot-production-092f.up.railway.app",
     "https://goethe-booking-bot-production-21af.up.railway.app",
     "http://localhost:3000",
@@ -474,7 +472,7 @@ def add_headers(resp):
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline'; "
         "style-src 'self' 'unsafe-inline'; "
-        "connect-src 'self' https://goethe-booking-dashboard.netlify.app https://incredible-seahorse-66be2b.netlify.app https://snazzy-kleicha-1d59fd.netlify.app; "
+        "connect-src 'self' https://goethe-booking-dashboard.vercel.app; "
         "img-src 'self' data:; "
         "font-src 'self' https://fonts.gstatic.com; "
         "frame-ancestors 'none';"

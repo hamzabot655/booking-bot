@@ -20,21 +20,18 @@ jobs:
       - name: Security audit
         run: pip install pip-audit && pip-audit --desc on 2>&1 || true
 
-  deploy-netlify:
+  deploy-vercel:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy frontend to Netlify
-        uses: nwtgck/actions-netlify@v3.0
-        with:
-          publish-dir: frontend
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Auto-deploy from GitHub Actions"
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+      - name: Deploy frontend to Vercel
+        run: vercel deploy --prod --cwd frontend --token ${{ secrets.VERCEL_TOKEN }}
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
   deploy-railway:
     runs-on: ubuntu-latest
@@ -69,7 +66,7 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d "text=✅ Deploy successful: booking-bot%0ACommit: ${{ github.sha }}%0ARailway: https://goethe-booking-bot-production-21af.up.railway.app%0ANetlify: https://snazzy-kleicha-1d59fd.netlify.app" > /dev/null 2>&1 || true
+            -d "text=✅ Deploy successful: booking-bot%0ACommit: ${{ github.sha }}%0ARailway: https://goethe-booking-bot-production-21af.up.railway.app%0AFrontend: https://goethe-booking-dashboard.vercel.app" > /dev/null 2>&1 || true
       - name: Notify deploy failure
         if: failure()
         run: |
