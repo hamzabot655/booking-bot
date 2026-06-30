@@ -1445,10 +1445,20 @@ def _fill_select_by_visible(driver: webdriver.Chrome, selectors: List[str], valu
     return False
 
 
+def _ensure_session(driver: webdriver.Chrome, student: Dict[str, str],
+                    logger: logging.Logger, step_label: str = "") -> None:
+    """Check if we're on a CAS login page (session expired) and re-login."""
+    if _is_cas_login_page(driver):
+        logger.warning("Session expired during %s — re-logging in", step_label)
+        if not _handle_cas_login_if_needed(driver, student, logger):
+            logger.warning("Re-login failed during %s", step_label)
+
+
 def _fill_step_personal_data_1(driver: webdriver.Chrome, student: Dict[str, str],
                                 logger: logging.Logger) -> bool:
     logger.info("══ Wizard Step 1: Personal Data (Name & Birth) ══")
     try:
+        _ensure_session(driver, student, logger, "Step 1")
         wait_for_document_ready(driver, timeout=30)
         random_human_delay(0.5, 1.5)
 
@@ -1486,6 +1496,7 @@ def _fill_step_personal_data_2(driver: webdriver.Chrome, student: Dict[str, str]
                                 logger: logging.Logger) -> bool:
     logger.info("══ Wizard Step 2: Personal Data (Address & Motivation) ══")
     try:
+        _ensure_session(driver, student, logger, "Step 2")
         wait_for_document_ready(driver, timeout=30)
         random_human_delay(0.5, 1.5)
 
@@ -1518,6 +1529,7 @@ def _fill_step_payment(driver: webdriver.Chrome, student: Dict[str, str],
                         logger: logging.Logger) -> bool:
     logger.info("══ Wizard Step 3: Payment Method ══")
     try:
+        _ensure_session(driver, student, logger, "Step 3")
         wait_for_document_ready(driver, timeout=30)
         random_human_delay(0.5, 1.5)
 
@@ -1551,6 +1563,7 @@ def _fill_step_promo(driver: webdriver.Chrome, student: Dict[str, str],
                       logger: logging.Logger) -> bool:
     logger.info("══ Wizard Step 4: Promotional Code ══")
     try:
+        _ensure_session(driver, student, logger, "Step 4")
         wait_for_document_ready(driver, timeout=30)
         random_human_delay(0.5, 1.5)
 
@@ -1576,6 +1589,7 @@ def _fill_step_review(driver: webdriver.Chrome, student: Dict[str, str],
                        logger: logging.Logger) -> bool:
     logger.info("══ Wizard Step 5: Review & Confirm ══")
     try:
+        _ensure_session(driver, student, logger, "Step 5")
         wait_for_document_ready(driver, timeout=30)
         random_human_delay(0.5, 1.5)
 
