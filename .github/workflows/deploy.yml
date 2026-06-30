@@ -44,17 +44,17 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Link Railway project
-        run: railway link --project df54b489-2cdf-48c4-9d53-1e3886858311
+        run: railway link --project 520adb72-b1f4-4021-8c4b-21ca81f8a901
         env:
           RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
       - name: Deploy to Railway
-        run: railway up --detach --service 0596e8bf-ed43-4033-a585-0c67e7b3a43d
+        run: railway up --detach --service f568e242-4d2a-4b44-8205-07899abfbd26
         env:
           RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
       - name: Health check gate (zero-downtime verification)
         run: |
           for i in $(seq 1 30); do
-            STATUS=$(curl -sf https://goethe-booking-bot-production-092f.up.railway.app/api/health 2>/dev/null | python -c "import sys,json; print(json.load(sys.stdin).get('status','down'))" 2>/dev/null || echo "down")
+            STATUS=$(curl -sf https://goethe-booking-bot-production-21af.up.railway.app/api/health 2>/dev/null | python -c "import sys,json; print(json.load(sys.stdin).get('status','down'))" 2>/dev/null || echo "down")
             if [ "$STATUS" = "ok" ]; then
               echo "Health check passed (attempt $i)"
               exit 0
@@ -69,7 +69,7 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d "text=✅ Deploy successful: goethe-booking-bot%0ACommit: ${{ github.sha }}%0ARailway: https://goethe-booking-bot-production-092f.up.railway.app%0ANetlify: https://goethe-booking-dashboard.netlify.app" > /dev/null 2>&1 || true
+            -d "text=✅ Deploy successful: booking-bot%0ACommit: ${{ github.sha }}%0ARailway: https://goethe-booking-bot-production-21af.up.railway.app%0ANetlify: https://snazzy-kleicha-1d59fd.netlify.app" > /dev/null 2>&1 || true
       - name: Notify deploy failure
         if: failure()
         run: |

@@ -29,12 +29,11 @@ railway service redeploy --yes
 |---------|-----|
 | Frontend | https://snazzy-kleicha-1d59fd.netlify.app |
 | Backend | https://goethe-booking-bot-production-21af.up.railway.app |
-| GitHub | https://github.com/abeermeer/goethe-booking-bot (public, new home) |
-| Old GitHub (fork) | https://github.com/hamzabot655/goethe-booking-bot (private fork, may be stale) |
+| GitHub | https://github.com/hamzabot655/booking-bot (new repo) |
 
 ## Credentials
 - **Auth login**: AUTH_EMAIL=`hamzarafiq655@gmail.com` / AUTH_PASSWORD=`Hamza@123` (Railway env vars)
-- **ScrapingBee API**: RQS2P8K2SVGO15HH5X9C17P006KS9RCULD3M3X4URWZ7XEPVFU4GMG5B3U6DK2470PUG0XREZKVKSN3P (set via `SCRAPINGBEE_API_KEY` env var)
+- **ScrapingBee API**: RZCBXGW6IV3KM9YWEDPHGYG5GZGOKBUEM1Z2YC3XQIZYYMHVTI3LX6X3J0RRP9FXLTBJCIAQP1GWA3R1 (set via `SCRAPINGBEE_API_KEY` env var)
 - **Google Sheet ID**: `1C7VD_52VnGmJqYSQGtdNzBZGekvCRHWUrdZCgTvvhAY` (`GOOGLE_SHEET_ID` env var)
 - **Google Service Account**: Base64 in `GOOGLE_SERVICE_ACCOUNT_B64` env var
 
