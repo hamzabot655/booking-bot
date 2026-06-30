@@ -224,13 +224,16 @@ PROCESS_START_TIME = time.time()
 def _make_token(email: str) -> str:
     return db.create_session(email, expiry_hours=24)
 
-def _check_auth():
-    auth = request.headers.get("Authorization", "")
-    token = auth.removeprefix("Bearer ").strip()
+def validate_token(token: str) -> bool:
     if not token:
         return False
     email = db.validate_session(token)
     return email == AUTH_EMAIL if email else False
+
+def _check_auth():
+    auth = request.headers.get("Authorization", "")
+    token = auth.removeprefix("Bearer ").strip()
+    return validate_token(token)
 
 # ── Global state ──
 bot_stop_event = threading.Event()
