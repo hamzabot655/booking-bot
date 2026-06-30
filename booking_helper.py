@@ -1366,6 +1366,11 @@ def _is_wicket_page(driver: webdriver.Chrome) -> bool:
     return False
 
 
+def _is_cas_login_page(driver: webdriver.Chrome) -> bool:
+    url = driver.current_url.lower()
+    return "login.goethe.de" in url or "cas/login" in url
+
+
 def _handle_cas_login_if_needed(driver: webdriver.Chrome, student: Dict[str, str],
                                  logger: logging.Logger) -> bool:
     url = driver.current_url.lower()
@@ -1604,6 +1609,74 @@ def _fill_step_review(driver: webdriver.Chrome, student: Dict[str, str],
         return False
 
 
+# ── Profile URLs for post-booking verification ──
+PROFILE_URLS = [
+    "https://mein.goethe.de/",
+    "https://mein.goethe.de/booking",
+]
+
+
+def verify_booking(driver: webdriver.Chrome, student: Dict[str, str],
+                   reference: str, logger: logging.Logger) -> Dict[str, str]:
+    """Navigate to Goethe profile page and verify the booking appears.
+
+    Tries known profile URLs, searches for the reference number or
+    booking indicators. Returns dict with verification status.
+    """
+    result = {"verified": False, "profile_screenshot": "", "detail": ""}
+    name = student.get("name", "Unknown")
+
+    timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_name = re.sub(r"[^a-zA-Z0-9]", "_", name)
+
+    for url in PROFILE_URLS:
+        try:
+            logger.info("Verification: navigating to %s", url)
+            driver.get(url)
+            wait_for_document_ready(driver, timeout=20)
+            random_human_delay(1.0, 2.0)
+
+            if _is_cas_login_page(driver):
+                logger.info("Verification: CAS login page at %s — skipping", url)
+                result["detail"] = f"CAS login required at {url}"
+                continue
+
+            body_text = driver.find_element(By.TAG_NAME, "body").text.lower()
+
+            profile_screenshot = f"profile_{safe_name}_{timestamp}.png"
+            try:
+                driver.save_screenshot(profile_screenshot)
+                result["profile_screenshot"] = profile_screenshot
+            except Exception:
+                pass
+
+            if reference and reference.lower() in body_text:
+                logger.info("✅ Verification PASSED — reference '%s' found in profile", reference)
+                result["verified"] = True
+                result["detail"] = f"Reference found on {url}"
+                return result
+
+            booking_keywords = ["booking", "buchung", "order", "bestellung",
+                                "registered", "angemeldet", "exam", "prüfung",
+                                "registration", "anmeldung"]
+            found_keywords = [kw for kw in booking_keywords if kw in body_text]
+            if found_keywords:
+                result["detail"] = f"Booking keywords found at {url}: {', '.join(found_keywords)}"
+                result["verified"] = True
+                return result
+
+            logger.info("Verification: no booking data found at %s", url)
+
+        except Exception as exc:
+            logger.warning("Verification error at %s: %s", url, exc)
+            result["detail"] = f"Error at {url}: {str(exc)[:100]}"
+
+    if not result.get("detail"):
+        result["detail"] = "No profile URL responded with booking data"
+
+    return result
+
+
 def run_student_flow(student: Dict[str, str], use_headless: bool, logger: logging.Logger,
                      stop_event: threading.Event = None, proxy: Optional[str] = None,
                      immediate: bool = False) -> Dict[str, str]:
@@ -1614,7 +1687,8 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
     3. Click through 5-step Wicket wizard (Personal Data × 2 → Payment → Promo → Review)
     4. Handle CAS login if session expired
     5. Screenshot confirmation + parse reference number
-    6. Update DB logs, status, checkpoint at each milestone
+    6. Verify booking on profile page (navigate to mein.goethe.de)
+    7. Update DB logs, status, checkpoint at each milestone
 
     Returns dict with status: booked/failed/stopped/error and details.
     """
@@ -1919,6 +1993,19 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
             db.add_log(sk, level, f"✅✅ BOOKING CONFIRMED — Ref: {ref}")
         else:
             db.add_log(sk, level, f"✅ Flow complete — status: {result['status']}")
+
+        random_human_delay(1.0, 2.0)
+        verification = verify_booking(driver, student, ref, logger)
+        result["verified"] = verification["verified"]
+        result["profile_screenshot"] = verification.get("profile_screenshot", "")
+        if verification["verified"]:
+            result["status"] = "verified"
+            db.add_log(sk, level, f"✅✅ BOOKING VERIFIED on profile page — Ref: {ref}")
+        else:
+            detail = verification.get("detail", "no detail")
+            logger.warning("Post-booking verification: %s", detail)
+            db.add_log(sk, level, f"⚠️ Booking unverifiable — {detail}")
+
         db.clear_checkpoint(student_key)
 
         if assigned_proxy:

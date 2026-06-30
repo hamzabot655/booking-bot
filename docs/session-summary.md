@@ -1,3 +1,19 @@
+# Session Summary — June 24, 2026 — Railway Paid Plan Confirmed, Auto-Connect Fix
+
+## Railway Paid Plan — Up Time Confirmed
+- **Client paid Railway plan** → bot runs 24/7 on cloud servers
+- Laptop off ho ya sleep mode, bot chalta rahe ga
+- No cold starts, no downtime, no hibernation
+- Railway handles all infrastructure — client doesn't need to do anything
+
+## Auto-Connect Frontend Fix (Asked but Not Done Yet)
+- **Problem:** `#backendUrl` input field + "Connect" button har baar dikhta hai
+- **Current behavior:** URL already saved to `localStorage` on connect (line 1234), and if `authToken` exists → `connectBackend()` called automatically on page load (lines 1226-1228)
+- **But** input field still shows in conn-bar every time
+- **Fix planned but NOT yet applied:** Remove `#backendUrl` input + "Connect" button from conn-bar; auto-connect on page load from saved URL or `DEFAULT_BACKEND`; show connection status as text only
+
+---
+
 # Session Summary — June 22, 2026 (Updated)
 
 ## Fixes — Delete Student, Sheets 429, Schedule Speed
