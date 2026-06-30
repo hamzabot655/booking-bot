@@ -1293,11 +1293,34 @@ def _fill_attempt(driver: webdriver.Chrome, student: Dict[str, str], logger: log
             return True
         else:
             logger.warning("Submit button not found! Dumping page for debugging.")
-            driver.save_screenshot("debug_no_submit.png")
+            save_failure_evidence(driver, "debug_no_submit")
             return False
     except Exception as exc:
         logger.exception("Form fill error: %s", exc)
         return False
+
+
+def save_failure_evidence(driver: webdriver.Chrome, label: str,
+                          driver_available: bool = True) -> None:
+    """Save screenshot + page source for debugging failures.
+
+    label is used as prefix (e.g. 'step1', 'error'). Files are written
+    to the current directory with timestamp. Safe to call when
+    driver is None or has crashed — set driver_available=False to skip.
+    """
+    if not driver_available or driver is None:
+        return
+    timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    try:
+        driver.save_screenshot(f"{label}_{timestamp}.png")
+    except Exception:
+        pass
+    try:
+        html = driver.page_source
+        with open(f"{label}_{timestamp}.html", "w", encoding="utf-8") as f:
+            f.write(html)
+    except Exception:
+        pass
 
 
 def capture_confirmation(driver: webdriver.Chrome, student_name: str, logger: logging.Logger) -> Dict[str, str]:
@@ -1483,11 +1506,12 @@ def _fill_step_personal_data_1(driver: webdriver.Chrome, student: Dict[str, str]
             _fill_text_input(driver, ["contact_number"], contact_number, logger)
 
         if not _click_continue_wizard(driver, logger):
-            driver.save_screenshot("debug_step1_no_continue.png")
+            save_failure_evidence(driver, "debug_step1_no_continue")
             return False
         logger.info("★ Step 1 done")
         return True
     except Exception as exc:
+        save_failure_evidence(driver, "debug_step1_error")
         logger.exception("Step 1 error: %s", exc)
         return False
 
@@ -1516,11 +1540,12 @@ def _fill_step_personal_data_2(driver: webdriver.Chrome, student: Dict[str, str]
         _fill_select_by_visible(driver, ["motivation_dropdown"], student.get("motivation", ""), logger)
 
         if not _click_continue_wizard(driver, logger):
-            driver.save_screenshot("debug_step2_no_continue.png")
+            save_failure_evidence(driver, "debug_step2_no_continue")
             return False
         logger.info("★ Step 2 done")
         return True
     except Exception as exc:
+        save_failure_evidence(driver, "debug_step2_error")
         logger.exception("Step 2 error: %s", exc)
         return False
 
@@ -1550,11 +1575,12 @@ def _fill_step_payment(driver: webdriver.Chrome, student: Dict[str, str],
                         break
 
         if not _click_continue_wizard(driver, logger):
-            driver.save_screenshot("debug_step3_no_continue.png")
+            save_failure_evidence(driver, "debug_step3_no_continue")
             return False
         logger.info("★ Step 3 done")
         return True
     except Exception as exc:
+        save_failure_evidence(driver, "debug_step3_error")
         logger.exception("Step 3 error: %s", exc)
         return False
 
@@ -1576,11 +1602,12 @@ def _fill_step_promo(driver: webdriver.Chrome, student: Dict[str, str],
                 random_human_delay(0.3, 0.8)
 
         if not _click_continue_wizard(driver, logger):
-            driver.save_screenshot("debug_step4_no_continue.png")
+            save_failure_evidence(driver, "debug_step4_no_continue")
             return False
         logger.info("★ Step 4 done")
         return True
     except Exception as exc:
+        save_failure_evidence(driver, "debug_step4_error")
         logger.exception("Step 4 error: %s", exc)
         return False
 
@@ -1608,7 +1635,7 @@ def _fill_step_review(driver: webdriver.Chrome, student: Dict[str, str],
 
         if confirm_btn is None:
             logger.warning("No confirm button found on review page")
-            driver.save_screenshot("debug_step5_no_confirm.png")
+            save_failure_evidence(driver, "debug_step5_no_confirm")
             return False
 
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", confirm_btn)
@@ -1925,7 +1952,7 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
             db.add_log(sk, level, " Wizard Step 1: Personal Data (Name & Birth)")
             if not _fill_step_personal_data_1(driver, student, logger):
                 db.add_log(sk, level, "❌ Step 1 (Name & Birth) failed")
-                driver.save_screenshot(f"debug_step1_{name}.png")
+                save_failure_evidence(driver, f"debug_step1_{name}")
                 raise RuntimeError("Step 1 (Name & Birth) failed")
             db.add_log(sk, level, "✅ Step 1 done — Name & Birth")
             db.save_checkpoint(student_key, 2)
@@ -1941,7 +1968,7 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
             db.add_log(sk, level, " Wizard Step 2: Address & Motivation")
             if not _fill_step_personal_data_2(driver, student, logger):
                 db.add_log(sk, level, "❌ Step 2 (Address & Motivation) failed")
-                driver.save_screenshot(f"debug_step2_{name}.png")
+                save_failure_evidence(driver, f"debug_step2_{name}")
                 raise RuntimeError("Step 2 (Address & Motivation) failed")
             db.add_log(sk, level, "✅ Step 2 done — Address & Motivation")
             db.save_checkpoint(student_key, 3)
@@ -1957,7 +1984,7 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
             db.add_log(sk, level, " Wizard Step 3: Payment Method")
             if not _fill_step_payment(driver, student, logger):
                 db.add_log(sk, level, "❌ Step 3 (Payment) failed")
-                driver.save_screenshot(f"debug_step3_{name}.png")
+                save_failure_evidence(driver, f"debug_step3_{name}")
                 raise RuntimeError("Step 3 (Payment) failed")
             db.add_log(sk, level, "✅ Step 3 done — Payment method selected")
             db.save_checkpoint(student_key, 4)
@@ -1973,7 +2000,7 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
             db.add_log(sk, level, " Wizard Step 4: Promotional Code")
             if not _fill_step_promo(driver, student, logger):
                 db.add_log(sk, level, "❌ Step 4 (Promo) failed")
-                driver.save_screenshot(f"debug_step4_{name}.png")
+                save_failure_evidence(driver, f"debug_step4_{name}")
                 raise RuntimeError("Step 4 (Promo) failed")
             db.add_log(sk, level, "✅ Step 4 done — Promo code")
             db.save_checkpoint(student_key, 5)
@@ -1989,7 +2016,7 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
             db.add_log(sk, level, " Wizard Step 5: Review & Confirm")
             if not _fill_step_review(driver, student, logger):
                 db.add_log(sk, level, "❌ Step 5 (Review & Confirm) failed")
-                driver.save_screenshot(f"debug_step5_{name}.png")
+                save_failure_evidence(driver, f"debug_step5_{name}")
                 raise RuntimeError("Step 5 (Review & Confirm) failed")
             db.add_log(sk, level, "✅ Step 5 done — Booking submitted!")
             db.save_checkpoint(student_key, 6)
@@ -2039,11 +2066,7 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
         if assigned_proxy:
             PROXY_ROTATOR.mark_failed(assigned_proxy)
         notify(f"❌ Booking failed: {name}", msg, logger)
-        if driver:
-            try:
-                driver.save_screenshot(f"error_{name}.png")
-            except Exception:
-                pass
+        save_failure_evidence(driver, f"error_{name}")
     finally:
         if driver is not None:
             try:
