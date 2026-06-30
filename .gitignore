@@ -22,3 +22,5 @@ presentation/
 *.mp4
 *.pptx
 goethe-bot-sa.json
+.vercel
+.env*

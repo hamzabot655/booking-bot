@@ -117,18 +117,6 @@ def init_db():
 
 def add_student(student: Dict[str, str]) -> int:
     conn = _get_conn()
-    conn.execute("DELETE FROM students")
-    for s in students:
-        conn.execute(
-            "INSERT INTO students (name, email, password, level, city, booking_datetime, status, first_name, surname, dob, contact_number, country, postal_code, street, house_number, additional_address, location_city, phone_prefix, phone, place_of_birth, motivation, promo_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (s.get("name", ""), s.get("email", ""), s.get("password", ""), s.get("level", s.get("exam_level", "")), s.get("city", ""), s.get("booking_datetime", ""), "pending",
-             s.get("first_name", ""), s.get("surname", ""), s.get("dob", ""), s.get("contact_number", ""), s.get("country", ""), s.get("postal_code", ""), s.get("street", ""), s.get("house_number", ""), s.get("additional_address", ""), s.get("location_city", ""), s.get("phone_prefix", ""), s.get("phone", ""), s.get("place_of_birth", ""), s.get("motivation", ""), s.get("promo_code", "")),
-        )
-    conn.commit()
-
-
-def add_student(student: Dict[str, str]) -> int:
-    conn = _get_conn()
     cur = conn.execute(
         "INSERT INTO students (name, email, password, level, city, booking_datetime, status, first_name, surname, dob, contact_number, country, postal_code, street, house_number, additional_address, location_city, phone_prefix, phone, place_of_birth, motivation, promo_code) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (student.get("name", ""), student.get("email", ""), student.get("password", ""),

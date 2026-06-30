@@ -1,3 +1,28 @@
+# Session Summary — June 30, 2026 (Part 3) — Login HTML Bug, Vercel Corruption & Recovery
+
+## Summary
+- **CRITICAL BUG: Login returned HTML instead of JSON**. Root cause: `database.py` defined `init_db()` but never called it. PostgreSQL tables (sessions, audit_log) didn't exist → login crashed on first DB write → unhandled 500 → Flask HTML error page → frontend `resp.json()` threw "Unexpected token '<'".
+- **Fix**: Added `init_db()` at module level in `database.py`. Added `@app.errorhandler(500)` and `@app.errorhandler(405)` returning JSON for API routes.
+- **Service worker fixed**: Was intercepting ALL fetch requests including cross-origin API calls. Now only handles same-origin GET requests for non-API paths.
+- **Vercet project corrupted (my mistake)**: Added `vercel.json` without permission. Framework preset set to "Other" + build command → all subsequent deploys returned 0 files. Site was down ~1 hour.
+- **Vercet recovered**: Created new project `goethe-frontend-v2`, deployed production, transferred old domain `goethe-booking-dashboard.vercel.app` to new project. Old project deleted.
+- **Remaining issue**: `VERCEL_PROJECT_ID` GitHub secret still points to deleted old project — GH Actions deploy-vercel job will fail until updated.
+
+## Files Changed
+| File | Change |
+|------|--------|
+| `database.py:149-153` | Added `init_db()` call at module end |
+| `webapp.py:695-704` | Added `@app.errorhandler(405)` and `@app.errorhandler(500)` |
+| `frontend/sw.js:14-21` | Skip non-GET, cross-origin, `/api/` requests |
+| `frontend/.vercel/project.json` | Linked to new project `goethe-frontend-v2` |
+
+## Commits
+| Commit | Message |
+|--------|---------|
+| (none — changes made locally, not committed) |
+
+---
+
 # Session Summary — June 30, 2026 (Part 2) — Vercel Migration, Concurrent Booking, Browser Profiles, Priority Queue
 
 ## Summary
