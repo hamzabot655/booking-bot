@@ -692,6 +692,18 @@ def api_404(e):
         return jsonify({"ok": False, "error": "Not found"}), 404
 
 
+@app.errorhandler(405)
+def api_405(e):
+    if request.path.startswith("/api/"):
+        return jsonify({"ok": False, "error": "Method not allowed"}), 405
+
+
+@app.errorhandler(500)
+def api_500(e):
+    if request.path.startswith("/api/"):
+        return jsonify({"ok": False, "error": "Internal server error"}), 500
+
+
 @bp.route("/students", methods=["GET"])
 @require_auth
 def api_get_students():

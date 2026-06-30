@@ -150,6 +150,9 @@ def init_db():
     Base.metadata.create_all(bind=engine)
 
 
+init_db()
+
+
 # ── Session management ──
 
 def create_session(email: str, expiry_hours: int = 24) -> str:
