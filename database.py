@@ -212,15 +212,22 @@ def delete_state(key: str):
 
 # ── Checkpoint management ──
 
-def save_checkpoint(booking_key: str, sequence_id: int, url: str):
-    set_state(f"checkpoint_{booking_key}", json.dumps({"seq": sequence_id, "url": url}))
+def save_checkpoint(student_key: str, step: int):
+    # NOTE: signature must mirror db.py (key, step:int) — booking_helper calls
+    # save_checkpoint(student_key, N) and treats get_checkpoint() as an int.
+    set_state(f"checkpoint_{student_key}", str(step))
 
 
-def get_checkpoint(booking_key: str) -> Optional[Dict]:
-    raw = get_state(f"checkpoint_{booking_key}")
-    if raw:
-        return json.loads(raw)
-    return None
+def get_checkpoint(student_key: str) -> int:
+    raw = get_state(f"checkpoint_{student_key}", "0")
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        # Tolerate the old JSON form {"seq": N, "url": ...} if any rows linger.
+        try:
+            return int(json.loads(raw).get("seq", 0))
+        except Exception:
+            return 0
 
 
 def clear_checkpoint(booking_key: str):
@@ -347,13 +354,31 @@ def get_students() -> List[Dict]:
         } for r in rows]
 
 
-def update_student_status(student_id: int, status: str, result: Optional[Dict] = None):
+def update_student_status(student_key: str, status: str, result: Optional[Dict] = None):
+    # Callers (webapp.run_students_web, booking_helper) pass the composite
+    # "name|level|city" key — mirror db.py and match on those columns, not id.
+    parts = str(student_key).split("|")
     with SessionLocal() as session:
-        student = session.query(StudentModel).filter(StudentModel.id == student_id).first()
-        if student:
+        q = session.query(StudentModel)
+        if len(parts) == 3:
+            name, level, city = parts
+            q = q.filter(
+                StudentModel.name == name,
+                StudentModel.level == level,
+                StudentModel.city == city,
+            )
+        elif str(student_key).isdigit():
+            # Backward-compat: allow an integer id if ever passed.
+            q = q.filter(StudentModel.id == int(student_key))
+        else:
+            return
+        updated = False
+        for student in q.all():
             student.status = status
-            if result:
+            if result is not None:
                 student.result_json = json.dumps(result)
+            updated = True
+        if updated:
             session.commit()
 
 

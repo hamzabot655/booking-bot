@@ -16,7 +16,9 @@ from pathlib import Path
 
 PROJECT_DIR = Path(__file__).parent.parent
 DEFAULT_BACKUP_DIR = PROJECT_DIR / "backups"
-DB_PATH = PROJECT_DIR / "booking_bot.db"
+# NOTE: this only covers the local SQLite path (db.py uses bot_data.db).
+# Production runs on Railway Postgres — see the automated pg_dump task for that.
+DB_PATH = PROJECT_DIR / "bot_data.db"
 CONFIG_PATH = PROJECT_DIR / "config.csv"
 
 
@@ -27,8 +29,14 @@ def backup(target_dir: Path) -> Path:
     backup_subdir.mkdir()
 
     if DB_PATH.exists():
-        shutil.copy2(DB_PATH, backup_subdir / "booking_bot.db")
-        print(f"  DB:  {DB_PATH} → {backup_subdir / 'booking_bot.db'}")
+        shutil.copy2(DB_PATH, backup_subdir / DB_PATH.name)
+        print(f"  DB:  {DB_PATH} → {backup_subdir / DB_PATH.name}")
+        # Include WAL/SHM sidecars so an in-flight DB restores consistently.
+        for suffix in ("-wal", "-shm"):
+            sidecar = DB_PATH.with_name(DB_PATH.name + suffix)
+            if sidecar.exists():
+                shutil.copy2(sidecar, backup_subdir / sidecar.name)
+                print(f"  DB:  {sidecar} → {backup_subdir / sidecar.name}")
     else:
         print("  DB:  (not found, skipped)")
 
@@ -47,12 +55,16 @@ def restore(source_dir: Path) -> None:
         print(f"Error: {source_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    db_src = source_dir / "booking_bot.db"
+    db_src = source_dir / DB_PATH.name
     csv_src = source_dir / "config.csv"
 
     if db_src.exists():
         shutil.copy2(db_src, DB_PATH)
         print(f"  DB restored: {db_src} → {DB_PATH}")
+        for suffix in ("-wal", "-shm"):
+            sidecar = source_dir / (DB_PATH.name + suffix)
+            if sidecar.exists():
+                shutil.copy2(sidecar, DB_PATH.with_name(DB_PATH.name + suffix))
     if csv_src.exists():
         shutil.copy2(csv_src, CONFIG_PATH)
         print(f"  CSV restored: {csv_src} → {CONFIG_PATH}")
