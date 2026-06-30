@@ -340,7 +340,8 @@ def deadman_alert():
     bot.notify("Dead Man Switch", "Bot heartbeat stopped. Process may be hung or crashed.", master_logger)
 
 REQUEUE_MAX_RETRIES = int(os.environ.get("REQUEUE_MAX_RETRIES", "3"))
-REQUEUE_DELAY_SECONDS = int(os.environ.get("REQUEUE_DELAY_SECONDS", "300"))  # 5 min
+REQUEUE_DELAY_SECONDS = int(os.environ.get("REQUEUE_DELAY_SECONDS", "300"))
+MAX_CONCURRENT = int(os.environ.get("MAX_CONCURRENT", "2"))  # 5 min
 
 
 def run_students_web(students: List[Dict], headless: bool, immediate: bool = False):
@@ -355,6 +356,7 @@ def run_students_web(students: List[Dict], headless: bool, immediate: bool = Fal
 
     threads = []
     results_lock = threading.Lock()
+    concurrency_sem = threading.Semaphore(MAX_CONCURRENT)
     requeue_counts: Dict[str, int] = {}
     for s in students:
         requeue_counts[_student_key(s)] = 0
@@ -365,66 +367,70 @@ def run_students_web(students: List[Dict], headless: bool, immediate: bool = Fal
         level = s.get("level", s.get("exam_level", "?"))
         student_logger = setup_web_logger(f"bot_{name}_{level}")
 
-        while True:
-            if bot_stop_event.is_set():
-                student_status[key] = {"status": "Stopped", "color": "danger", "details": "Cancelled by user"}
-                return
-
-            student_status[key] = {"status": "Waiting...", "color": "warning", "details": "Polling for slot"}
-            result = bot.smart_retry(
-                s, use_headless=headless,
-                logger=student_logger,
-                stop_event=bot_stop_event,
-                immediate=immediate,
-            )
-
-            status = result.get("status", "failed")
-            if status == "stopped":
-                student_status[key] = {"status": "Stopped", "color": "danger", "details": "Cancelled by user"}
-                return
-
-            if status not in ("failed", "error"):
-                with results_lock:
-                    student_results.append(result)
-                db.update_student_status(key, status, result)
-                try:
-                    ws_broadcaster.push({"type": "status", "name": name, "status": status, "time": time.time()})
-                except Exception:
-                    pass
-
-                if status == "confirmed":
-                    student_status[key] = {"status": "Confirmed!", "color": "success", "details": f"Ref: {result.get('reference', 'N/A')}"}
-                elif status == "submitted":
-                    student_status[key] = {"status": "Submitted", "color": "success", "details": "Form submitted"}
-                elif status == "verified":
-                    student_status[key] = {"status": "Verified", "color": "success", "details": f"Ref: {result.get('reference', 'N/A')}"}
-                else:
-                    student_status[key] = {"status": status, "color": "success", "details": ""}
-                return
-
-            requeue_counts[key] = requeue_counts.get(key, 0) + 1
-            if requeue_counts[key] > REQUEUE_MAX_RETRIES:
-                master_logger.warning("Re-queue limit reached for %s (%d attempts) — giving up", name, requeue_counts[key])
-                student_status[key] = {"status": "Failed", "color": "danger", "details": f"Failed after {requeue_counts[key]} attempts"}
-                with results_lock:
-                    student_results.append(result)
-                db.update_student_status(key, "failed", result)
-                return
-
-            master_logger.warning("Re-queuing %s (attempt %d/%d) — waiting %ds",
-                                  name, requeue_counts[key], REQUEUE_MAX_RETRIES, REQUEUE_DELAY_SECONDS)
-            student_status[key] = {"status": "Re-queued", "color": "warning", "details": f"Retry {requeue_counts[key]}/{REQUEUE_MAX_RETRIES} in {REQUEUE_DELAY_SECONDS}s"}
-            try:
-                ws_broadcaster.push({"type": "status", "name": name, "status": "requeued", "time": time.time(),
-                                     "attempt": requeue_counts[key]})
-            except Exception:
-                pass
-
-            for _ in range(REQUEUE_DELAY_SECONDS):
+        concurrency_sem.acquire()
+        try:
+            while True:
                 if bot_stop_event.is_set():
                     student_status[key] = {"status": "Stopped", "color": "danger", "details": "Cancelled by user"}
                     return
-                time.sleep(1)
+
+                student_status[key] = {"status": "Waiting...", "color": "warning", "details": "Polling for slot"}
+                result = bot.smart_retry(
+                    s, use_headless=headless,
+                    logger=student_logger,
+                    stop_event=bot_stop_event,
+                    immediate=immediate,
+                )
+
+                status = result.get("status", "failed")
+                if status == "stopped":
+                    student_status[key] = {"status": "Stopped", "color": "danger", "details": "Cancelled by user"}
+                    return
+
+                if status not in ("failed", "error"):
+                    with results_lock:
+                        student_results.append(result)
+                    db.update_student_status(key, status, result)
+                    try:
+                        ws_broadcaster.push({"type": "status", "name": name, "status": status, "time": time.time()})
+                    except Exception:
+                        pass
+
+                    if status == "confirmed":
+                        student_status[key] = {"status": "Confirmed!", "color": "success", "details": f"Ref: {result.get('reference', 'N/A')}"}
+                    elif status == "submitted":
+                        student_status[key] = {"status": "Submitted", "color": "success", "details": "Form submitted"}
+                    elif status == "verified":
+                        student_status[key] = {"status": "Verified", "color": "success", "details": f"Ref: {result.get('reference', 'N/A')}"}
+                    else:
+                        student_status[key] = {"status": status, "color": "success", "details": ""}
+                    return
+
+                requeue_counts[key] = requeue_counts.get(key, 0) + 1
+                if requeue_counts[key] > REQUEUE_MAX_RETRIES:
+                    master_logger.warning("Re-queue limit reached for %s (%d attempts) — giving up", name, requeue_counts[key])
+                    student_status[key] = {"status": "Failed", "color": "danger", "details": f"Failed after {requeue_counts[key]} attempts"}
+                    with results_lock:
+                        student_results.append(result)
+                    db.update_student_status(key, "failed", result)
+                    return
+
+                master_logger.warning("Re-queuing %s (attempt %d/%d) — waiting %ds",
+                                      name, requeue_counts[key], REQUEUE_MAX_RETRIES, REQUEUE_DELAY_SECONDS)
+                student_status[key] = {"status": "Re-queued", "color": "warning", "details": f"Retry {requeue_counts[key]}/{REQUEUE_MAX_RETRIES} in {REQUEUE_DELAY_SECONDS}s"}
+                try:
+                    ws_broadcaster.push({"type": "status", "name": name, "status": "requeued", "time": time.time(),
+                                         "attempt": requeue_counts[key]})
+                except Exception:
+                    pass
+
+                for _ in range(REQUEUE_DELAY_SECONDS):
+                    if bot_stop_event.is_set():
+                        student_status[key] = {"status": "Stopped", "color": "danger", "details": "Cancelled by user"}
+                        return
+                    time.sleep(1)
+        finally:
+            concurrency_sem.release()
 
     for s in students:
         key = _student_key(s)
