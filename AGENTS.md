@@ -15,10 +15,8 @@ Selenium bot that auto-books Goethe Institut exam slots for Pakistan region. Web
 # Deploy backend to Railway (auto-deploys from GitHub main; manual)
 railway up -d C:\Users\brosp\Downloads\goethe-bot
 
-# Deploy frontend to Netlify
-npx netlify deploy --prod --dir=frontend --site 0d638a6c-008a-402b-b8a9-7f6a4541980e
-# or from project dir:
-npx netlify deploy --prod --dir=frontend
+# Deploy frontend to Vercel
+vercel deploy --prod --cwd frontend --token $VERCEL_TOKEN
 
 # Set Railway env var
 railway variable set KEY=VALUE
@@ -34,7 +32,7 @@ railway service redeploy --yes
 ## URLs
 | Service | URL |
 |---------|-----|
-| Frontend | https://snazzy-kleicha-1d59fd.netlify.app |
+| Frontend | https://goethe-booking-dashboard.vercel.app |
 | Backend | https://goethe-booking-bot-production-21af.up.railway.app |
 | GitHub | https://github.com/hamzabot655/booking-bot (new repo) |
 
@@ -63,7 +61,7 @@ railway service redeploy --yes
 | `frontend/index.html` | Single-page dashboard — 6 sections (Dashboard, Controls, Schedule, Students, Logs, Settings) |
 | `Dockerfile` | Railway deployment — Python + Chrome + Playwright |
 | `pk_fallback.json` | Offline exam schedule data (10 entries, Jul-Oct 2026) |
-| `netlify.toml` | Netlify config — publishes `frontend/` directory |
+| `.vercel/` | Vercel project link config |
 
 ## Architecture
 
@@ -127,7 +125,7 @@ railway service redeploy --yes
 ## Deployment Notes
 - Railway auto-deploys from GitHub `main` branch pushes (uses Railway API token from GitHub secret)
 - Railway env vars picked up on next deploy (not hot-reloaded)
-- **Netlify blocked** — account credit exceeded, no frontend deploys until credits added
+- **Vercel frontend** — https://goethe-booking-dashboard.vercel.app
 - Frontend is pure HTML/CSS/JS — no build step needed
 - Backend uses **Postgres** (`database.py`) via `DATABASE_URL` — data persists across restarts
 - Local dev uses SQLite (`db.py`) when `DATABASE_URL` not set
@@ -140,7 +138,8 @@ railway service redeploy --yes
 | `AUTH_EMAIL` | `hamzarafiq655@gmail.com` |
 | `AUTH_PASSWORD` | `REDACTED` |
 | `GOOGLE_SERVICE_ACCOUNT_B64` | Base64-encoded service account JSON |
-| `NETLIFY_AUTH_TOKEN` | `nfp_va8j6vHyZvxRpkU2cajqn4MhRBkcAGvU87f1` |
+| `VERCEL_ORG_ID` | `team_e9xBdY5fOoQQDcyJtoPIkfAW` |
+| `VERCEL_PROJECT_ID` | `prj_c6bzqPz9vMhYVl24HPhtKYLbKqzg` |
 | `ACTIVE_HOURS_START` | `07:00` (PKT, default) |
 | `ACTIVE_HOURS_END` | `20:00` (PKT, default) |
 | `REQUEUE_MAX_RETRIES` | `3` (default) |

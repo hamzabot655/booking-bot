@@ -1,4 +1,45 @@
-# Session Summary — June 30, 2026 — All 5 Critical Fixes, psycopg2 Deploy Fix
+# Session Summary — June 30, 2026 (Part 2) — Vercel Migration, Concurrent Booking, Browser Profiles, Priority Queue
+
+## Summary
+- **Frontend migrated from Netlify → Vercel**: New URL `https://goethe-booking-dashboard.vercel.app`. Netlify credit limit exhausted.
+- **Vercel GitHub Actions added**: `deploy-vercel` job replaces `deploy-netlify`. Token/project IDs stored as repo secrets.
+- **GitHub app not installed** — user needs to install Vercel GitHub app at https://github.com/apps/vercel for push-to-deploy. Until then, GitHub Actions handles Vercel deploys.
+- **All env links updated**: AGENTS.md, README.md, webapp.py CORS/CSP, session-summary, deploy workflow notifications.
+- **Old Netlify URLs removed** from CORS whitelist.
+
+## Features Implemented
+| Todo | Status |
+|------|--------|
+| Priority Queue | ✅ Sort students by `booking_datetime` |
+| Browser Profiles | ✅ Reuse Chrome profile per student |
+| Concurrent Booking | ✅ Semaphore (default 2 parallel, configurable via `MAX_CONCURRENT`) |
+| Selector Health Check | ✅ Added to `/api/health` endpoint |
+| Google Sheets retry | ✅ `append_student` wrapped with `_retry_gsheet` |
+| Vercel migration | ✅ Frontend live at `goethe-booking-dashboard.vercel.app`, CI/CD updated |
+
+## Already-Done Features Reviewed
+| Todo | Status |
+|------|--------|
+| Confirmation Capture | Already implemented (capture_confirmation + verify_booking) |
+| Slot Pre-check | Already implemented (check_slot_via_api in polling loop) |
+| Notifications | Already implemented (notifications.py + notify_all on success/failure) |
+| Postgres Backups | Railway paid plan handles natively |
+
+## Commits This Part
+| Commit | Message |
+|--------|---------|
+| `5d9f596` | feat: priority queue — sort students by booking_datetime |
+| `50b5c82` | feat: browser profiles — reuse Chrome profile per student |
+| `7f929db` | feat: selector health check in /api/health |
+| `fcbea7b` | fix: wrap append_student with _retry_gsheet |
+| `f1500dc` | feat: concurrent booking — semaphore max 2 parallel |
+
+## Commits Pending (this message)
+- Vercel migration, CORS update, README/doc updates
+
+---
+
+# Session Summary — June 30, 2026 (Part 1) — All 5 Critical Fixes, psycopg2 Deploy Fix
 
 ## Summary
 - **Postgres connected**: `DATABASE_URL` set to internal Railway Postgres URL. App uses `database.py` (SQLAlchemy + Postgres) instead of `db.py` (SQLite). Data persists across restarts.
@@ -29,7 +70,7 @@
 ## URLs
 | Service | URL |
 |---------|-----|
-| Frontend | https://snazzy-kleicha-1d59fd.netlify.app |
+| Frontend | https://goethe-booking-dashboard.vercel.app |
 | Backend | https://goethe-booking-bot-production-21af.up.railway.app |
 | GitHub | https://github.com/hamzabot655/booking-bot |
 
