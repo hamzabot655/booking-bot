@@ -119,6 +119,11 @@ _BASE_POLL = float(os.environ.get("POLL_INTERVAL", "10"))
 _JITTER_MAX = float(os.environ.get("POLL_JITTER", "5"))
 DEFAULT_POLL_INTERVAL = _BASE_POLL + random.uniform(0, _JITTER_MAX)
 
+# ── Scheduled booking hours — only poll aggressively during these ──
+ACTIVE_HOURS_START = int(os.environ.get("ACTIVE_HOURS_START", "7"))   # 7 AM PKT
+ACTIVE_HOURS_END = int(os.environ.get("ACTIVE_HOURS_END", "20"))      # 8 PM PKT
+SLEEP_POLL_INTERVAL = int(os.environ.get("SLEEP_POLL_INTERVAL", "300"))  # 5 min during quiet hours
+
 # ── Proxy rotation ──
 PROXY_LIST = [p.strip() for p in os.environ.get("PROXY_LIST", "").split(",") if p.strip()]
 PROXY_ROTATOR = ProxyRotator(logger=logging.getLogger("proxy_rotator"))
@@ -944,6 +949,15 @@ def scan_booking_form(student: Dict[str, str], logger: logging.Logger, cookies: 
 # ── Scheduled mode ──
 
 SCHEDULED_CHECK_INTERVAL = 30  # seconds
+
+
+def is_active_hours() -> bool:
+    """Check if current time is within configured active booking hours."""
+    now_hour = dt.datetime.now().hour
+    if ACTIVE_HOURS_START <= ACTIVE_HOURS_END:
+        return ACTIVE_HOURS_START <= now_hour < ACTIVE_HOURS_END
+    else:
+        return now_hour >= ACTIVE_HOURS_START or now_hour < ACTIVE_HOURS_END
 
 def scheduled_wait(booking_time_str: str, logger: logging.Logger, stop_event: threading.Event) -> bool:
     """Wait until the booking time arrives. Returns True if it's time."""
@@ -1785,6 +1799,7 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
         step1_done = False
         page_loaded = False
         consecutive_errors = 0
+        gap_printed = False
 
         logger.info("══ STEP 1: Waiting for booking button ('Select modules' / 'Book Now') ══")
         while True:
@@ -1880,7 +1895,14 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
                         gap = BURST_PRE_POLL
                     elif burst:
                         gap = random.uniform(BURST_POST_POLL_MIN, BURST_POST_POLL_MAX)
+                    elif not is_active_hours():
+                        gap = random.uniform(SLEEP_POLL_INTERVAL, SLEEP_POLL_INTERVAL * 1.5)
+                        if not gap_printed:
+                            logger.info("Outside active hours (%d-%d) — polling every %ds",
+                                        ACTIVE_HOURS_START, ACTIVE_HOURS_END, int(gap))
+                            gap_printed = True
                     else:
+                        gap_printed = False
                         gap = max(20, DEFAULT_POLL_INTERVAL + random.randint(-10, 15))
                     for _ in range(int(gap)):
                         if stop_event.is_set():
