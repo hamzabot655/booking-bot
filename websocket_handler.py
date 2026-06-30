@@ -102,9 +102,5 @@ def setup_websocket(app):
             finally:
                 broadcaster.unregister(ws)
     except ImportError:
-        pass
-            finally:
-                broadcaster.unregister(ws)
-    except ImportError:
         # flask-sock not installed — logs will use polling
         pass
