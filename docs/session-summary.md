@@ -1,3 +1,76 @@
+# Session Summary — July 1, 2026 (Part 5) — Maintenance Pass: Backend-Crash Fix, Delete Bug, Secret Purge, Vercel Rebuild
+
+## Summary
+- **CRITICAL: backend was crashing on import.** `websocket_handler.py` had a committed
+  `IndentationError` (introduced by `e64dd94`) — a duplicated/orphaned `finally`/`except`
+  tail in `setup_websocket()`. `webapp.py` imports it at startup, so the whole Flask app
+  failed to load → every request 500'd → login returned HTML → the `"Unexpected token '<'"`
+  symptom was back. Prod stayed up only because Railway was still serving an older build;
+  `main` HEAD would have crashed on the next deploy. **Fixed** (`7c6294e`).
+- **Delete-student "Not found" fixed.** Sheet/config students get negative ids (-1, -2);
+  the DELETE route was `<int:student_id>`, and Flask's int converter rejects negatives →
+  the request fell through to the generic 404 (`"Not found"`). Route is now
+  `<int(signed=True):student_id>`; a negative id resolves back to name/level/city and deletes
+  the matching **Google Sheet row** via new `google_sheets.delete_student()`. Verified live —
+  "DeleteTest" removed from the sheet (2 → 1). (`a37f5c1`)
+- **Vercel rebuilt from scratch.** Deleted the only project `goethe-frontend-v2`, created a
+  fresh **`goethe-frontend-v3`** (`prj_n3wa6LvxRTU36YhfUCfw0349fgc0`) →
+  `https://goethe-frontend-v3.vercel.app`. Updated backend `_ALLOWED_ORIGINS` + CSP `connect-src`
+  to the new origin (verified live) and the GH secrets `VERCEL_PROJECT_ID` / `VERCEL_ORG_ID`. (`460b215`)
+- **Secrets purged from the repo.** Removed hardcoded Goethe creds, Railway/dashboard tokens,
+  ScrapingBee key, and admin login from tracked files (`scripts/*.py`, `tests/k6_load.js`,
+  `postman_collection.json`, `add_postgres.py`, `AGENTS.md`, this file) and from the git remote
+  URL; replaced with env-var reads. **They still need rotating at their providers** — they were
+  public in git history/chat. (`58f9df7`)
+- **Postgres backups automated.** Added `.github/workflows/pg-backup.yml` (daily `pg_dump` →
+  gzipped artifact) + restore docs in `BACKUP_AND_ROLLBACK.md`. Needs repo secret
+  `DATABASE_URL_EXTERNAL` (Railway public URL).
+- **Regression tests added.** `tests/test_database.py` (SQLAlchemy checkpoint/status) and
+  `tests/test_booking_wizard.py` (wizard helpers). 100 unit tests pass.
+- **Correction to Part 4's claims:** the "QA passed 88/88, no hardcoded secrets" note was not
+  accurate — the backend couldn't even boot (websocket syntax error) and secrets were still in
+  the repo. The checkpoint/status/db.py/backup.py fixes Part 4 referenced were genuinely already
+  committed in `2b90919`; verified and now test-guarded.
+
+## Files Changed (this part)
+| File | Change |
+|------|--------|
+| `websocket_handler.py` | Removed duplicated/orphaned `finally`/`except` tail (IndentationError) |
+| `webapp.py` | DELETE route `<int(signed=True)>`; negative-id → Google Sheet row delete; CORS/CSP → v3 |
+| `google_sheets.py` | New `delete_student(name, level, city)` |
+| `scripts/*.py`, `tests/k6_load.js`, `postman_collection.json`, `add_postgres.py` | Secret values → env reads |
+| `.github/workflows/pg-backup.yml` | NEW — daily pg_dump |
+| `tests/test_database.py`, `tests/test_booking_wizard.py` | NEW — regression tests |
+| `BACKUP_AND_ROLLBACK.md` | Postgres backup/restore section |
+| `AGENTS.md`, `docs/session-summary.md` | Updated to reflect this pass |
+
+## Commits This Part
+| Commit | Message |
+|--------|---------|
+| `58f9df7` | chore: purge committed secrets, add Postgres backup workflow + regression tests |
+| `7c6294e` | fix: repair IndentationError in websocket_handler.py that crashed backend on import |
+| `460b215` | chore: point backend CORS/CSP at new Vercel frontend (goethe-frontend-v3) |
+| `171a872` | docs: record live frontend URL/project id (goethe-frontend-v3) |
+| `a37f5c1` | fix: delete sheet-backed students (was 'Not found' on negative ids) |
+
+## URLs
+| Service | URL |
+|---------|-----|
+| Frontend | https://goethe-frontend-v3.vercel.app |
+| Backend | https://goethe-booking-bot-production-21af.up.railway.app |
+| GitHub | https://github.com/hamzabot655/booking-bot |
+
+## Still Pending (need owner action)
+- **Rotate all exposed secrets** at providers (GitHub tokens, Vercel token, Goethe pw, Railway
+  API token, Postgres pw, ScrapingBee key, admin `AUTH_PASSWORD`). Removed from tree, still in history.
+- Set repo secret `DATABASE_URL_EXTERNAL` for pg-backup.
+- Railway reCAPTCHA bypass (Hetzner VPS / residential proxy / 2Captcha) — gates live booking.
+- Live booking test (next registration window).
+- India adaptation (separate Webshop engine).
+- Optional: scrub secrets from git history (`git filter-repo` + force-push) — rewrites SHAs.
+
+---
+
 # Session Summary — June 30, 2026 (Part 4) — Full Vercel Cleanup, SPA Routing, Auto-Connect, WebSocket Auth, QA
 
 ## Summary

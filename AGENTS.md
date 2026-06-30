@@ -1,22 +1,31 @@
 # AGENTS.md — Goethe Booking Bot
 
-## Session Context (latest — maintenance + secret hygiene pass)
-- **Production-breaking bugs fixed in `database.py`** (the Postgres path used in prod):
-  `save_checkpoint`/`get_checkpoint` and `update_student_status` had signatures that
-  did NOT match how `booking_helper.py`/`webapp.py` call them. A prior commit message
-  (`2b90919`) claimed these were fixed but the code still had the broken versions.
-  Now genuinely fixed: `save_checkpoint(key, step:int)`, `get_checkpoint(key)->int`,
-  `update_student_status(student_key, ...)` matching `name|level|city`.
-- **`db.py` cleanup**: removed a broken duplicate `add_student` (referenced an undefined
-  `students` var and did `DELETE FROM students`).
-- **`scripts/backup.py`** pointed at `booking_bot.db`; real file is `bot_data.db` — fixed
-  (now also copies WAL/SHM sidecars). Local-SQLite only; Postgres backups are separate.
-- **Secrets purged from the repo**: hardcoded Goethe credentials, Railway/dashboard tokens,
-  ScrapingBee key, and admin login were removed from tracked files (scripts, `tests/k6_load.js`,
-  `postman_collection.json`, `add_postgres.py`, this file) and replaced with env-var reads.
-  **All previously-committed secrets must be rotated at their providers — see below.**
-- **Regression tests added**: `tests/test_database.py` (checkpoint/status on the SQLAlchemy
-  layer) and `tests/test_booking_wizard.py` (wizard helper logic).
+## Session Context (latest — maintenance, secret hygiene, Vercel rebuild)
+- **CRITICAL backend-crash fixed** (`7c6294e`): `websocket_handler.py` had a committed
+  `IndentationError` (from `e64dd94`) — a duplicated/orphaned `finally`/`except` tail.
+  Because `webapp.py` imports it at startup, the **whole backend crashed on import** → every
+  request 500'd → login returned HTML → the `"Unexpected token '<'"` symptom. Production was
+  still up on an older build; `main` HEAD was a landmine that would crash on next deploy. Fixed.
+- **Sheet-student delete fixed** (`a37f5c1`): deleting a student showed `"Not found"`. Sheet/
+  config students get negative ids (-1, -2); the route was `<int:student_id>`, and Flask's int
+  converter rejects negatives → generic 404. Route is now `<int(signed=True):student_id>`, and a
+  negative id resolves back to name/level/city and deletes the matching Google Sheet row via the
+  new `google_sheets.delete_student()`. Verified live (DeleteTest removed from the sheet).
+- **Vercel rebuilt from scratch**: deleted the only project `goethe-frontend-v2`, created fresh
+  **`goethe-frontend-v3`** (`prj_n3wa6LvxRTU36YhfUCfw0349fgc0`) → `https://goethe-frontend-v3.vercel.app`.
+  Updated backend CORS + CSP to the new origin (verified live) and the GH secrets
+  `VERCEL_PROJECT_ID` / `VERCEL_ORG_ID`.
+- **Secrets purged from the repo** (`58f9df7`): hardcoded Goethe creds, Railway/dashboard tokens,
+  ScrapingBee key, admin login removed from tracked files (scripts, `tests/k6_load.js`,
+  `postman_collection.json`, `add_postgres.py`, `AGENTS.md`, `docs/session-summary.md`) and from
+  the git remote URL; replaced with env-var reads. **Still must be rotated at providers — see below.**
+- **Postgres backup workflow added**: `.github/workflows/pg-backup.yml` (daily `pg_dump`) +
+  restore docs. Needs repo secret `DATABASE_URL_EXTERNAL` (Railway public URL).
+- **Regression tests added**: `tests/test_database.py` (SQLAlchemy checkpoint/status) and
+  `tests/test_booking_wizard.py` (wizard helper logic). 100 unit tests pass.
+- **Verified already-correct**: the checkpoint/status signature fixes, `db.py` duplicate
+  `add_student` removal, and `backup.py` DB path were already committed in `2b90919`; confirmed
+  against HEAD and locked in with the new tests.
 
 > ⚠️ **Do not put live secrets in this file or any tracked file.** Use env vars / `.env`
 > (gitignored) and GitHub Actions / Railway secrets.
@@ -121,23 +130,25 @@ ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright
 
 ## Todo / Known Gaps
 
-### ✅ Done (verified against code)
+### ✅ Done (verified against code / live)
+- **websocket_handler.py IndentationError fixed** (`7c6294e`) — backend boots again; login returns JSON
+- **Sheet-student delete fixed** (`a37f5c1`) — signed-int route + `google_sheets.delete_student()`; verified live
+- **Vercel rebuilt** — old project deleted, fresh `goethe-frontend-v3` deployed; CORS/CSP + GH secrets updated
+- **Postgres backup workflow** (`.github/workflows/pg-backup.yml`) + restore docs
+- **Secrets purged** from tracked files + git remote URL (`58f9df7`)
 - Login HTML bug — `database.py` calls `init_db()`; `/api/*` 404/405/500 return JSON
 - Service worker scoped to same-origin non-API GET
 - `vercel.json` SPA rewrites; WebSocket token auth (`validate_token`)
-- **database.py checkpoint/status signatures fixed** (this pass)
-- **db.py duplicate `add_student` removed** (this pass)
-- **backup.py DB path fixed** (this pass)
-- **Secrets purged from tracked files** (this pass)
+- checkpoint/status signatures, `db.py` duplicate `add_student`, `backup.py` DB path — already fixed in `2b90919`, verified + test-guarded
 - Priority queue (sort by datetime); browser profiles; concurrent booking (semaphore);
   selector health check in `/api/health`; gsheets retry/backoff; post-booking verification;
   session refresh per step; failure evidence (screenshot+HTML); student re-queue ×3;
   scheduled active-hours polling; confirmation capture; slot pre-check; Telegram/email notifications
-- Regression tests: `tests/test_database.py`, `tests/test_booking_wizard.py`
+- Regression tests: `tests/test_database.py`, `tests/test_booking_wizard.py` (100 unit tests pass)
 
 ### ⬜ Pending
 - [ ] Rotate all leaked secrets at their providers (see table above) — values removed from repo, but they were public
-- [ ] Automated Postgres backups (pg_dump cron) — Railway only auto-backs-up on paid plan
+- [ ] Set repo secret `DATABASE_URL_EXTERNAL` (Railway public Postgres URL) so the pg-backup workflow can run
 - [ ] Railway reCAPTCHA bypass for Goethe login — Hetzner VPS (≈€3.99/mo) or residential proxy / 2Captcha
 - [ ] Live booking test — blocked until the next registration window opens
 - [ ] Auto-connect: hide the connect bar when already authenticated (claimed before, not in UI)
