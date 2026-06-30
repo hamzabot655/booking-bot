@@ -1026,6 +1026,12 @@ def api_health():
     chrome_ok = bot._find_chrome() is not None if hasattr(bot, "_find_chrome") else True
     uptime = round(time.time() - PROCESS_START_TIME)
     cb = bot.CIRCUIT_BREAKER
+
+    from selector_fallbacks import ELEMENT_SELECTORS
+    total_selectors = len(ELEMENT_SELECTORS)
+    empty_selectors = sum(1 for v in ELEMENT_SELECTORS.values() if not v)
+    selectors_ok = empty_selectors == 0
+
     return jsonify({
         "status": "ok" if db_ok else "degraded",
         "uptime_seconds": uptime,
@@ -1033,6 +1039,11 @@ def api_health():
         "checks": {
             "database": "ok" if db_ok else "fail",
             "chrome": "ok" if chrome_ok else "fail",
+            "selectors": {
+                "status": "ok" if selectors_ok else "degraded",
+                "total": total_selectors,
+                "empty": empty_selectors,
+            },
         },
         "circuit_breaker": {
             "state": cb.state,
