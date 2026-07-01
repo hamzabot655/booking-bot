@@ -174,10 +174,15 @@ ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright
 - **Owner runbooks**: `docs/SECURITY_ROTATION.md`, `docs/LIVE_TEST.md`; proxy-auth limitation documented
   in `docs/VPS_SETUP.md`.
 
+### Git history scrubbed
+- Ran `git filter-repo` + force-push (`7e6ea15`) — all known leaked literals now redacted across
+  history (verified: 0 commits contain them). **This does NOT rotate them** — the credentials still
+  work until rotated at the provider (see below). Any other local clone is now divergent → re-clone.
+
 ### ⬜ Pending (owner action)
-- [ ] **Rotate all leaked secrets** — checklist in `docs/SECURITY_ROTATION.md`. Only the owner can do this.
+- [ ] **Rotate all leaked secrets — STILL REQUIRED.** History scrub ≠ rotation; the tokens/passwords
+      remain valid until changed at each provider. Checklist: `docs/SECURITY_ROTATION.md`.
 - [ ] Provision reCAPTCHA bypass — VPS (`docs/VPS_SETUP.md`) / IP-whitelisted residential proxy / set `CAPTCHA_API_KEY`.
 - [ ] Set repo secret `DATABASE_URL_EXTERNAL` (Railway public Postgres URL) for pg-backup — I can set it once you paste the value.
 - [ ] Live booking test — run `docs/LIVE_TEST.md` on the next registration window.
-- [ ] (Optional) Scrub secrets from git history — destructive; awaiting go-ahead.
 - [ ] India adaptation — separate Webshop-based engine.
