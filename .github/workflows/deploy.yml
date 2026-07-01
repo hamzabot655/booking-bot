@@ -11,7 +11,7 @@ jobs:
     # Runs on BOTH push and PR so it can gate the deploy jobs below.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Vercel CLI
         run: npm install -g vercel
       - name: Deploy frontend to Vercel
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Link Railway project
