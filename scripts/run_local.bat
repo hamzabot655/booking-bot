@@ -1,5 +1,7 @@
 @echo off
 title Goethe Booking Bot — Local Mode
+:: Run from repo root regardless of where the .bat is launched from.
+cd /d "%~dp0.."
 echo ============================================
 echo   Goethe Booking Bot — Local Runner
 echo   Starts Flask backend on your laptop

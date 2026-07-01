@@ -60,21 +60,23 @@ Let the bot run through its login flow.
 
 - [ ] **Step 1: Check Railway logs for these lines**
 
-Search for these exact log messages:
+Search for these **actual** log messages (from `booking_helper.py`):
 
 | Log line | Meaning |
 |---|---|
-| `login page loaded` | Bot reached CAS login page ✅ |
-| `detected reCAPTCHA on login page` | reCAPTCHA widget is visible (expected) |
-| `solving captcha with 2captcha` | Bot attempted to solve — won't happen without `CAPTCHA_API_KEY` |
-| `logged in successfully` | Login worked despite reCAPTCHA ✅ |
-| `login failed` or `authentication failed` | Login blocked by CAPTCHA or wrong credentials ❌ |
+| `══ STEP 4: Logging in to My Goethe.de ══` | Bot reached CAS login flow ✅ |
+| `CAPTCHA detected on login page — attempting 2Captcha solve` | reCAPTCHA present on the page |
+| `CAPTCHA detected but no CAPTCHA_API_KEY set` | reCAPTCHA present, no key → cannot solve |
+| `CAPTCHA site key found` / `CAPTCHA solved` | 2Captcha attempted / succeeded (only if `CAPTCHA_API_KEY` set) |
+| `★ LOGIN SUCCESSFUL` + `Post-login URL: ...` (not a `/login` url) | Login worked ✅ |
+| `Still on login page — no visible error` / `Login error: ...` / `Login failed after 3 attempts` | Login blocked/failed ❌ |
 
 - [ ] **Step 2: Determine the answer**
 
 Check one:
-- **No blocking:** If `login page loaded` → `logged in successfully` appears → **reCAPTCHA is NOT blocking Railway IP. No action needed.**
-- **Blocking confirmed:** If `login page loaded` → `detected reCAPTCHA` → then stalls/times out with `login failed` → **reCAPTCHA IS blocking Railway IP.**
+- **No blocking:** `══ STEP 4 ...` → `★ LOGIN SUCCESSFUL` appears → **reCAPTCHA NOT blocking Railway IP. No action needed.**
+- **Blocking confirmed:** `══ STEP 4 ...` → `CAPTCHA detected on login page` → then `Still on login page` / `Login failed after 3 attempts` → **reCAPTCHA IS blocking Railway IP.**
+- **Note:** with no `CAPTCHA_API_KEY` set, you'll see `CAPTCHA detected but no CAPTCHA_API_KEY set` — expected; that's the "cannot solve" path.
 
 ---
 ### Task 4: Decide next steps based on result
