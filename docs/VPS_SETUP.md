@@ -42,9 +42,21 @@ journalctl -u goethe-bot -f          # live logs
   origin to `_ALLOWED_ORIGINS` and the CSP `connect-src` in `webapp.py` and redeploy/restart.
 
 ## Alternatives to a VPS
-- **Residential proxy:** set `PROXY_LIST=http://user:pass@host:port` (already wired via
-  `proxy_rotator.py`); keep running on Railway.
-- **2Captcha:** set `CAPTCHA_API_KEY` (already wired in `booking_helper.solve_captcha`).
+
+### Residential proxy (keep running on Railway)
+`PROXY_LIST` is comma-separated and applied to Chrome via `--proxy-server` in `create_driver`,
+health-checked + rotated per attempt by `proxy_rotator.py`. **Important limitation:** Chrome's
+`--proxy-server` **ignores inline `user:pass@` credentials**, so:
+- ✅ **Use an IP-whitelisted residential proxy** — whitelist the Railway/VPS egress IP at the
+  proxy provider, then set `PROXY_LIST=http://host:port` (no credentials). This works out of the box.
+- ⚠️ **User/password proxies won't authenticate** through `--proxy-server` alone. To use one you'd
+  need a proxy-auth Chrome extension, `selenium-wire`, or a local upstream (e.g. `gost`/`mitmproxy`)
+  that injects the auth and exposes an unauthenticated local port to put in `PROXY_LIST`.
+- Format: `PROXY_LIST=http://1.2.3.4:8000,http://5.6.7.8:8000`
+
+### 2Captcha (automatic fallback)
+Set `CAPTCHA_API_KEY`. The bot now detects a reCAPTCHA on the CAS login page and solves it via
+2Captcha before submitting (`_login_attempt` → `detect_captcha`/`solve_captcha`). No-op without the key.
 
 ## Notes
 - Chrome needs `--no-sandbox` (already set for non-Windows in `create_driver`).

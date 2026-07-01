@@ -1144,6 +1144,17 @@ def _login_attempt(driver: webdriver.Chrome, email: str, password: str, logger: 
         except (NoSuchElementException, TimeoutException):
             pass
 
+        # reCAPTCHA fallback: if a captcha is present and CAPTCHA_API_KEY is set,
+        # solve it via 2Captcha before submitting. No-op (logs a warning) when no
+        # key is configured, so this is safe when relying on a clean-IP/proxy path.
+        try:
+            if detect_captcha(driver):
+                logger.info("CAPTCHA detected on login page — attempting 2Captcha solve")
+                if not solve_captcha(driver, logger):
+                    logger.warning("CAPTCHA present but not solved (no CAPTCHA_API_KEY or solve failed)")
+        except Exception as cap_exc:
+            logger.warning("CAPTCHA handling error: %s", cap_exc)
+
         submit_btn = find_element_fallback(driver, "login_submit", timeout=10, logger=logger)
         if submit_btn is None:
             _last_login_error = "Submit button not found on login page"

@@ -8,19 +8,29 @@ on:
 
 jobs:
   test:
+    # Runs on BOTH push and PR so it can gate the deploy jobs below.
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: python -m pytest tests/ -v
+      - name: Import/compile smoke (catches syntax + import-time errors)
+        # pytest alone never imports webapp/websocket_handler, so a syntax error
+        # there (see the Part-5 IndentationError) could reach prod. Guard it.
+        run: |
+          python -m py_compile $(git ls-files '*.py')
+          python -c "import webapp; print('webapp imports OK')"
+      - name: Unit tests
+        # Exclude tests that need a live server (test_e2e) or hit the real
+        # goethe.de portal (test_live_integration runs in live-integration.yml).
+        run: python -m pytest tests/ -q --ignore=tests/test_e2e.py --ignore=tests/test_live_integration.py
       - name: Security audit
         run: pip install pip-audit && pip-audit --desc on 2>&1 || true
 
   deploy-vercel:
+    needs: [test]                       # gate: never deploy on failing tests
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -34,6 +44,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
   deploy-railway:
+    needs: [test]                       # gate: never deploy on failing tests
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -66,7 +77,7 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d "text=✅ Deploy successful: booking-bot%0ACommit: ${{ github.sha }}%0ARailway: https://goethe-booking-bot-production-21af.up.railway.app%0AFrontend: https://goethe-booking-dashboard.vercel.app" > /dev/null 2>&1 || true
+            -d "text=✅ Deploy successful: booking-bot%0ACommit: ${{ github.sha }}%0ARailway: https://goethe-booking-bot-production-21af.up.railway.app%0AFrontend: https://goethe-frontend-v3.vercel.app" > /dev/null 2>&1 || true
       - name: Notify deploy failure
         if: failure()
         run: |

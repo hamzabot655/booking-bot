@@ -22,6 +22,11 @@ EMAIL_PASS = os.environ.get("EMAIL_PASS", "")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "")
 EMAIL_TO = os.environ.get("EMAIL_TO", "")
 
+# Optional generic alert webhook (Twilio function / Zapier / Make / n8n / etc.)
+# so critical alerts (dead-man switch, booking failures) can reach SMS/call
+# services in addition to Telegram. Payload: JSON {"text": "..."}.
+ALERT_WEBHOOK_URL = os.environ.get("ALERT_WEBHOOK_URL", "")
+
 
 
 
@@ -62,8 +67,28 @@ def send_email(subject: str, body: str, logger: logging.Logger) -> bool:
 
 
 
+def send_webhook(title: str, message: str, logger: logging.Logger) -> bool:
+    """POST the alert to a generic webhook (SMS/call bridge). No-op if unset."""
+    if not ALERT_WEBHOOK_URL:
+        return False
+    try:
+        import json
+        payload = json.dumps({"text": f"{title}\n{message}", "title": title, "message": message}).encode()
+        req = urllib.request.Request(
+            ALERT_WEBHOOK_URL, data=payload,
+            headers={"Content-Type": "application/json"}, method="POST",
+        )
+        urllib.request.urlopen(req, timeout=10)
+        logger.info("Alert webhook sent")
+        return True
+    except Exception as exc:
+        logger.warning("Alert webhook failed: %s", exc)
+        return False
+
+
 def notify_all(title: str, message: str, logger: logging.Logger):
     full = f"<b>{title}</b>\n{message}"
     logger.info("NOTIFY: %s - %s", title, message)
     send_telegram(full, logger)
     send_email(title, message, logger)
+    send_webhook(title, message, logger)
