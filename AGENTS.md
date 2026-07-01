@@ -185,4 +185,5 @@ ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright
 - [ ] Provision reCAPTCHA bypass — VPS (`docs/VPS_SETUP.md`) / IP-whitelisted residential proxy / set `CAPTCHA_API_KEY`.
 - [ ] Set repo secret `DATABASE_URL_EXTERNAL` (Railway public Postgres URL) for pg-backup — I can set it once you paste the value.
 - [ ] Live booking test — run `docs/LIVE_TEST.md` on the next registration window.
-- [ ] India adaptation — separate Webshop-based engine.
+
+> India adaptation is **dropped** (client no longer engaged). Scope is Goethe **Pakistan** only.
