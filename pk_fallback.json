@@ -1,18 +1,18 @@
 {
   "APIFILTERS": {
     "targetGroupExam": "ER",
-    "category": "E004"
+    "category": "E006"
   },
   "LANGID": "1",
   "DATA": [
     {
-      "moduleId": "SM05004418",
+      "moduleId": "SM05004426",
       "isExam": true,
-      "isModular": false,
+      "isModular": true,
       "isDigital": false,
       "isDdpActive": false,
       "isBlended": false,
-      "isOnlyBookAllExamParts": true,
+      "isOnlyBookAllExamParts": false,
       "ageFrom": 16,
       "ageTo": 99,
       "publishFrom": "15.04.2026",
@@ -20,7 +20,7 @@
       "publishTo": "17.07.2026",
       "publishToTime": "23:59:59.000",
       "bookFrom": "03.07.2026",
-      "bookFromTime": "12:16:00.000",
+      "bookFromTime": "15:26:00.000",
       "bookTo": "17.07.2026",
       "bookToTime": "23:59:59.000",
       "startDate": "18.07.2026",
@@ -29,8 +29,8 @@
       "endTime": "00:00:00.000",
       "locationId": "F 05001563",
       "locationName": "Islamabad",
-      "category": "E004",
-      "languageLevel": "A1",
+      "category": "E006",
+      "languageLevel": "B1",
       "targetGroupExam": "ER",
       "targetGroupCourse": "",
       "onlyWithAcc": false,
@@ -39,21 +39,21 @@
       "durationWeeks": "0 Week",
       "teachingUnitsPerWeek": 0,
       "teachingUnitsTotal": 0,
-      "pspElement": "ASA1",
-      "price": " PKR 25,000.00",
-      "priceInternal": " PKR 16,500.00",
-      "priceRate": 25000,
-      "priceInternRate": 16500,
+      "pspElement": "AB1A",
+      "price": " PKR 30,000.00",
+      "priceInternal": " PKR 25,000.00",
+      "priceRate": 30000,
+      "priceInternRate": 25000,
       "currency": "PKR",
       "availability": 11,
       "capacityOptimal": 0,
       "capacityMax": 0,
       "isOnlineCourse": false,
       "isIndividualCourse": false,
-      "lastUpdated": "2026-06-19T11:23:17.000",
+      "lastUpdated": "2026-07-02T11:33:16.000",
       "variantId": "",
       "acadYear": "2026",
-      "acadPeriod": "018",
+      "acadPeriod": "019",
       "evObId": "",
       "institutIdFlw": "",
       "smModuleIdFlw": "",
@@ -78,7 +78,7 @@
       ],
       "publishFromStamp": "2026-04-15T01:00:00.000Z",
       "publishToStamp": "2026-07-17T18:59:59.000Z",
-      "bookFromStamp": "2026-07-03T07:16:00.000Z",
+      "bookFromStamp": "2026-07-03T10:26:00.000Z",
       "bookToStamp": "2026-07-17T18:59:59.000Z",
       "supportLanguages": [],
       "targetGroup": "ER",
@@ -86,8 +86,8 @@
       "airports": [],
       "modules": [
         {
-          "ceId": "CE05006041",
-          "type": "0014",
+          "ceId": "CE05006060",
+          "type": "0011",
           "startTime": "00:00:00.000",
           "endTime": "00:00:00.000",
           "minutesExamDuration": "000",
@@ -95,8 +95,26 @@
           "isOdpExam": false
         },
         {
-          "ceId": "CE05006042",
-          "type": "0021",
+          "ceId": "CE05006061",
+          "type": "0012",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006062",
+          "type": "0013",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006063",
+          "type": "0014",
           "startTime": "00:00:00.000",
           "endTime": "00:00:00.000",
           "minutesExamDuration": "000",
@@ -104,32 +122,61 @@
           "isOdpExam": false
         }
       ],
-      "modularPrices": [],
+      "modularPrices": [
+        {
+          "moduleCount": "1",
+          "price": 7500,
+          "priceIntern": 6250,
+          "priceRate": 7500,
+          "priceInternRate": 6250
+        },
+        {
+          "moduleCount": "2",
+          "price": 15000,
+          "priceIntern": 12500,
+          "priceRate": 15000,
+          "priceInternRate": 12500
+        },
+        {
+          "moduleCount": "3",
+          "price": 22500,
+          "priceIntern": 18750,
+          "priceRate": 22500,
+          "priceInternRate": 18750
+        },
+        {
+          "moduleCount": "4",
+          "price": 30000,
+          "priceIntern": 25000,
+          "priceRate": 30000,
+          "priceInternRate": 25000
+        }
+      ],
       "clevels": [],
       "smTexts": [
         {
-          "textKey": "SM05004418000000009005deO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009005deO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9005",
           "lang": "de",
-          "text": "Goethe-Zertifikat A1: Start Deutsch 1"
+          "text": "Goethe-Zertifikat B1"
         },
         {
-          "textKey": "SM05004418000000009006deO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009006deO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9006",
           "lang": "de",
-          "text": "<h2>Pr\u00fcfungsstruktur</h2><div>Die Pr\u00fcfung besteht aus folgenden Teilpr\u00fcfungen:</div><div>H\u00f6ren\u00a0 \u00a020 Minuten</div><div>Lesen\u00a0 \u00a0 25 Minuten</div><div>Schreiben 20 Minuten</div><div>Sprechen\u00a0 15 Minuten</div><div><br/></div><h2>Zugangsvoraussetzungen</h2><div>Empfohlen ab 16 Jahre</div><div><br/></div><h2>Mindestteilnehmerzahl</h2><div>Die Mindestteilnehmerzahl betr\u00e4gt 10 Personen. Es kann nat\u00fcrlich auch bei uns vorkommen, dass die Mindestteilnehmerzahl nicht erreicht wird und eine Pr\u00fcfung deshalb nicht zu Stande kommt. In diesem Fall werden wir versuchen, Ihnen fr\u00fchzeitig eine Alternative anzubieten. M\u00f6chten Sie diese nicht akzeptieren, erhalten Sie die bereits geleisteten Zahlungen umgehend zur\u00fcck.</div>"
+          "text": "<h2>Pr\u00fcfungsstruktur</h2><div>Die Pr\u00fcfung besteht aus vier Modulen:</div><div>H\u00f6ren\u00a0 \u00a040 Minuten</div><div>Lesen\u00a0 \u00a065 Minuten</div><div>Schreiben 60 Minuten</div><div>Sprechen 15 Minuten</div><div><br/></div><h2>Zugangsvoraussetzungen</h2><div>Empfohlen ab 16 Jahre</div><div><br/></div><h2>Mindestteilnehmerzahl</h2><div>Die Mindestteilnehmerzahl betr\u00e4gt 10 Personen. Es kann nat\u00fcrlich auch bei uns vorkommen, dass die Mindestteilnehmerzahl nicht erreicht wird und eine Pr\u00fcfung deshalb nicht zu Stande kommt. In diesem Fall werden wir versuchen, Ihnen fr\u00fchzeitig eine Alternative anzubieten. M\u00f6chten Sie diese nicht akzeptieren, erhalten Sie die bereits geleisteten Zahlungen umgehend zur\u00fcck.</div>"
         },
         {
-          "textKey": "SM05004418000000009006enO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009006enO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9006",
           "lang": "en",
-          "text": "<h2>Parts of the exam</h2><div>The exam consists of the following parts:</div><div>Listening 20 minutes</div><div>Reading 25 minutes</div><div>Writing 20 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>"
+          "text": "<h2>Parts of the exam</h2><div>The exam consists of four modules:</div><div>Listening 40 minutes</div><div>Reading 65 minutes</div><div>Writing 60 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>"
         }
       ],
       "eventTexts": [],
@@ -172,23 +219,23 @@
       "courseDurationUnit": "0",
       "ueConversionFactor": 0.75,
       "languageLevelArray": [
-        "A",
+        "B",
         "1"
       ],
-      "languageLevelBase": "A1",
-      "skillLevel": null,
-      "filter_languagelevelmin": "A1",
-      "filter_languagelevelmax": "A1",
-      "eventName": "Goethe-Zertifikat A1: Start Deutsch 1",
-      "eventDescription": "<h2>Parts of the exam</h2><div>The exam consists of the following parts:</div><div>Listening 20 minutes</div><div>Reading 25 minutes</div><div>Writing 20 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>",
+      "languageLevelBase": "B1",
+      "skillLevel": "A2",
+      "filter_languagelevelmin": "B1",
+      "filter_languagelevelmax": "B1",
+      "eventName": "Goethe-Zertifikat B1",
+      "eventDescription": "<h2>Parts of the exam</h2><div>The exam consists of four modules:</div><div>Listening 40 minutes</div><div>Reading 65 minutes</div><div>Writing 60 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>",
       "eventWeekdays": "",
-      "eventNameObjectId": "SM05004418",
+      "eventNameObjectId": "SM05004426",
       "locationDescription": "Goethe-Institut Pakistan\u00a0<br/>4 Khayaban-e-Johar, H 9/4 H-9, Islamabad, 44000",
       "STARTDATE_ALTERNATIVE": "18.07.2026",
       "ageSpan": "16 - 99",
       "ageType": "",
-      "languageLevelGroup": "136",
-      "languageSubLevel": "A1",
+      "languageLevelGroup": "138",
+      "languageSubLevel": "B1",
       "filter_locationId": "F 05001563",
       "filter_locationName": "Islamabad",
       "unstranslated_online": "Islamabad",
@@ -200,19 +247,21 @@
       "buttonDisabled": "disabled",
       "buttonLink": "",
       "buttonColor": "btnHellGrauV3",
-      "PRICEDEFAULT": 25000,
+      "PRICEDEFAULT": 30000,
       "startDateForAccessibility": "2026-07-18",
       "eventTimeSpan": "18.07.\r\n - 19.07.2026",
       "endDateForAccessibility": "2026-07-19",
       "availabilityText": "Bookable from<br/>03.07.2026",
       "detailText": "Details",
-      "multilevel": 1,
-      "languagelevelText": "Levels offered: A1",
-      "languagelevelDetailText": "On this date, we will be offering various classes for language levels A1.",
+      "multilevel": 0,
+      "languagelevelText": "B1",
+      "languagelevelDetailText": "On this date, we will be offering various classes for language level B1.",
       "bookFromStampLocalTimezone": "26",
       "teachingUnitsTotalText": "0 lessons",
       "teachingUnitsPerWeekInHours": "",
-      "modulePriceText": "",
+      "minModulePriceText": "PKR 6,250.00",
+      "singleModulePriceText": "PKR 7,500.00",
+      "modulePriceText": "Single module PKR 7,500.00",
       "moduleLevelDesc": {
         "COLUMNS": [
           "courselevel_id",
@@ -223,25 +272,25 @@
         ],
         "DATA": [
           [
-            2,
-            "E004",
+            5,
+            "E006",
             "",
             "",
-            25144163
+            25144469
           ]
         ]
       },
-      "bookFromTimeFormatted": "12:16 PM",
-      "encOID": "04019CD286DCF38EDD8952CB2AC95C552FDF8E7BEB92A8B201AC05FE84909DFC8ACFBFC582177F4DDDBDABDE57D14AD5BCAD8B9754875598F12FD21799DE9BE6"
+      "bookFromTimeFormatted": "3:26 PM",
+      "encOID": "5E0FCFD2858BFDD2D68C55C37ACE0C072F838C79BCC1F9E409AE56A286C69AF488CBE7CBDF13794DD4EFAFD707D64FD7EBFC88C1558254C7AF788B4398D5CBEB"
     },
     {
-      "moduleId": "SM05004418",
+      "moduleId": "SM05004426",
       "isExam": true,
-      "isModular": false,
+      "isModular": true,
       "isDigital": false,
       "isDdpActive": false,
       "isBlended": false,
-      "isOnlyBookAllExamParts": true,
+      "isOnlyBookAllExamParts": false,
       "ageFrom": 16,
       "ageTo": 99,
       "publishFrom": "05.06.2026",
@@ -249,17 +298,17 @@
       "publishTo": "23.07.2026",
       "publishToTime": "23:59:59.000",
       "bookFrom": "10.07.2026",
-      "bookFromTime": "11:24:00.000",
+      "bookFromTime": "14:08:00.000",
       "bookTo": "23.07.2026",
       "bookToTime": "23:59:59.000",
-      "startDate": "24.07.2026",
-      "endDate": "24.07.2026",
+      "startDate": "25.07.2026",
+      "endDate": "26.07.2026",
       "startTime": "00:00:00.000",
       "endTime": "00:00:00.000",
-      "locationId": "F 10003364",
+      "locationId": "F 05001562",
       "locationName": "Lahore",
-      "category": "E004",
-      "languageLevel": "A1",
+      "category": "E006",
+      "languageLevel": "B1",
       "targetGroupExam": "ER",
       "targetGroupCourse": "",
       "onlyWithAcc": false,
@@ -268,21 +317,21 @@
       "durationWeeks": "0 Week",
       "teachingUnitsPerWeek": 0,
       "teachingUnitsTotal": 0,
-      "pspElement": "ASA1",
-      "price": " PKR 25,000.00",
-      "priceInternal": " PKR 16,500.00",
-      "priceRate": 25000,
-      "priceInternRate": 16500,
+      "pspElement": "AB1A",
+      "price": " PKR 30,000.00",
+      "priceInternal": " PKR 25,000.00",
+      "priceRate": 30000,
+      "priceInternRate": 25000,
       "currency": "PKR",
       "availability": 11,
       "capacityOptimal": 0,
       "capacityMax": 0,
       "isOnlineCourse": false,
       "isIndividualCourse": false,
-      "lastUpdated": "2026-06-19T11:23:17.000",
+      "lastUpdated": "2026-06-19T11:33:10.000",
       "variantId": "",
       "acadYear": "2026",
-      "acadPeriod": "015",
+      "acadPeriod": "016",
       "evObId": "",
       "institutIdFlw": "",
       "smModuleIdFlw": "",
@@ -307,7 +356,7 @@
       ],
       "publishFromStamp": "2026-06-04T19:00:00.000Z",
       "publishToStamp": "2026-07-23T18:59:59.000Z",
-      "bookFromStamp": "2026-07-10T06:24:00.000Z",
+      "bookFromStamp": "2026-07-10T09:08:00.000Z",
       "bookToStamp": "2026-07-23T18:59:59.000Z",
       "supportLanguages": [],
       "targetGroup": "ER",
@@ -315,85 +364,132 @@
       "airports": [],
       "modules": [
         {
-          "ceId": "CE05006041",
+          "ceId": "CE05006060",
+          "type": "0011",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006061",
+          "type": "0012",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006062",
+          "type": "0013",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006063",
           "type": "0014",
           "startTime": "00:00:00.000",
           "endTime": "00:00:00.000",
           "minutesExamDuration": "000",
           "minutesExamLeadTime": "000",
           "isOdpExam": false
-        },
-        {
-          "ceId": "CE05006042",
-          "type": "0021",
-          "startTime": "00:00:00.000",
-          "endTime": "00:00:00.000",
-          "minutesExamDuration": "000",
-          "minutesExamLeadTime": "000",
-          "isOdpExam": false
         }
       ],
-      "modularPrices": [],
+      "modularPrices": [
+        {
+          "moduleCount": "1",
+          "price": 7500,
+          "priceIntern": 6250,
+          "priceRate": 7500,
+          "priceInternRate": 6250
+        },
+        {
+          "moduleCount": "2",
+          "price": 15000,
+          "priceIntern": 12500,
+          "priceRate": 15000,
+          "priceInternRate": 12500
+        },
+        {
+          "moduleCount": "3",
+          "price": 22500,
+          "priceIntern": 18750,
+          "priceRate": 22500,
+          "priceInternRate": 18750
+        },
+        {
+          "moduleCount": "4",
+          "price": 30000,
+          "priceIntern": 25000,
+          "priceRate": 30000,
+          "priceInternRate": 25000
+        }
+      ],
       "clevels": [],
       "smTexts": [
         {
-          "textKey": "SM05004418000000009005deO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009005deO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9005",
           "lang": "de",
-          "text": "Goethe-Zertifikat A1: Start Deutsch 1"
+          "text": "Goethe-Zertifikat B1"
         },
         {
-          "textKey": "SM05004418000000009006deO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009006deO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9006",
           "lang": "de",
-          "text": "<h2>Pr\u00fcfungsstruktur</h2><div>Die Pr\u00fcfung besteht aus folgenden Teilpr\u00fcfungen:</div><div>H\u00f6ren\u00a0 \u00a020 Minuten</div><div>Lesen\u00a0 \u00a0 25 Minuten</div><div>Schreiben 20 Minuten</div><div>Sprechen\u00a0 15 Minuten</div><div><br/></div><h2>Zugangsvoraussetzungen</h2><div>Empfohlen ab 16 Jahre</div><div><br/></div><h2>Mindestteilnehmerzahl</h2><div>Die Mindestteilnehmerzahl betr\u00e4gt 10 Personen. Es kann nat\u00fcrlich auch bei uns vorkommen, dass die Mindestteilnehmerzahl nicht erreicht wird und eine Pr\u00fcfung deshalb nicht zu Stande kommt. In diesem Fall werden wir versuchen, Ihnen fr\u00fchzeitig eine Alternative anzubieten. M\u00f6chten Sie diese nicht akzeptieren, erhalten Sie die bereits geleisteten Zahlungen umgehend zur\u00fcck.</div>"
+          "text": "<h2>Pr\u00fcfungsstruktur</h2><div>Die Pr\u00fcfung besteht aus vier Modulen:</div><div>H\u00f6ren\u00a0 \u00a040 Minuten</div><div>Lesen\u00a0 \u00a065 Minuten</div><div>Schreiben 60 Minuten</div><div>Sprechen 15 Minuten</div><div><br/></div><h2>Zugangsvoraussetzungen</h2><div>Empfohlen ab 16 Jahre</div><div><br/></div><h2>Mindestteilnehmerzahl</h2><div>Die Mindestteilnehmerzahl betr\u00e4gt 10 Personen. Es kann nat\u00fcrlich auch bei uns vorkommen, dass die Mindestteilnehmerzahl nicht erreicht wird und eine Pr\u00fcfung deshalb nicht zu Stande kommt. In diesem Fall werden wir versuchen, Ihnen fr\u00fchzeitig eine Alternative anzubieten. M\u00f6chten Sie diese nicht akzeptieren, erhalten Sie die bereits geleisteten Zahlungen umgehend zur\u00fcck.</div>"
         },
         {
-          "textKey": "SM05004418000000009006enO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009006enO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9006",
           "lang": "en",
-          "text": "<h2>Parts of the exam</h2><div>The exam consists of the following parts:</div><div>Listening 20 minutes</div><div>Reading 25 minutes</div><div>Writing 20 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>"
+          "text": "<h2>Parts of the exam</h2><div>The exam consists of four modules:</div><div>Listening 40 minutes</div><div>Reading 65 minutes</div><div>Writing 60 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>"
         }
       ],
       "eventTexts": [],
       "locationTexts": [
         {
-          "textKey": "F 10003364000000009005deO 10000366",
-          "objectId": "F 10003364",
+          "textKey": "F 05001562000000009005deO 10000366",
+          "objectId": "F 05001562",
           "eventId": "00000000",
           "type": "9005",
           "lang": "de",
           "text": "Lahore"
         },
         {
-          "textKey": "F 10003364000000009005enO 10000366",
-          "objectId": "F 10003364",
+          "textKey": "F 05001562000000009005enO 10000366",
+          "objectId": "F 05001562",
           "eventId": "00000000",
           "type": "9005",
           "lang": "en",
           "text": "Lahore"
         },
         {
-          "textKey": "F 10003364000000009008deO 10000366",
-          "objectId": "F 10003364",
+          "textKey": "F 05001562000000009008deO 10000366",
+          "objectId": "F 05001562",
           "eventId": "00000000",
           "type": "9008",
           "lang": "de",
-          "text": "NUML Lahore: 2nd Floor, Aiwan-e-Iqbal Complex, Egerton Rd, Garhi Shahu, Lahore, 54000, Pakistan"
+          "text": "Scotch Corner, 155 St 3, Upper Mall Scheme, Lahore, 54000, Pakistan"
         },
         {
-          "textKey": "F 10003364000000009008enO 10000366",
-          "objectId": "F 10003364",
+          "textKey": "F 05001562000000009008enO 10000366",
+          "objectId": "F 05001562",
           "eventId": "00000000",
           "type": "9008",
           "lang": "en",
-          "text": "NUML Lahore: 2nd Floor, Aiwan-e-Iqbal Complex, Egerton Rd, Garhi Shahu, Lahore, 54000, Pakistan"
+          "text": "Scotch Corner, 155 St 3, Upper Mall Scheme, Lahore, 54000, Pakistan"
         }
       ],
       "defaultLanguage": "de",
@@ -401,24 +497,24 @@
       "courseDurationUnit": "0",
       "ueConversionFactor": 0.75,
       "languageLevelArray": [
-        "A",
+        "B",
         "1"
       ],
-      "languageLevelBase": "A1",
-      "skillLevel": null,
-      "filter_languagelevelmin": "A1",
-      "filter_languagelevelmax": "A1",
-      "eventName": "Goethe-Zertifikat A1: Start Deutsch 1",
-      "eventDescription": "<h2>Parts of the exam</h2><div>The exam consists of the following parts:</div><div>Listening 20 minutes</div><div>Reading 25 minutes</div><div>Writing 20 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>",
+      "languageLevelBase": "B1",
+      "skillLevel": "A2",
+      "filter_languagelevelmin": "B1",
+      "filter_languagelevelmax": "B1",
+      "eventName": "Goethe-Zertifikat B1",
+      "eventDescription": "<h2>Parts of the exam</h2><div>The exam consists of four modules:</div><div>Listening 40 minutes</div><div>Reading 65 minutes</div><div>Writing 60 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>",
       "eventWeekdays": "",
-      "eventNameObjectId": "SM05004418",
-      "locationDescription": "NUML Lahore: 2nd Floor, Aiwan-e-Iqbal Complex, Egerton Rd, Garhi Shahu, Lahore, 54000, Pakistan",
-      "STARTDATE_ALTERNATIVE": "24.07.2026",
+      "eventNameObjectId": "SM05004426",
+      "locationDescription": "Scotch Corner, 155 St 3, Upper Mall Scheme, Lahore, 54000, Pakistan",
+      "STARTDATE_ALTERNATIVE": "25.07.2026",
       "ageSpan": "16 - 99",
       "ageType": "",
-      "languageLevelGroup": "136",
-      "languageSubLevel": "A1",
-      "filter_locationId": "F 10003364",
+      "languageLevelGroup": "138",
+      "languageSubLevel": "B1",
+      "filter_locationId": "F 05001562",
       "filter_locationName": "Lahore",
       "unstranslated_online": "Lahore",
       "AppendToLocalCourses": false,
@@ -429,19 +525,21 @@
       "buttonDisabled": "disabled",
       "buttonLink": "",
       "buttonColor": "btnHellGrauV3",
-      "PRICEDEFAULT": 25000,
-      "startDateForAccessibility": "2026-07-24",
-      "eventTimeSpan": "24.07.2026",
-      "endDateForAccessibility": "2026-07-24",
+      "PRICEDEFAULT": 30000,
+      "startDateForAccessibility": "2026-07-25",
+      "eventTimeSpan": "25.07.\r\n - 26.07.2026",
+      "endDateForAccessibility": "2026-07-26",
       "availabilityText": "Bookable from<br/>10.07.2026",
       "detailText": "Details",
-      "multilevel": 1,
-      "languagelevelText": "Levels offered: A1",
-      "languagelevelDetailText": "On this date, we will be offering various classes for language levels A1.",
+      "multilevel": 0,
+      "languagelevelText": "B1",
+      "languagelevelDetailText": "On this date, we will be offering various classes for language level B1.",
       "bookFromStampLocalTimezone": "26",
       "teachingUnitsTotalText": "0 lessons",
       "teachingUnitsPerWeekInHours": "",
-      "modulePriceText": "",
+      "minModulePriceText": "PKR 6,250.00",
+      "singleModulePriceText": "PKR 7,500.00",
+      "modulePriceText": "Single module PKR 7,500.00",
       "moduleLevelDesc": {
         "COLUMNS": [
           "courselevel_id",
@@ -452,25 +550,25 @@
         ],
         "DATA": [
           [
-            2,
-            "E004",
+            5,
+            "E006",
             "",
             "",
-            25144163
+            25144469
           ]
         ]
       },
-      "bookFromTimeFormatted": "11:24 AM",
-      "encOID": "0A099BDFD18EAF8EDB8B51962FC30F012BD18B75B8CDAAE60EF402AED3C0CBF889CDBF9E8F14284AD4BBFFDE55D54380EDA889C156D1529FF278D1429FD79AE6"
+      "bookFromTimeFormatted": "2:08 PM",
+      "encOID": "0F0FCA8FD788FC808DD955C77ACE5F002E83D728ED95ADEA01AB56AAD2C1C8FB8FC8BD9A8F17224D8BB8A8D307D5198DE6A8DB92528700CCA5278117CEDFC8E8"
     },
     {
-      "moduleId": "SM05004418",
+      "moduleId": "SM05004426",
       "isExam": true,
-      "isModular": false,
+      "isModular": true,
       "isDigital": false,
       "isDdpActive": false,
       "isBlended": false,
-      "isOnlyBookAllExamParts": true,
+      "isOnlyBookAllExamParts": false,
       "ageFrom": 16,
       "ageTo": 99,
       "publishFrom": "08.04.2026",
@@ -478,8 +576,8 @@
       "publishTo": "30.07.2026",
       "publishToTime": "23:59:59.000",
       "bookFrom": "17.07.2026",
-      "bookFromTime": "12:17:00.000",
-      "bookTo": "30.07.2026",
+      "bookFromTime": "14:31:00.000",
+      "bookTo": "29.07.2026",
       "bookToTime": "23:59:59.000",
       "startDate": "31.07.2026",
       "endDate": "01.08.2026",
@@ -487,8 +585,8 @@
       "endTime": "00:00:00.000",
       "locationId": "F 05001322",
       "locationName": "Goethe-Institut Karachi",
-      "category": "E004",
-      "languageLevel": "A1",
+      "category": "E006",
+      "languageLevel": "B1",
       "targetGroupExam": "ER",
       "targetGroupCourse": "",
       "onlyWithAcc": false,
@@ -497,11 +595,11 @@
       "durationWeeks": "0 Week",
       "teachingUnitsPerWeek": 0,
       "teachingUnitsTotal": 0,
-      "pspElement": "ASA1",
-      "price": " PKR 25,000.00",
-      "priceInternal": " PKR 16,500.00",
-      "priceRate": 25000,
-      "priceInternRate": 16500,
+      "pspElement": "AB1A",
+      "price": " PKR 30,000.00",
+      "priceInternal": " PKR 25,000.00",
+      "priceRate": 30000,
+      "priceInternRate": 25000,
       "currency": "PKR",
       "availability": 11,
       "capacityOptimal": 0,
@@ -511,7 +609,7 @@
       "lastUpdated": "2026-05-13T13:02:39.000",
       "variantId": "",
       "acadYear": "2026",
-      "acadPeriod": "012",
+      "acadPeriod": "013",
       "evObId": "",
       "institutIdFlw": "",
       "smModuleIdFlw": "",
@@ -536,16 +634,16 @@
       ],
       "publishFromStamp": "2026-04-08T01:00:00.000Z",
       "publishToStamp": "2026-07-30T18:59:59.000Z",
-      "bookFromStamp": "2026-07-17T07:17:00.000Z",
-      "bookToStamp": "2026-07-30T18:59:59.000Z",
+      "bookFromStamp": "2026-07-17T09:31:00.000Z",
+      "bookToStamp": "2026-07-29T18:59:59.000Z",
       "supportLanguages": [],
       "targetGroup": "ER",
       "priceForRanges": [],
       "airports": [],
       "modules": [
         {
-          "ceId": "CE05006041",
-          "type": "0014",
+          "ceId": "CE05006060",
+          "type": "0011",
           "startTime": "00:00:00.000",
           "endTime": "00:00:00.000",
           "minutesExamDuration": "000",
@@ -553,8 +651,26 @@
           "isOdpExam": false
         },
         {
-          "ceId": "CE05006042",
-          "type": "0021",
+          "ceId": "CE05006061",
+          "type": "0012",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006062",
+          "type": "0013",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006063",
+          "type": "0014",
           "startTime": "00:00:00.000",
           "endTime": "00:00:00.000",
           "minutesExamDuration": "000",
@@ -562,32 +678,61 @@
           "isOdpExam": false
         }
       ],
-      "modularPrices": [],
+      "modularPrices": [
+        {
+          "moduleCount": "1",
+          "price": 7500,
+          "priceIntern": 6250,
+          "priceRate": 7500,
+          "priceInternRate": 6250
+        },
+        {
+          "moduleCount": "2",
+          "price": 15000,
+          "priceIntern": 12500,
+          "priceRate": 15000,
+          "priceInternRate": 12500
+        },
+        {
+          "moduleCount": "3",
+          "price": 22500,
+          "priceIntern": 18750,
+          "priceRate": 22500,
+          "priceInternRate": 18750
+        },
+        {
+          "moduleCount": "4",
+          "price": 30000,
+          "priceIntern": 25000,
+          "priceRate": 30000,
+          "priceInternRate": 25000
+        }
+      ],
       "clevels": [],
       "smTexts": [
         {
-          "textKey": "SM05004418000000009005deO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009005deO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9005",
           "lang": "de",
-          "text": "Goethe-Zertifikat A1: Start Deutsch 1"
+          "text": "Goethe-Zertifikat B1"
         },
         {
-          "textKey": "SM05004418000000009006deO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009006deO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9006",
           "lang": "de",
-          "text": "<h2>Pr\u00fcfungsstruktur</h2><div>Die Pr\u00fcfung besteht aus folgenden Teilpr\u00fcfungen:</div><div>H\u00f6ren\u00a0 \u00a020 Minuten</div><div>Lesen\u00a0 \u00a0 25 Minuten</div><div>Schreiben 20 Minuten</div><div>Sprechen\u00a0 15 Minuten</div><div><br/></div><h2>Zugangsvoraussetzungen</h2><div>Empfohlen ab 16 Jahre</div><div><br/></div><h2>Mindestteilnehmerzahl</h2><div>Die Mindestteilnehmerzahl betr\u00e4gt 10 Personen. Es kann nat\u00fcrlich auch bei uns vorkommen, dass die Mindestteilnehmerzahl nicht erreicht wird und eine Pr\u00fcfung deshalb nicht zu Stande kommt. In diesem Fall werden wir versuchen, Ihnen fr\u00fchzeitig eine Alternative anzubieten. M\u00f6chten Sie diese nicht akzeptieren, erhalten Sie die bereits geleisteten Zahlungen umgehend zur\u00fcck.</div>"
+          "text": "<h2>Pr\u00fcfungsstruktur</h2><div>Die Pr\u00fcfung besteht aus vier Modulen:</div><div>H\u00f6ren\u00a0 \u00a040 Minuten</div><div>Lesen\u00a0 \u00a065 Minuten</div><div>Schreiben 60 Minuten</div><div>Sprechen 15 Minuten</div><div><br/></div><h2>Zugangsvoraussetzungen</h2><div>Empfohlen ab 16 Jahre</div><div><br/></div><h2>Mindestteilnehmerzahl</h2><div>Die Mindestteilnehmerzahl betr\u00e4gt 10 Personen. Es kann nat\u00fcrlich auch bei uns vorkommen, dass die Mindestteilnehmerzahl nicht erreicht wird und eine Pr\u00fcfung deshalb nicht zu Stande kommt. In diesem Fall werden wir versuchen, Ihnen fr\u00fchzeitig eine Alternative anzubieten. M\u00f6chten Sie diese nicht akzeptieren, erhalten Sie die bereits geleisteten Zahlungen umgehend zur\u00fcck.</div>"
         },
         {
-          "textKey": "SM05004418000000009006enO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009006enO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9006",
           "lang": "en",
-          "text": "<h2>Parts of the exam</h2><div>The exam consists of the following parts:</div><div>Listening 20 minutes</div><div>Reading 25 minutes</div><div>Writing 20 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>"
+          "text": "<h2>Parts of the exam</h2><div>The exam consists of four modules:</div><div>Listening 40 minutes</div><div>Reading 65 minutes</div><div>Writing 60 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>"
         }
       ],
       "eventTexts": [],
@@ -630,23 +775,23 @@
       "courseDurationUnit": "0",
       "ueConversionFactor": 0.75,
       "languageLevelArray": [
-        "A",
+        "B",
         "1"
       ],
-      "languageLevelBase": "A1",
-      "skillLevel": null,
-      "filter_languagelevelmin": "A1",
-      "filter_languagelevelmax": "A1",
-      "eventName": "Goethe-Zertifikat A1: Start Deutsch 1",
-      "eventDescription": "<h2>Parts of the exam</h2><div>The exam consists of the following parts:</div><div>Listening 20 minutes</div><div>Reading 25 minutes</div><div>Writing 20 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>",
+      "languageLevelBase": "B1",
+      "skillLevel": "A2",
+      "filter_languagelevelmin": "B1",
+      "filter_languagelevelmax": "B1",
+      "eventName": "Goethe-Zertifikat B1",
+      "eventDescription": "<h2>Parts of the exam</h2><div>The exam consists of four modules:</div><div>Listening 40 minutes</div><div>Reading 65 minutes</div><div>Writing 60 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>",
       "eventWeekdays": "",
-      "eventNameObjectId": "SM05004418",
+      "eventNameObjectId": "SM05004426",
       "locationDescription": "Goethe-Institut Pakistan\u00a0<br/>Kehkashan,\u00a0Plot/St 1 near Teen Talwar Karachi, Block 8 Clifton, 75600",
       "STARTDATE_ALTERNATIVE": "31.07.2026",
       "ageSpan": "16 - 99",
       "ageType": "",
-      "languageLevelGroup": "136",
-      "languageSubLevel": "A1",
+      "languageLevelGroup": "138",
+      "languageSubLevel": "B1",
       "filter_locationId": "F 05001322",
       "filter_locationName": "Goethe-Institut Karachi",
       "unstranslated_online": "Goethe-Institut Karachi",
@@ -658,19 +803,21 @@
       "buttonDisabled": "disabled",
       "buttonLink": "",
       "buttonColor": "btnHellGrauV3",
-      "PRICEDEFAULT": 25000,
+      "PRICEDEFAULT": 30000,
       "startDateForAccessibility": "2026-07-31",
       "eventTimeSpan": "31.07.\r\n - 01.08.2026",
       "endDateForAccessibility": "2026-08-01",
       "availabilityText": "Bookable from<br/>17.07.2026",
       "detailText": "Details",
-      "multilevel": 1,
-      "languagelevelText": "Levels offered: A1",
-      "languagelevelDetailText": "On this date, we will be offering various classes for language levels A1.",
+      "multilevel": 0,
+      "languagelevelText": "B1",
+      "languagelevelDetailText": "On this date, we will be offering various classes for language level B1.",
       "bookFromStampLocalTimezone": "26",
       "teachingUnitsTotalText": "0 lessons",
       "teachingUnitsPerWeekInHours": "",
-      "modulePriceText": "",
+      "minModulePriceText": "PKR 6,250.00",
+      "singleModulePriceText": "PKR 7,500.00",
+      "modulePriceText": "Single module PKR 7,500.00",
       "moduleLevelDesc": {
         "COLUMNS": [
           "courselevel_id",
@@ -681,43 +828,43 @@
         ],
         "DATA": [
           [
-            2,
-            "E004",
+            5,
+            "E006",
             "",
             "",
-            25144163
+            25144469
           ]
         ]
       },
-      "bookFromTimeFormatted": "12:17 PM",
-      "encOID": "5C09C98E86DCF2D5D68C05C528CC5F0F7DDFD62FBE90FAE109F500A881CACCF58BC2BF9FDA43781DD9E7A8D254824287BAFD8E915E8357CBA32ED043CF85C1E9"
+      "bookFromTimeFormatted": "2:31 PM",
+      "encOID": "5C5BCCDDD7DDF3D48CD651C57ACB080026D1DC2EEAC4AEB20EA900A98F92CDAF8FC2E9CC8D1E7D4DD4BDFE8207D51FD1BDA886CB548707C8A42ED045C5DF9BE7"
     },
     {
-      "moduleId": "SM05004418",
+      "moduleId": "SM05004426",
       "isExam": true,
-      "isModular": false,
+      "isModular": true,
       "isDigital": false,
       "isDdpActive": false,
       "isBlended": false,
-      "isOnlyBookAllExamParts": true,
+      "isOnlyBookAllExamParts": false,
       "ageFrom": 16,
       "ageTo": 99,
       "publishFrom": "10.04.2026",
       "publishFromTime": "06:00:00.000",
-      "publishTo": "20.08.2026",
+      "publishTo": "21.08.2026",
       "publishToTime": "23:59:59.000",
       "bookFrom": "07.08.2026",
-      "bookFromTime": "11:11:00.000",
+      "bookFromTime": "14:37:00.000",
       "bookTo": "20.08.2026",
       "bookToTime": "23:59:59.000",
-      "startDate": "21.08.2026",
-      "endDate": "21.08.2026",
+      "startDate": "22.08.2026",
+      "endDate": "23.08.2026",
       "startTime": "00:00:00.000",
       "endTime": "00:00:00.000",
-      "locationId": "F 10003364",
+      "locationId": "F 05001562",
       "locationName": "Lahore",
-      "category": "E004",
-      "languageLevel": "A1",
+      "category": "E006",
+      "languageLevel": "B1",
       "targetGroupExam": "ER",
       "targetGroupCourse": "",
       "onlyWithAcc": false,
@@ -726,11 +873,11 @@
       "durationWeeks": "0 Week",
       "teachingUnitsPerWeek": 0,
       "teachingUnitsTotal": 0,
-      "pspElement": "ASA1",
-      "price": " PKR 25,000.00",
-      "priceInternal": " PKR 16,500.00",
-      "priceRate": 25000,
-      "priceInternRate": 16500,
+      "pspElement": "AB1A",
+      "price": " PKR 30,000.00",
+      "priceInternal": " PKR 25,000.00",
+      "priceRate": 30000,
+      "priceInternRate": 25000,
       "currency": "PKR",
       "availability": 11,
       "capacityOptimal": 0,
@@ -740,7 +887,7 @@
       "lastUpdated": "2026-05-13T13:02:39.000",
       "variantId": "",
       "acadYear": "2026",
-      "acadPeriod": "016",
+      "acadPeriod": "017",
       "evObId": "",
       "institutIdFlw": "",
       "smModuleIdFlw": "",
@@ -764,8 +911,8 @@
         }
       ],
       "publishFromStamp": "2026-04-10T01:00:00.000Z",
-      "publishToStamp": "2026-08-20T18:59:59.000Z",
-      "bookFromStamp": "2026-08-07T06:11:00.000Z",
+      "publishToStamp": "2026-08-21T18:59:59.000Z",
+      "bookFromStamp": "2026-08-07T09:37:00.000Z",
       "bookToStamp": "2026-08-20T18:59:59.000Z",
       "supportLanguages": [],
       "targetGroup": "ER",
@@ -773,85 +920,132 @@
       "airports": [],
       "modules": [
         {
-          "ceId": "CE05006041",
+          "ceId": "CE05006060",
+          "type": "0011",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006061",
+          "type": "0012",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006062",
+          "type": "0013",
+          "startTime": "00:00:00.000",
+          "endTime": "00:00:00.000",
+          "minutesExamDuration": "000",
+          "minutesExamLeadTime": "000",
+          "isOdpExam": false
+        },
+        {
+          "ceId": "CE05006063",
           "type": "0014",
           "startTime": "00:00:00.000",
           "endTime": "00:00:00.000",
           "minutesExamDuration": "000",
           "minutesExamLeadTime": "000",
           "isOdpExam": false
-        },
-        {
-          "ceId": "CE05006042",
-          "type": "0021",
-          "startTime": "00:00:00.000",
-          "endTime": "00:00:00.000",
-          "minutesExamDuration": "000",
-          "minutesExamLeadTime": "000",
-          "isOdpExam": false
         }
       ],
-      "modularPrices": [],
+      "modularPrices": [
+        {
+          "moduleCount": "1",
+          "price": 7500,
+          "priceIntern": 6250,
+          "priceRate": 7500,
+          "priceInternRate": 6250
+        },
+        {
+          "moduleCount": "2",
+          "price": 15000,
+          "priceIntern": 12500,
+          "priceRate": 15000,
+          "priceInternRate": 12500
+        },
+        {
+          "moduleCount": "3",
+          "price": 22500,
+          "priceIntern": 18750,
+          "priceRate": 22500,
+          "priceInternRate": 18750
+        },
+        {
+          "moduleCount": "4",
+          "price": 30000,
+          "priceIntern": 25000,
+          "priceRate": 30000,
+          "priceInternRate": 25000
+        }
+      ],
       "clevels": [],
       "smTexts": [
         {
-          "textKey": "SM05004418000000009005deO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009005deO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9005",
           "lang": "de",
-          "text": "Goethe-Zertifikat A1: Start Deutsch 1"
+          "text": "Goethe-Zertifikat B1"
         },
         {
-          "textKey": "SM05004418000000009006deO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009006deO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9006",
           "lang": "de",
-          "text": "<h2>Pr\u00fcfungsstruktur</h2><div>Die Pr\u00fcfung besteht aus folgenden Teilpr\u00fcfungen:</div><div>H\u00f6ren\u00a0 \u00a020 Minuten</div><div>Lesen\u00a0 \u00a0 25 Minuten</div><div>Schreiben 20 Minuten</div><div>Sprechen\u00a0 15 Minuten</div><div><br/></div><h2>Zugangsvoraussetzungen</h2><div>Empfohlen ab 16 Jahre</div><div><br/></div><h2>Mindestteilnehmerzahl</h2><div>Die Mindestteilnehmerzahl betr\u00e4gt 10 Personen. Es kann nat\u00fcrlich auch bei uns vorkommen, dass die Mindestteilnehmerzahl nicht erreicht wird und eine Pr\u00fcfung deshalb nicht zu Stande kommt. In diesem Fall werden wir versuchen, Ihnen fr\u00fchzeitig eine Alternative anzubieten. M\u00f6chten Sie diese nicht akzeptieren, erhalten Sie die bereits geleisteten Zahlungen umgehend zur\u00fcck.</div>"
+          "text": "<h2>Pr\u00fcfungsstruktur</h2><div>Die Pr\u00fcfung besteht aus vier Modulen:</div><div>H\u00f6ren\u00a0 \u00a040 Minuten</div><div>Lesen\u00a0 \u00a065 Minuten</div><div>Schreiben 60 Minuten</div><div>Sprechen 15 Minuten</div><div><br/></div><h2>Zugangsvoraussetzungen</h2><div>Empfohlen ab 16 Jahre</div><div><br/></div><h2>Mindestteilnehmerzahl</h2><div>Die Mindestteilnehmerzahl betr\u00e4gt 10 Personen. Es kann nat\u00fcrlich auch bei uns vorkommen, dass die Mindestteilnehmerzahl nicht erreicht wird und eine Pr\u00fcfung deshalb nicht zu Stande kommt. In diesem Fall werden wir versuchen, Ihnen fr\u00fchzeitig eine Alternative anzubieten. M\u00f6chten Sie diese nicht akzeptieren, erhalten Sie die bereits geleisteten Zahlungen umgehend zur\u00fcck.</div>"
         },
         {
-          "textKey": "SM05004418000000009006enO 10000366",
-          "objectId": "SM05004418",
+          "textKey": "SM05004426000000009006enO 10000366",
+          "objectId": "SM05004426",
           "eventId": "00000000",
           "type": "9006",
           "lang": "en",
-          "text": "<h2>Parts of the exam</h2><div>The exam consists of the following parts:</div><div>Listening 20 minutes</div><div>Reading 25 minutes</div><div>Writing 20 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>"
+          "text": "<h2>Parts of the exam</h2><div>The exam consists of four modules:</div><div>Listening 40 minutes</div><div>Reading 65 minutes</div><div>Writing 60 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>"
         }
       ],
       "eventTexts": [],
       "locationTexts": [
         {
-          "textKey": "F 10003364000000009005deO 10000366",
-          "objectId": "F 10003364",
+          "textKey": "F 05001562000000009005deO 10000366",
+          "objectId": "F 05001562",
           "eventId": "00000000",
           "type": "9005",
           "lang": "de",
           "text": "Lahore"
         },
         {
-          "textKey": "F 10003364000000009005enO 10000366",
-          "objectId": "F 10003364",
+          "textKey": "F 05001562000000009005enO 10000366",
+          "objectId": "F 05001562",
           "eventId": "00000000",
           "type": "9005",
           "lang": "en",
           "text": "Lahore"
         },
         {
-          "textKey": "F 10003364000000009008deO 10000366",
-          "objectId": "F 10003364",
+          "textKey": "F 05001562000000009008deO 10000366",
+          "objectId": "F 05001562",
           "eventId": "00000000",
           "type": "9008",
           "lang": "de",
-          "text": "NUML Lahore: 2nd Floor, Aiwan-e-Iqbal Complex, Egerton Rd, Garhi Shahu, Lahore, 54000, Pakistan"
+          "text": "Scotch Corner, 155 St 3, Upper Mall Scheme, Lahore, 54000, Pakistan"
         },
         {
-          "textKey": "F 10003364000000009008enO 10000366",
-          "objectId": "F 10003364",
+          "textKey": "F 05001562000000009008enO 10000366",
+          "objectId": "F 05001562",
           "eventId": "00000000",
           "type": "9008",
           "lang": "en",
-          "text": "NUML Lahore: 2nd Floor, Aiwan-e-Iqbal Complex, Egerton Rd, Garhi Shahu, Lahore, 54000, Pakistan"
+          "text": "Scotch Corner, 155 St 3, Upper Mall Scheme, Lahore, 54000, Pakistan"
         }
       ],
       "defaultLanguage": "de",
@@ -859,24 +1053,24 @@
       "courseDurationUnit": "0",
       "ueConversionFactor": 0.75,
       "languageLevelArray": [
-        "A",
+        "B",
         "1"
       ],
-      "languageLevelBase": "A1",
-      "skillLevel": null,
-      "filter_languagelevelmin": "A1",
-      "filter_languagelevelmax": "A1",
-      "eventName": "Goethe-Zertifikat A1: Start Deutsch 1",
-      "eventDescription": "<h2>Parts of the exam</h2><div>The exam consists of the following parts:</div><div>Listening 20 minutes</div><div>Reading 25 minutes</div><div>Writing 20 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>",
+      "languageLevelBase": "B1",
+      "skillLevel": "A2",
+      "filter_languagelevelmin": "B1",
+      "filter_languagelevelmax": "B1",
+      "eventName": "Goethe-Zertifikat B1",
+      "eventDescription": "<h2>Parts of the exam</h2><div>The exam consists of four modules:</div><div>Listening 40 minutes</div><div>Reading 65 minutes</div><div>Writing 60 minutes</div><div>Speaking 15 minutes</div><div><br/></div><h2>Prerequisites for participation</h2><div>recommended from 16 years of age</div><div><br/></div><h2>Minimum number of participants</h2><div>The minimum number of participants is 10. If the minimum number of participants is not reached, the examination will not take place as a consequence. In such a case, we will do our best to offer you an alternative in good time. If you do not want to accept the suggested alternative, any payments already made will be promptly refunded.</div>",
       "eventWeekdays": "",
-      "eventNameObjectId": "SM05004418",
-      "locationDescription": "NUML Lahore: 2nd Floor, Aiwan-e-Iqbal Complex, Egerton Rd, Garhi Shahu, Lahore, 54000, Pakistan",
-      "STARTDATE_ALTERNATIVE": "21.08.2026",
+      "eventNameObjectId": "SM05004426",
+      "locationDescription": "Scotch Corner, 155 St 3, Upper Mall Scheme, Lahore, 54000, Pakistan",
+      "STARTDATE_ALTERNATIVE": "22.08.2026",
       "ageSpan": "16 - 99",
       "ageType": "",
-      "languageLevelGroup": "136",
-      "languageSubLevel": "A1",
-      "filter_locationId": "F 10003364",
+      "languageLevelGroup": "138",
+      "languageSubLevel": "B1",
+      "filter_locationId": "F 05001562",
       "filter_locationName": "Lahore",
       "unstranslated_online": "Lahore",
       "AppendToLocalCourses": false,
@@ -887,19 +1081,21 @@
       "buttonDisabled": "disabled",
       "buttonLink": "",
       "buttonColor": "btnHellGrauV3",
-      "PRICEDEFAULT": 25000,
-      "startDateForAccessibility": "2026-08-21",
-      "eventTimeSpan": "21.08.2026",
-      "endDateForAccessibility": "2026-08-21",
+      "PRICEDEFAULT": 30000,
+      "startDateForAccessibility": "2026-08-22",
+      "eventTimeSpan": "22.08.\r\n - 23.08.2026",
+      "endDateForAccessibility": "2026-08-23",
       "availabilityText": "Bookable from<br/>07.08.2026",
       "detailText": "Details",
-      "multilevel": 1,
-      "languagelevelText": "Levels offered: A1",
-      "languagelevelDetailText": "On this date, we will be offering various classes for language levels A1.",
+      "multilevel": 0,
+      "languagelevelText": "B1",
+      "languagelevelDetailText": "On this date, we will be offering various classes for language level B1.",
       "bookFromStampLocalTimezone": "26",
       "teachingUnitsTotalText": "0 lessons",
       "teachingUnitsPerWeekInHours": "",
-      "modulePriceText": "",
+      "minModulePriceText": "PKR 6,250.00",
+      "singleModulePriceText": "PKR 7,500.00",
+      "modulePriceText": "Single module PKR 7,500.00",
       "moduleLevelDesc": {
         "COLUMNS": [
           "courselevel_id",
@@ -910,16 +1106,16 @@
         ],
         "DATA": [
           [
-            2,
-            "E004",
+            5,
+            "E006",
             "",
             "",
-            25144163
+            25144469
           ]
         ]
       },
-      "bookFromTimeFormatted": "11:11 AM",
-      "encOID": "5C5ACC8C8188AD85D8D953C57AC959522CD58B7CBFC2FCB200FC02A8D097C8FDD898EEC482122F4A8BB8F4D554D242D0E9FD8690038502CEF32FD11099D19BEB"
+      "bookFromTimeFormatted": "2:37 PM",
+      "encOID": "0F58C3D9D0DAFD84D789029576CC0A5427DEDB2BBCC4FEE50BAC03AED5C59FA8849BBB9A83117F1DDBE9FC8600DE4CD5EEAE87C252D051CBAF2ED115C4D2C0E6"
     }
   ],
   "PAGINATION": {
@@ -1338,15 +1534,15 @@
     }
   },
   "TIMELOG": {
-    "STARTTIME": "June, 30 2026 19:38:55 +0200",
+    "STARTTIME": "July, 02 2026 22:29:08 +0200",
     "APIREQUESTTIME": {
       "offers": {
-        "START": "June, 30 2026 19:38:55 +0200",
+        "START": "July, 02 2026 22:29:08 +0200",
         "TIME": 0,
-        "END": "June, 30 2026 19:38:55 +0200"
+        "END": "July, 02 2026 22:29:08 +0200"
       }
     },
     "TIMESPAN": 0,
-    "ENDTIME": "June, 30 2026 19:38:55 +0200"
+    "ENDTIME": "July, 02 2026 22:29:08 +0200"
   }
 }

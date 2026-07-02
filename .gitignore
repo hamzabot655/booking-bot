@@ -24,3 +24,6 @@ presentation/
 goethe-bot-sa.json
 .vercel
 .env*
+
+# Local booking-day runner (contains secrets)
+book_tomorrow.bat
