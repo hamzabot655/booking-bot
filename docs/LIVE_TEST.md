@@ -3,6 +3,11 @@
 Run this on the next real registration window. Goal: prove the full flow works against the
 **live** goethe.de DOM (the wizard has never been confirmed end-to-end on a real booking).
 
+> **Login status (verified July 2, 2026):** Login WORKS from a home IP (headless or headful) after the
+> Usercentrics consent fix (`5ea24bd`). **Railway does NOT log in — its datacenter IP is blocked** (tested:
+> fails with uc AND plain Selenium AND consent-fix live). **So run the booking LOCAL** (`scripts\run_local.bat`),
+> not on Railway. The wizard/confirm pages past login are still unproven and may have their own reCAPTCHA.
+
 ## Preconditions
 - [ ] reCAPTCHA path solved: bot runs from a clean IP (VPS, see `VPS_SETUP.md`) **or** an
       IP-whitelisted residential proxy in `PROXY_LIST` **or** `CAPTCHA_API_KEY` set (2Captcha).

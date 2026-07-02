@@ -1,3 +1,42 @@
+# Session Summary — July 2, 2026 (Part 10) — Login Root-Cause Nailed: Consent Bug + Datacenter IP (both real)
+
+## Context
+Debugging why the bot can't log in to Goethe CAS. A second AI (DeepSeek) argued "no reCAPTCHA, it's
+consent/CAS-token". Resolved it empirically with isolation tests.
+
+## Findings (tested, not theorized)
+- **CAS login page has NO reCAPTCHA markup** — confirmed from raw HTML (from a home IP). No `api.js`,
+  `g-recaptcha`, sitekey. Uses Usercentrics + standard CAS `execution` token.
+- **Blocker #1 — Usercentrics consent.** The bot only HID the banner (`display:none`), never consented;
+  Usercentrics gated the POST → `Still on login page — no visible error`. **FIXED** (`5ea24bd`):
+  `_accept_cookie_consent` = `UC_UI.acceptAllConsents()` + shadow-DOM accept-button click.
+  Proof: local **headless** login went FAIL → `★ LOGIN SUCCESSFUL` (`my.goethe.de`) with only this change.
+- **Blocker #2 — datacenter IP (Railway only).** Even with the consent fix deployed, Railway still fails.
+  Isolation: local plain-Selenium = works; Railway with uc = fails; Railway with `DISABLE_UC=1`
+  (plain Selenium) = fails. So NOT uc, NOT consent → **the IP**. Goethe serves datacenter IPs a dynamic
+  challenge a home IP never sees (explains why static HTML from home showed no reCAPTCHA).
+- **DeepSeek's CAS-token-timing theory: disproven** — the consent fix ADDS ~1.2s delay before submit yet
+  login started working; more delay ≠ the fix. Consent was it (locally); IP is the Railway wall.
+
+## Verdict
+- **Login works from a home IP** (headless or headful). **Railway will NOT log in.** → book LOCAL tomorrow.
+- Both diagnoses were partly right: consent (all envs) + datacenter IP (Railway). Fixing consent alone
+  does not unblock Railway.
+
+## Still open (only knowable at the window)
+- Booking **wizard/confirm** pages may have their own reCAPTCHA (login doesn't). 2Captcha v2 wired.
+- Live selector drift on the wizard (never run end-to-end). Backup = human manual booking.
+- Verify the true reg-open time (`12:16 PM` looked odd).
+
+## Commits This Part
+| Commit | Message |
+|--------|---------|
+| `5ea24bd` | fix: accept Usercentrics consent so login submit works (was the real blocker) |
+| `19963b7` | fix: allow headful on Windows/macOS + DISABLE_UC switch for reliable local run |
+| (Railway var) | `DISABLE_UC=1` set (isolation test; harmless) |
+
+---
+
 # Session Summary — July 2, 2026 (Part 9) — Booking-Day Prep: Railway Login Blocked Confirmed, 2Captcha, AM/PM Fix
 
 ## Context

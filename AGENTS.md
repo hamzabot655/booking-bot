@@ -1,28 +1,47 @@
 # AGENTS.md — Goethe Booking Bot
 
 ## ✅ Booking Day Status (client: 1 student, A1 Islamabad, reg opens 03.07.2026 12:16 PM)
-**SOLVED. Root cause = HEADLESS, not IP.** Verified login flow end-to-end:
-- Headless Chrome (Railway OR local) → reCAPTCHA v3 silent block → `Still on login page`.
-- **Headful Chrome from a home/residential IP → `★ LOGIN SUCCESSFUL`** (reached `my.goethe.de/kdf/fe/user/index`).
-- Creds are **valid** (`abeermeer7979@gmail.com`), home IP is **clean**. So run local + headful.
+**TWO real login blockers — both diagnosed. Run LOCAL tomorrow.**
+
+### Root causes (both true)
+1. **Usercentrics consent** blocked the form POST everywhere. The bot only *hid* the banner,
+   never consented. **FIXED** (`5ea24bd`): `_accept_cookie_consent` calls `UC_UI.acceptAllConsents()`
+   + clicks the shadow-DOM accept button. → local **headless** login now succeeds (`my.goethe.de`).
+2. **Datacenter IP** blocks Railway specifically. Proven by isolation tests: local (home IP) logs in;
+   Railway fails the SAME code — with uc AND with `DISABLE_UC=1` (plain Selenium) AND with the consent
+   fix live. So it is NOT uc, NOT consent → it's the IP. Goethe serves datacenter IPs a dynamic
+   challenge (invisible reCAPTCHA v3 / Akamai) that a home IP never sees (why the static-HTML check,
+   done from a home IP, showed zero reCAPTCHA).
+
+**Net: login works from a home IP (headless or headful). Railway will NOT log in. Book LOCAL.**
+
+### Verified truths
+- Creds valid (`abeermeer7979@gmail.com`). Home IP clean. Consent fix makes even headless log in.
+- CAS login page itself has NO reCAPTCHA markup (confirmed) — the block is consent (all) + IP (datacenter only).
 
 ### Fixes shipped for booking day
-- `api_start` no longer forces headless on Windows/macOS when `DISPLAY` unset (`19963b7`).
-- `create_driver` honors `DISABLE_UC=1` (undetected-chromedriver is broken on Chrome149/Windows:
-  zombie procs + profile lock). `run_local.bat` sets it + runs from repo root.
-- `parse_exam_time_str` tolerates AM/PM; frontend Fetch-Dates emits 24h (`100a986`).
+- `5ea24bd` — accept Usercentrics consent (the real POST blocker).
+- `19963b7` — `api_start` no longer forces headless on Windows/macOS; `create_driver` honors `DISABLE_UC=1`
+  (uc is broken on Chrome149/Windows: zombie procs + profile lock); `run_local.bat` sets it + cd repo root.
+- `100a986` — `parse_exam_time_str` tolerates AM/PM; frontend Fetch-Dates emits 24h.
 
-### Tomorrow — exact steps (run on a home-IP laptop)
-1. `scripts\run_local.bat` → backend on `http://localhost:5000` (sets `DISABLE_UC=1`).
+### Tomorrow — locked steps (home-IP laptop)
+1. `scripts\run_local.bat` → backend `http://localhost:5000` (sets `DISABLE_UC=1`).
 2. Dashboard `goethe-frontend-v3.vercel.app` → Backend URL `http://localhost:5000` → Connect → login.
-3. Confirm student **abeer meer / A1 / Islamabad** (add if missing; needs Goethe email+password + all fields).
-4. **UNCHECK "Headless"** — REQUIRED (headless = blocked).
-5. Verify `booking_datetime` = the TRUE reg-open time (⚠️ confirm `12:16 PM` on official goethe.de page).
-6. Start ~5 min before open. Bot burst-polls → clicks "Select modules" → headful login → 5-step wizard → confirm.
-7. Laptop awake, stable wifi, **don't touch the Chrome window** while it runs.
+3. Confirm student **abeer meer / A1 / Islamabad** (Goethe email+password + all wizard fields).
+4. Headful is safest (headless now works too, but leave "Headless" unchecked).
+5. Verify `booking_datetime` = TRUE reg-open time (⚠️ confirm `12:16 PM` on official goethe.de page).
+6. Start ~5 min before open → burst-poll → Select modules → login → 5-step wizard → confirm.
+7. Laptop awake, stable wifi, don't touch the Chrome window.
 
-2Captcha (`CAPTCHA_API_KEY` on Railway, $3) is v2-only → irrelevant now; local headful is the path.
-`kill`-tip: if Chrome zombies pile up, `taskkill /F /IM chrome.exe /T` before re-running.
+### Residual risks (only known at the window)
+- The booking **wizard/confirm** pages may have their OWN reCAPTCHA (login has none). 2Captcha v2 is wired
+  (`CAPTCHA_API_KEY` on Railway — but booking runs local; set the key locally too if needed). v3 there = harder.
+- Live selector drift on the wizard (never run end-to-end). **Backup: human books manually.**
+
+### To make Railway/cloud work later (post-tomorrow)
+Only a **residential proxy** beats the datacenter-IP wall (needs `selenium-wire` for user:pass auth).
+`DISABLE_UC=1` is currently set on Railway (harmless).
 
 ## Session Context (latest — maintenance, secret hygiene, Vercel rebuild)
 - **CRITICAL backend-crash fixed** (`7c6294e`): `websocket_handler.py` had a committed
