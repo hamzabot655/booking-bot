@@ -1,5 +1,22 @@
 # AGENTS.md — Goethe Booking Bot
 
+## ⏰ Booking Day Status (client: 1 student, A1 Islamabad, reg opens 03.07.2026 12:16 PM)
+- **CONFIRMED: Railway CANNOT log in to Goethe.** Form Scanner from Railway prod →
+  `Login failed: Still on login page — no visible error`. Cause = datacenter IP + invisible
+  reCAPTCHA v3 (silent low-score block). Not removable; all datacenter IPs affected.
+- **2Captcha key set** on Railway (`CAPTCHA_API_KEY=...`, $3 balance) — but code only solves
+  reCAPTCHA **v2**; Goethe login is **v3**, so it does NOT fix Railway. Wired but ineffective here.
+- **booking_datetime AM/PM bug FIXED** (`100a986`): student row was `2026-07-03T12:16 PM` (invalid ISO →
+  bot errored). `parse_exam_time_str` now tolerates AM/PM; frontend Fetch-Dates converts to 24h.
+  ⚠️ The exact reg-open time `12:16 PM` is unverified — check official goethe.de page.
+- **Student loaded**: DB id 4, `abeer meer`, A1 Islamabad, email `abeermeer7979@gmail.com`, all wizard
+  fields present. Password stored encrypted (FERNET key persisted in DB).
+- **NOT YET TESTED: home/residential IP login.** Run `python scripts/scan_form_local.py --email .. --password ..`
+  to confirm. If home works → IP block confirmed. If home also fails → it's a bug, not IP.
+- **Booking-day options (ranked):** (1) run local from a clean IP — dev's home laptop or remote-in to
+  client via AnyDesk (`scripts/run_local.bat` → dashboard → localhost:5000); (2) residential proxy on
+  Railway (needs `selenium-wire` for user:pass auth — NOT yet implemented); (3) 2Captcha v3 (unreliable).
+
 ## Session Context (latest — maintenance, secret hygiene, Vercel rebuild)
 - **CRITICAL backend-crash fixed** (`7c6294e`): `websocket_handler.py` had a committed
   `IndentationError` (from `e64dd94`) — a duplicated/orphaned `finally`/`except` tail.

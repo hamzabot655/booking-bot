@@ -1,3 +1,35 @@
+# Session Summary — July 2, 2026 (Part 9) — Booking-Day Prep: Railway Login Blocked Confirmed, 2Captcha, AM/PM Fix
+
+## Context
+Client paid; needs **1 student** booked tomorrow (03.07.2026) — A1 Islamabad, reg opens 12:16 PM.
+
+## What happened
+- **2Captcha configured**: client bought $3, key set on Railway (`CAPTCHA_API_KEY`) via `railway variable set`.
+  Code wires `detect_captcha`/`solve_captcha` into `_login_attempt` — but only handles reCAPTCHA **v2**.
+- **Confirmed Railway login is blocked**: ran Form Scanner (`/api/form/scan`) from Railway →
+  `Login failed: Still on login page — no visible error`. = datacenter IP + invisible reCAPTCHA **v3**.
+  2Captcha (v2) does not fix this. Railway IP reputation is not changeable.
+- **Fixed a booking-killer bug** (`100a986`): the student's `booking_datetime` was `2026-07-03T12:16 PM`
+  (invalid ISO — `parse_exam_time_str` raised → booking would fail). Now the parser tolerates AM/PM and the
+  frontend Fetch-Dates converts `reg_open_time` to 24h. Regression test added. **Existing DB row now books
+  without editing it.**
+- **Student verified**: DB id 4 `abeer meer`, A1 Islamabad, all wizard fields present, encrypted password.
+
+## Open / decisions
+- ⚠️ **Verify exact reg-open time** — `12:16 PM` is suspicious; check official goethe.de A1 Islamabad page.
+- ⚠️ **Home/residential IP login NOT yet tested** — run `scripts/scan_form_local.py` with the Goethe password.
+  Result is the fork: home works → IP block real → use clean-IP path; home fails → it's a bug (fix, Railway too).
+- **Booking-day path (ranked):** local run from a clean IP (dev home laptop, or remote-in to client via
+  AnyDesk) > residential proxy on Railway (needs `selenium-wire` for auth — not built) > 2Captcha v3 (weak).
+
+## Commits This Part
+| Commit | Message |
+|--------|---------|
+| `100a986` | fix: accept AM/PM booking_datetime (Fetch-Dates emitted '12:16 PM') |
+| (Railway var) | `CAPTCHA_API_KEY` set on prod |
+
+---
+
 # Session Summary — July 1, 2026 (Part 8) — Git History Scrub Executed + India Dropped
 
 ## Summary
