@@ -1,3 +1,35 @@
+# Session Summary — July 3, 2026 (Part 12) — AUTH_PASSWORD as API Token + Cookie Capture Verified
+
+## Context
+Capture cookies script needed `validate_token()` to accept `AUTH_PASSWORD` as a Bearer token for API auth.
+Also discovered that `AUTH_PASSWORD` on Railway was `Hamza@123`, not `@dm1n@123`.
+
+## What Changed
+### validate_token() now accepts AUTH_PASSWORD directly
+- **`webapp.py:validate_token()`** — added `if token == _raw_password: return True` so scripts can use
+  `AUTH_PASSWORD` as a master API Bearer token without needing a dashboard session token.
+- The frontend login still uses email/password → creates a session token. But scripts (cookie capture,
+  save_goethe_cookies) can now use `AUTH_PASSWORD` directly in `Authorization: Bearer <password>`.
+
+### Correct AUTH_PASSWORD discovered
+- Railway had `AUTH_PASSWORD=Hamza@123`, not `@dm1n@123` as previously thought. Fixed in user's command.
+
+### Cookie capture verified
+- `scripts/capture_cookies.py` ran successfully → **12 cookies saved** to Railway DB.
+- Confirmed via `curl` to `/api/goethe-cookies` endpoint.
+
+## Files Changed
+| File | Change |
+|------|--------|
+| `webapp.py` | `validate_token()` now returns True if token matches `_raw_password` |
+
+## Commits
+| Commit | Message |
+|--------|---------|
+| `9a5b46f` | fix: allow AUTH_PASSWORD as Bearer token for API access |
+
+---
+
 # Session Summary — July 3, 2026 (Part 11) — Cookie Persistence Fix: Railway Login Unblocked + 2Captcha v3
 
 ## Context

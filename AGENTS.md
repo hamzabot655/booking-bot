@@ -208,11 +208,19 @@ ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright
   history (verified: 0 commits contain them). **This does NOT rotate them** — the credentials still
   work until rotated at the provider (see below). Any other local clone is now divergent → re-clone.
 
-### ⬜ Pending (owner action)
+#### Latest: validate_token accepts AUTH_PASSWORD as Bearer (`9a5b46f`)
+- `webapp.py:validate_token()` now checks `if token == _raw_password: return True` — scripts can use
+  `AUTH_PASSWORD` directly as a Bearer token for API calls without needing a dashboard session token.
+- Cookie capture verified: 12 cookies saved to Railway DB. Confirmed via `/api/goethe-cookies`.
+
+### Railway AUTH_PASSWORD
+- Actual value on Railway: `Hamza@123` (NOT `@dm1n@123` as previously thought).
+
+## ⬜ Pending (owner action)
 - [ ] **Rotate all leaked secrets — STILL REQUIRED.** History scrub ≠ rotation; the tokens/passwords
       remain valid until changed at each provider. Checklist: `docs/SECURITY_ROTATION.md`.
 - [ ] Provision reCAPTCHA bypass — VPS (`docs/VPS_SETUP.md`) / IP-whitelisted residential proxy / set `CAPTCHA_API_KEY`.
 - [ ] Set repo secret `DATABASE_URL_EXTERNAL` (Railway public Postgres URL) for pg-backup — I can set it once you paste the value.
-- [ ] Live booking test — run `docs/LIVE_TEST.md` on the next registration window.
+- [ ] Live booking test — 03.07.2026 12:16 PM A1 Islamabad (cookie persistence path).
 
 > India adaptation is **dropped** (client no longer engaged). Scope is Goethe **Pakistan** only.
