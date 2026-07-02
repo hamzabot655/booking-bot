@@ -594,7 +594,7 @@ def simulate_human_typing(element: WebElement, text: str) -> None:
 # ── CAPTCHA solving (2Captcha) ──
 
 def detect_captcha(driver: webdriver.Chrome) -> Optional[str]:
-    """Check if a CAPTCHA iframe or element is on the page."""
+    """Check if a CAPTCHA iframe, element, or v3 site key is on the page."""
     captcha_selectors = [
         "iframe[src*='recaptcha']", "iframe[src*='captcha']",
         ".g-recaptcha", "#recaptcha", "[class*='captcha']",
@@ -604,27 +604,83 @@ def detect_captcha(driver: webdriver.Chrome) -> Optional[str]:
         els = driver.find_elements(By.CSS_SELECTOR, css)
         if els:
             return css
+    # Check for reCAPTCHA v3 (invisible) — look for api.js?render= in scripts
+    try:
+        scripts = driver.find_elements(By.TAG_NAME, "script")
+        for s in scripts:
+            src = s.get_attribute("src") or ""
+            if "recaptcha/api.js" in src:
+                return "recaptcha_v3"
+    except Exception:
+        pass
+    # Also check ___grecaptcha_cfg in JS
+    try:
+        has_v3 = driver.execute_script(
+            "return typeof ___grecaptcha_cfg !== 'undefined' && "
+            "___grecaptcha_cfg && ___grecaptcha_cfg.clients && "
+            "Object.keys(___grecaptcha_cfg.clients).length > 0"
+        )
+        if has_v3:
+            return "recaptcha_v3"
+    except Exception:
+        pass
     return None
 
 
 def solve_captcha(driver: webdriver.Chrome, logger: logging.Logger) -> bool:
-    """Solve reCAPTCHA v2 using 2Captcha."""
+    """Solve reCAPTCHA v2 or v3 using 2Captcha."""
     if not CAPTCHA_API_KEY:
         logger.warning("CAPTCHA detected but no CAPTCHA_API_KEY set")
         return False
     try:
-        site_key_el = driver.find_element(By.CSS_SELECTOR, ".g-recaptcha")
-        site_key = site_key_el.get_attribute("data-sitekey")
-        if not site_key:
-            return False
         page_url = driver.current_url
-        logger.info("CAPTCHA site key found: %s", site_key)
 
-        resp = requests.post("https://2captcha.com/in.php", data={
+        # Try to find site key from v3 config or v2 element
+        site_key = driver.execute_script("""
+            try {
+                var cfg = ___grecaptcha_cfg;
+                if (cfg && cfg.clients) {
+                    for (var k in cfg.clients) {
+                        var c = cfg.clients[k];
+                        if (c && c.sitekey) return c.sitekey;
+                    }
+                }
+            } catch(e) {}
+            try {
+                var el = document.querySelector('.g-recaptcha');
+                if (el) return el.getAttribute('data-sitekey');
+            } catch(e) {}
+            return null;
+        """)
+        if not site_key:
+            logger.warning("No reCAPTCHA site key found on page")
+            return False
+        logger.info("reCAPTCHA site key found: %s", site_key)
+
+        # Detect if v3 (invisible) — check for render=explicit or render=sitekey in scripts
+        is_v3 = driver.execute_script("""
+            try {
+                var scripts = document.querySelectorAll('script[src*=\"recaptcha/api.js\"]');
+                for (var i = 0; i < scripts.length; i++) {
+                    var src = scripts[i].getAttribute('src') || '';
+                    if (src.indexOf('render=') !== -1) return true;
+                }
+            } catch(e) {}
+            return false;
+        """) or False
+
+        payload = {
             "key": CAPTCHA_API_KEY, "method": "userrecaptcha",
             "googlekey": site_key, "pageurl": page_url,
             "json": 1,
-        }, timeout=30)
+        }
+        if is_v3:
+            payload["version"] = "v3"
+            payload["action"] = "verify"
+            payload["min_score"] = "0.5"
+            logger.info("2Captcha: solving reCAPTCHA v3 (invisible)")
+
+        resp = requests.post("https://2captcha.com/in.php", data=payload, timeout=30)
         data = resp.json()
         if data.get("status") != 1:
             logger.warning("2Captcha send failed: %s", data)
@@ -638,19 +694,36 @@ def solve_captcha(driver: webdriver.Chrome, logger: logging.Logger) -> bool:
             }, timeout=15).json()
             if result.get("status") == 1:
                 token = result["request"]
-                driver.execute_script(
-                    f"document.getElementById('g-recaptcha-response').innerHTML='{token}';"
-                )
-                driver.execute_script(f"___grecaptcha_cfg.clients[0].callback('{token}');")
-                logger.info("CAPTCHA solved")
+                if is_v3:
+                    driver.execute_script(
+                        f"document.querySelector('textarea#g-recaptcha-response')?.remove();"
+                    )
+                    ta = driver.execute_script("""
+                        var ta = document.createElement('textarea');
+                        ta.id = 'g-recaptcha-response';
+                        ta.style.display = 'none';
+                        document.body.appendChild(ta);
+                        return ta;
+                    """)
+                    driver.execute_script(f"arguments[0].value = '{token}';", ta)
+                    for key in ['g-recaptcha-response', 'g-recaptcha-response-data']:
+                        driver.execute_script(f"""
+                            try {{ window['{key}'] = '{token}'; }} catch(e) {{}}
+                        """)
+                else:
+                    driver.execute_script(
+                        f"document.getElementById('g-recaptcha-response').innerHTML='{token}';"
+                    )
+                    driver.execute_script(f"___grecaptcha_cfg.clients[0].callback('{token}');")
+                logger.info("reCAPTCHA solved (%s)", "v3" if is_v3 else "v2")
                 return True
             if result.get("request") == "ERROR_CAPTCHA_UNSOLVABLE":
-                logger.warning("CAPTCHA unsolvable")
+                logger.warning("reCAPTCHA unsolvable")
                 return False
-        logger.warning("CAPTCHA timeout")
+        logger.warning("reCAPTCHA timeout")
         return False
     except Exception as exc:
-        logger.warning("CAPTCHA solve error: %s", exc)
+        logger.warning("reCAPTCHA solve error: %s", exc)
         return False
 
 
@@ -829,8 +902,16 @@ def scan_booking_form(student: Dict[str, str], logger: logging.Logger, cookies: 
         from selenium.webdriver.common.by import By
         from selenium.common.exceptions import NoSuchElementException
 
-        # Try saved cookies first
+        # Try saved cookies first (from parameter or DB)
         logged_in = False
+        if not cookies:
+            raw = db.get_state("goethe_cookies", "")
+            if raw:
+                try:
+                    cookies = json.loads(raw)
+                    logger.info("Loaded %d cookies from DB for scan_booking_form", len(cookies))
+                except Exception:
+                    pass
         if cookies:
             driver.get("https://login.goethe.de/cas/login")
             wait_for_document_ready(driver)
@@ -1087,11 +1168,58 @@ def click_book_for_myself(driver: webdriver.Chrome, logger: logging.Logger, time
                 raise
 
 
+def _load_saved_cookies(driver: webdriver.Chrome, logger: logging.Logger) -> bool:
+    """Try to load saved Goethe cookies. Returns True if still on login page (need fresh login)."""
+    raw = db.get_state("goethe_cookies", "")
+    if not raw:
+        logger.info("No saved cookies found — need fresh login")
+        return False
+    try:
+        cookies = json.loads(raw)
+        if not cookies:
+            return False
+        logger.info("Found %d saved cookies — attempting injection", len(cookies))
+        driver.get("https://login.goethe.de/cas/login")
+        wait_for_document_ready(driver)
+        time.sleep(1)
+        for c in cookies:
+            try:
+                driver.add_cookie(c)
+            except Exception:
+                pass
+        driver.get("https://login.goethe.de/cas/login")
+        wait_for_document_ready(driver)
+        time.sleep(2)
+        if "login" not in driver.current_url.lower() and "cas/login" not in driver.current_url.lower():
+            logger.info("✓ Logged in using saved cookies!")
+            return True
+        logger.info("Cookies present but login page still showing — they may have expired")
+        return False
+    except Exception as exc:
+        logger.warning("Cookie injection error: %s", exc)
+        return False
+
+
+def _save_session_cookies(driver: webdriver.Chrome, logger: logging.Logger) -> None:
+    """Capture current session cookies and save to DB for future reuse."""
+    try:
+        cookies = driver.get_cookies()
+        if cookies:
+            db.set_state("goethe_cookies", json.dumps(cookies))
+            logger.info("✓ Saved %d session cookies for future reuse", len(cookies))
+    except Exception as exc:
+        logger.warning("Failed to save cookies: %s", exc)
+
+
 def login_to_goethe(driver: webdriver.Chrome, email: str, password: str, logger: logging.Logger) -> bool:
     logger.info("══ STEP 4: Logging in to My Goethe.de ══")
+    # Try saved cookies first
+    if _load_saved_cookies(driver, logger):
+        return True
     for attempt in range(1, 4):
         try:
             if _login_attempt(driver, email, password, logger):
+                _save_session_cookies(driver, logger)
                 return True
             if attempt < 3:
                 logger.warning("Login attempt %d failed, reloading page and retrying...", attempt)
@@ -1472,6 +1600,8 @@ def _handle_cas_login_if_needed(driver: webdriver.Chrome, student: Dict[str, str
                                  logger: logging.Logger) -> bool:
     url = driver.current_url.lower()
     if "login.goethe.de" not in url and "cas/login" not in url:
+        # Not on login page — save cookies for future reuse
+        _save_session_cookies(driver, logger)
         return True
     logger.info("CAS login page detected — attempting login")
     email = student.get("email", "")
