@@ -273,6 +273,17 @@ def parse_exam_time_str(raw: str) -> Optional[dt.datetime]:
     if not raw:
         return None
     try:
+        # Tolerate 12-hour AM/PM times (e.g. "2026-07-03T12:16 PM" or "12:16 PM")
+        # that the Fetch-Dates UI historically produced — ISO parse can't read them.
+        if re.search(r"\b[AP]M\b", raw, re.I):
+            norm = raw.replace("T", " ").strip()
+            for fmt in ("%Y-%m-%d %I:%M %p", "%Y-%m-%d %I:%M:%S %p"):
+                try:
+                    return dt.datetime.strptime(norm, fmt)
+                except ValueError:
+                    pass
+            today = dt.date.today().isoformat()
+            return dt.datetime.strptime(f"{today} {norm}", "%Y-%m-%d %I:%M %p")
         if "T" in raw or "-" in raw:
             return dt.datetime.fromisoformat(raw)
         today = dt.date.today().isoformat()

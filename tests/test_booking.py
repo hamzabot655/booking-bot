@@ -29,6 +29,15 @@ def test_parse_exam_time_str_empty():
     assert bot.parse_exam_time_str("") is None
 
 
+def test_parse_exam_time_str_ampm():
+    # Fetch-Dates UI historically stored 12h AM/PM; parser must tolerate it.
+    d = bot.parse_exam_time_str("2026-07-03T12:16 PM")
+    assert (d.hour, d.minute) == (12, 16)
+    assert bot.parse_exam_time_str("2026-07-03T09:00 AM").hour == 9
+    assert bot.parse_exam_time_str("2026-07-03T12:00 AM").hour == 0   # midnight
+    assert bot.parse_exam_time_str("2026-07-03T01:30 PM").hour == 13
+
+
 def test_get_exam_url_real():
     urls = bot.get_exam_url("A1")
     assert "goethe.de" in urls

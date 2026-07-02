@@ -1558,7 +1558,16 @@ async function fetchLiveDates() {
     select.innerHTML = `<option value="">— Select an exam —</option>` +
       filtered.map(ex => {
         const dt = ex.reg_open;
-        const tm = ex.reg_open_time || "10:00";
+        let tm = ex.reg_open_time || "10:00";
+        // Convert 12h "12:16 PM" -> 24h "12:16" so booking_datetime is valid ISO.
+        const tmatch = tm.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])?$/);
+        if (tmatch) {
+          let h = parseInt(tmatch[1], 10);
+          const ap = (tmatch[3] || "").toUpperCase();
+          if (ap === "PM" && h < 12) h += 12;
+          if (ap === "AM" && h === 12) h = 0;
+          tm = String(h).padStart(2, "0") + ":" + tmatch[2];
+        }
         const parts = dt ? dt.split(/[.\/]/) : [];
         let iso = dt;
         if (parts.length === 3) {
