@@ -1114,15 +1114,46 @@ _last_login_error = ""
 def get_last_login_error() -> str:
     return _last_login_error
 
-def _dismiss_cookie_consent(driver: webdriver.Chrome) -> None:
+def _accept_cookie_consent(driver: webdriver.Chrome, logger: Optional[logging.Logger] = None) -> None:
+    """Actually ACCEPT the Usercentrics consent (not just hide it).
+
+    The CAS login page has no reCAPTCHA; it uses Usercentrics, whose uc-block
+    script can gate interactions until consent is given. Hiding the banner does
+    NOT give consent — we must call the UC API / click the accept button (which
+    lives in a shadow root, so DOM selectors alone can't reach it).
+    """
     try:
-        for sel in ["#usercentrics-root", ".uc-banner", "[data-testid='uc-accept-all']", ".cookie-consent", "[aria-label*='cookie']"]:
-            els = driver.find_elements(By.CSS_SELECTOR, sel)
-            for el in els:
+        driver.execute_script("""
+            try {
+              if (window.UC_UI && UC_UI.acceptAllConsents) {
+                UC_UI.acceptAllConsents().then(function(){ if (UC_UI.closeCUI) UC_UI.closeCUI(); }).catch(function(){});
+              }
+            } catch (e) {}
+            try {
+              var root = document.querySelector('#usercentrics-root');
+              if (root && root.shadowRoot) {
+                var b = root.shadowRoot.querySelector('[data-testid="uc-accept-all-button"], button[data-testid*="accept"], [aria-label*="Accept All"]');
+                if (b) b.click();
+              }
+            } catch (e) {}
+        """)
+        time.sleep(1.2)
+    except Exception as exc:
+        if logger:
+            logger.debug("consent accept error: %s", exc)
+    # Hide any leftover banner so it never overlaps the form.
+    try:
+        for sel in ["#usercentrics-root", ".uc-banner", ".cookie-consent", "[aria-label*='cookie']"]:
+            for el in driver.find_elements(By.CSS_SELECTOR, sel):
                 if el.is_displayed():
                     driver.execute_script("arguments[0].style.display='none'", el)
     except Exception:
         pass
+
+
+def _dismiss_cookie_consent(driver: webdriver.Chrome) -> None:
+    # Back-compat wrapper — now accepts consent instead of only hiding it.
+    _accept_cookie_consent(driver)
 
 def _login_attempt(driver: webdriver.Chrome, email: str, password: str, logger: logging.Logger) -> bool:
     global _last_login_error
