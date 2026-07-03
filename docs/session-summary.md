@@ -1,32 +1,40 @@
-# Session Summary — July 3, 2026 (Part 12) — AUTH_PASSWORD as API Token + Cookie Capture Verified
+# Session Summary — July 3, 2026 (Part 13) — Cookie Persistence IP-Pinned + Standalone .exe Built
 
 ## Context
-Capture cookies script needed `validate_token()` to accept `AUTH_PASSWORD` as a Bearer token for API auth.
-Also discovered that `AUTH_PASSWORD` on Railway was `Hamza@123`, not `@dm1n@123`.
+Cookie capture succeeded (12 cookies saved) but form scanner confirmed cookies DON'T work from Railway IP.
+Goethe CAS sessions are IP-pinned—bound to the home IP that created them. Railway's datacenter IP (39.45.18.10)
+gets rejected even with valid cookies.
 
 ## What Changed
-### validate_token() now accepts AUTH_PASSWORD directly
-- **`webapp.py:validate_token()`** — added `if token == _raw_password: return True` so scripts can use
-  `AUTH_PASSWORD` as a master API Bearer token without needing a dashboard session token.
-- The frontend login still uses email/password → creates a session token. But scripts (cookie capture,
-  save_goethe_cookies) can now use `AUTH_PASSWORD` directly in `Authorization: Bearer <password>`.
+### Cookie method confirmed failed
+- Form scanner (`POST /api/form/scan`) returned: `"Login failed: Still on login page — no visible error"`
+- **Root cause:** Goethe CAS session is IP-bound. Cookies captured from home IP cannot be replayed from Railway.
+- All three-layer defense assumptions invalidated for Railway-only operation.
 
-### Correct AUTH_PASSWORD discovered
-- Railway had `AUTH_PASSWORD=Hamza@123`, not `@dm1n@123` as previously thought. Fixed in user's command.
+### Standalone booking executables built
+- **Windows `.exe`** (`dist/windows/goethe-booker.exe`, 67MB) — built via PyInstaller with all dependencies.
+  Double-click, no Python install needed. Prompts for student details interactively or reads `student.json`.
+- **Mac package** (`dist/mac/`) — Python scripts + `install.command` + `run.command`. Mac has Python pre-installed.
+  Double-click `install.command` once, then `run.command` each booking.
+- **Template config** `student.template.json` — rename to `student.json`, fill student details, place beside exe.
 
-### Cookie capture verified
-- `scripts/capture_cookies.py` ran successfully → **12 cookies saved** to Railway DB.
-- Confirmed via `curl` to `/api/goethe-cookies` endpoint.
+### Build tools created
+- `scripts/build_exe_windows.bat` — rebuilds the .exe from source
 
-## Files Changed
-| File | Change |
-|------|--------|
-| `webapp.py` | `validate_token()` now returns True if token matches `_raw_password` |
+### Key research finding
+Only **residential IP** (home connection or residential proxy) can bypass Goethe's reCAPTCHA v3.
+All cloud platforms (Railway, Google Colab, Oracle Cloud, GitHub Actions) use datacenter IPs → same block.
 
-## Commits
-| Commit | Message |
-|--------|---------|
-| `9a5b46f` | fix: allow AUTH_PASSWORD as Bearer token for API access |
+## Files Created
+| File | Purpose |
+|------|---------|
+| `scripts/book_one.py` | Standalone booking script (no Flask dependency) |
+| `scripts/mac_install.command` | Mac one-time dependency installer |
+| `scripts/mac_run.command` | Mac double-click runner |
+| `student.template.json` | Config template for standalone booking |
+| `scripts/build_exe_windows.bat` | PyInstaller build script |
+| `dist/windows/goethe-booker.exe` | Windows executable (67 MB) |
+| `dist/mac/*` | Mac package (all source files + scripts) |
 
 ---
 

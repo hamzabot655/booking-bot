@@ -208,19 +208,25 @@ ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright
   history (verified: 0 commits contain them). **This does NOT rotate them** — the credentials still
   work until rotated at the provider (see below). Any other local clone is now divergent → re-clone.
 
-#### Latest: validate_token accepts AUTH_PASSWORD as Bearer (`9a5b46f`)
-- `webapp.py:validate_token()` now checks `if token == _raw_password: return True` — scripts can use
-  `AUTH_PASSWORD` directly as a Bearer token for API calls without needing a dashboard session token.
-- Cookie capture verified: 12 cookies saved to Railway DB. Confirmed via `/api/goethe-cookies`.
+### ❌ Cookie persistence FAILED — IP-pinned
+- Form scanner confirmed: cookies captured from home IP don't work from Railway IP.
+- Goethe CAS sessions are **IP-bound**. Replaying cookies from a different IP = rejected.
+- Three-layer defense invalidated for Railway-only operation. Only **residential IP** works.
 
-### Railway AUTH_PASSWORD
-- Actual value on Railway: `Hamza@123` (NOT `@dm1n@123` as previously thought).
+### Standalone .exe built (`9a5b46f`)
+- **Windows:** `dist/windows/goethe-booker.exe` (67 MB, PyInstaller, no Python needed)
+- **Mac:** `dist/mac/` — Python scripts + `install.command` + `run.command`
+- Double-click → bot runs from local home IP → login works → books.
+- Config via `student.json` (rename from `student.template.json`).
+
+### Key finding: Only residential IP bypasses reCAPTCHA
+All cloud platforms (Railway, Colab, Oracle, GitHub Actions) = datacenter IP = blocked by Google reCAPTCHA v3.
+Only real solutions: **client runs locally** (free, guaranteed) or **residential proxy** on any server ($3-5/mo).
 
 ## ⬜ Pending (owner action)
 - [ ] **Rotate all leaked secrets — STILL REQUIRED.** History scrub ≠ rotation; the tokens/passwords
       remain valid until changed at each provider. Checklist: `docs/SECURITY_ROTATION.md`.
-- [ ] Provision reCAPTCHA bypass — VPS (`docs/VPS_SETUP.md`) / IP-whitelisted residential proxy / set `CAPTCHA_API_KEY`.
-- [ ] Set repo secret `DATABASE_URL_EXTERNAL` (Railway public Postgres URL) for pg-backup — I can set it once you paste the value.
-- [ ] Live booking test — 03.07.2026 12:16 PM A1 Islamabad (cookie persistence path).
+- [ ] Set repo secret `DATABASE_URL_EXTERNAL` (Railway public Postgres URL) for pg-backup.
+- [ ] Live booking test — client runs standalone .exe from home IP or dashboard local server.
 
 > India adaptation is **dropped** (client no longer engaged). Scope is Goethe **Pakistan** only.
