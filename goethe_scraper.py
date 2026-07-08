@@ -19,6 +19,19 @@ import requests
 
 SCRAPINGBEE_API_KEY = os.environ.get("SCRAPINGBEE_API_KEY", "")
 
+
+def _first_proxy():
+    """First PROXY_LIST entry as a requests/curl_cffi proxies dict, else None.
+    curl_cffi (libcurl) handles user:pass proxies natively — no forwarder needed."""
+    raw = os.environ.get("PROXY_LIST", "")
+    px = next((p.strip() for p in raw.split(",") if p.strip()), "")
+    if not px:
+        return None
+    if "://" not in px:
+        px = "http://" + px
+    return {"http": px, "https": px}
+
+
 try:
     from curl_cffi import requests as curl_requests
     HAS_CURL = True
@@ -204,6 +217,13 @@ def _scrape_level(level: str) -> List[ExamEntry]:
         "sortOrder": "ASC",
     }
 
+    # Prefer curl_cffi through the residential proxy — fast, free, unblocked.
+    # (Datacenter IP + dead/expired ScrapingBee made schedule loads slow.)
+    if HAS_CURL and _first_proxy():
+        entries = _scrape_via_curl_cffi(level, url, params)
+        if entries:
+            return entries
+
     if SCRAPINGBEE_API_KEY:
         entries = _scrape_via_scrapingbee(level, url, params)
         if entries:
@@ -279,6 +299,7 @@ def _scrape_via_curl_cffi(level: str, url: str, params: dict) -> List[ExamEntry]
             headers=headers,
             impersonate="chrome131",
             timeout=30,
+            proxies=_first_proxy(),
         )
         if resp.status_code == 200:
             data = resp.json()
