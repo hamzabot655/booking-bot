@@ -1154,6 +1154,21 @@ async function doLogout() {
   document.getElementById("connBar").style.display = "";
 }
 
+// ── Polyfill: AbortSignal.timeout (older Safari / macOS browsers lack it) ──
+// Without this, every apiFetch throws synchronously on those browsers and the
+// dashboard appears totally broken (works on Chrome, fails on an old MacBook).
+if (typeof AbortSignal === "undefined" || typeof AbortSignal.timeout !== "function") {
+  window.AbortSignal = window.AbortSignal || {};
+  AbortSignal.timeout = function (ms) {
+    const c = new AbortController();
+    setTimeout(function () {
+      try { c.abort(new DOMException("signal timed out", "TimeoutError")); }
+      catch (e) { c.abort(); }
+    }, ms);
+    return c.signal;
+  };
+}
+
 // ── Auth helpers ──
 function apiFetch(url, opts = {}) {
   const headers = opts.headers || {};
@@ -1240,7 +1255,7 @@ async function connectBackend(retries = 2) {
     statusEl.innerHTML = `<span class="conn-spinner"></span> ${attempt === 0 ? 'Connecting...' : attempt === 1 ? 'Retrying...' : 'Final attempt...'}`;
     statusEl.className = "status-text";
     try {
-      const resp = await apiFetch(`${BASE}/api/status`, { signal: AbortSignal.timeout(5000) });
+      const resp = await apiFetch(`${BASE}/api/status`, { signal: AbortSignal.timeout(15000) });
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       connected = true;
       statusEl.innerHTML = "";
@@ -1278,7 +1293,7 @@ function startStatusPoll() {
 async function fetchStatus() {
   if (!connected) return;
   try {
-    const resp = await apiFetch(`${BASE}/api/status`, { signal: AbortSignal.timeout(4000) });
+    const resp = await apiFetch(`${BASE}/api/status`, { signal: AbortSignal.timeout(15000) });
     const data = await resp.json();
     updateBadge(data.running);
     toggleButtons(data.running);
@@ -2290,7 +2305,21 @@ if ("serviceWorker" in navigator) {
 }
 
 // ── Error boundary ──
+// Transient network / timeout / abort errors are NORMAL while the backend is
+// busy booking (Railway is CPU-bound running Chrome). They must NEVER show the
+// crash overlay — that made clients hit "Reload Dashboard", which reloaded mid-
+// booking and dropped the connection. Swallow them; only real bugs surface.
+function _isTransientError(msg) {
+  msg = (msg || "").toLowerCase();
+  return [
+    "signal timed out", "timed out", "timeouterror", "aborterror",
+    "the operation was aborted", "failed to fetch", "load failed",
+    "networkerror", "network error", "err_network", "err_connection",
+    "the user aborted", "unauthorized"
+  ].some(s => msg.includes(s));
+}
 window.onerror = function(msg, url, line, col, err) {
+  if (_isTransientError(msg) || (err && _isTransientError(err.message))) return true;
   const el = document.getElementById("errorBoundary");
   if (!el) return;
   const msgEl = document.getElementById("errorMsg");
@@ -2300,7 +2329,8 @@ window.onerror = function(msg, url, line, col, err) {
 };
 window.addEventListener("unhandledrejection", function(e) {
   const msg = e.reason ? e.reason.message || String(e.reason) : "Unknown";
-  if (msg.includes("MetaMask") || msg.includes("ethereum") || msg.includes("EIP-1193")) return;
+  if (msg.includes("MetaMask") || msg.includes("ethereum") || msg.includes("EIP-1193")) { e.preventDefault(); return; }
+  if (_isTransientError(msg)) { e.preventDefault(); return; }  // ignore network blips
   const el = document.getElementById("errorBoundary");
   if (!el) return;
   const msgEl = document.getElementById("errorMsg");
