@@ -22,13 +22,21 @@ SCRAPINGBEE_API_KEY = os.environ.get("SCRAPINGBEE_API_KEY", "")
 
 def _first_proxy():
     """First PROXY_LIST entry as a requests/curl_cffi proxies dict, else None.
-    curl_cffi (libcurl) handles user:pass proxies natively — no forwarder needed."""
+    curl_cffi (libcurl) handles user:pass proxies natively — no forwarder needed.
+
+    Schedule scraping makes many requests; a single sticky IP gets throttled by
+    Goethe (only some levels come back). So strip DataImpulse's sticky-session
+    modifiers (`__sessid.*` / `__sesstime.*`) → a ROTATING IP per request while
+    keeping the country (`__cr.pk`). Booking keeps its own sticky proxy elsewhere."""
+    import re as _re
     raw = os.environ.get("PROXY_LIST", "")
     px = next((p.strip() for p in raw.split(",") if p.strip()), "")
     if not px:
         return None
     if "://" not in px:
         px = "http://" + px
+    px = _re.sub(r"__sessid\.[^:_@]+", "", px)
+    px = _re.sub(r"__sesstime\.[^:_@]+", "", px)
     return {"http": px, "https": px}
 
 
@@ -152,18 +160,24 @@ def get_schedule(force_refresh: bool = False) -> List[ExamEntry]:
 
 
 def _refresh_sync():
+    # SERIAL, not concurrent: 3 parallel requests through the same sticky proxy IP
+    # made Goethe throttle -> partial results (7 vs 1 entries). Fetch each level
+    # one at a time with a retry so every level (all cities) comes through.
     all_entries: List[ExamEntry] = []
-    levels = ("A1", "A2", "B1")
-    with ThreadPoolExecutor(max_workers=len(levels)) as exe:
-        fut = {exe.submit(_scrape_level, lv): lv for lv in levels}
-        for f in as_completed(fut):
-            lv = fut[f]
+    for lv in ("A1", "A2", "B1"):
+        entries = []
+        for attempt in (1, 2):
             try:
-                entries = f.result()
-                print(f"[pk_scraper] {lv}: {len(entries)} exams")
-                all_entries.extend(entries)
+                entries = _scrape_level(lv)
             except Exception as e:
-                print(f"[pk_scraper] Error scraping {lv}: {e}")
+                print(f"[pk_scraper] Error scraping {lv} (try {attempt}): {e}")
+                entries = []
+            if entries:
+                break
+            time.sleep(1.5)
+        print(f"[pk_scraper] {lv}: {len(entries)} exams")
+        all_entries.extend(entries)
+        time.sleep(1)
     if all_entries:
         _last_cache["data"] = all_entries
         _last_cache["ts"] = time.time()
