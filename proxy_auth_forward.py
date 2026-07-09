@@ -1,11 +1,16 @@
 """Local forwarding proxy that adds Basic auth to an upstream HTTP proxy.
 
 Chrome's --proxy-server ignores embedded user:pass, and on Chrome 127+ the
-MV2 auth-extension trick is dead. selenium-wire MITMs HTTPS (breaks on some
-setups). This forwarder avoids all that: it listens on localhost, and for every
-request it opens a connection to the upstream proxy (e.g. DataImpulse) with a
-`Proxy-Authorization: Basic ...` header, then tunnels bytes. HTTPS goes through
-CONNECT untouched (no cert interception), so there are no cert issues.
+MV2 auth-extension trick is dead. This forwarder listens on localhost and, for
+every connection, opens a connection to the upstream proxy (e.g. DataImpulse)
+with a `Proxy-Authorization: Basic ...` header, then pumps bytes. HTTPS goes
+through CONNECT untouched (no cert interception).
+
+Threading: ONE daemon thread per connection (bidirectional pump via select — not
+two threads), and a bounded semaphore caps concurrent connections. This matters
+because Chrome opens hundreds of connections; the old 2-threads-per-connection
+design exhausted the process thread limit ("can't start new thread") and starved
+the Flask server, causing random disconnects.
 
 Usage:
     port = start_auth_forwarder("gw.dataimpulse.com", 823, "user", "pass")
@@ -14,6 +19,7 @@ Usage:
 from __future__ import annotations
 
 import base64
+import select
 import socket
 import threading
 from typing import Dict, Tuple
@@ -21,32 +27,36 @@ from typing import Dict, Tuple
 _RUNNING: Dict[Tuple[str, int, str, str], int] = {}
 _LOCK = threading.Lock()
 
+# Hard cap on concurrent tunnels so we never exhaust the OS/process thread limit.
+_MAX_CONN = 300
+_SEM = threading.BoundedSemaphore(_MAX_CONN)
 
-def _pipe(a: socket.socket, b: socket.socket) -> None:
+
+def _pump(client: socket.socket, up: socket.socket) -> None:
+    """Bidirectional relay between two sockets in a single thread."""
+    socks = [client, up]
     try:
         while True:
-            data = a.recv(65536)
-            if not data:
-                break
-            b.sendall(data)
+            r, _, _ = select.select(socks, [], [], 120)
+            if not r:
+                break  # idle timeout
+            for s in r:
+                data = s.recv(65536)
+                if not data:
+                    return
+                (up if s is client else client).sendall(data)
     except OSError:
         pass
-    finally:
-        for s in (a, b):
-            try:
-                s.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                pass
 
 
 def _handle(client: socket.socket, up_host: str, up_port: int, auth: str) -> None:
+    up = None
     try:
         client.settimeout(30)
         head = b""
         while b"\r\n\r\n" not in head:
             chunk = client.recv(4096)
             if not chunk:
-                client.close()
                 return
             head += chunk
             if len(head) > 65536:
@@ -58,7 +68,6 @@ def _handle(client: socket.socket, up_host: str, up_port: int, auth: str) -> Non
         up = socket.create_connection((up_host, up_port), timeout=30)
 
         if method.upper() == "CONNECT":
-            # host:port from the CONNECT line
             target = parts[1]
             req = (
                 "CONNECT %s HTTP/1.1\r\nHost: %s\r\n"
@@ -72,22 +81,24 @@ def _handle(client: socket.socket, up_host: str, up_port: int, auth: str) -> Non
                 if not c:
                     break
                 resp += c
-            # relay upstream's CONNECT response (200) straight to the client
             client.sendall(resp)
         else:
-            # plain HTTP: inject auth header, forward the buffered request as-is
             inject = b"Proxy-Authorization: Basic " + auth.encode() + b"\r\n"
             head = head.replace(b"\r\n", b"\r\n" + inject, 1)
             up.sendall(head)
 
-        t = threading.Thread(target=_pipe, args=(client, up), daemon=True)
-        t.start()
-        _pipe(up, client)
+        client.settimeout(None)
+        _pump(client, up)
     except OSError:
-        try:
-            client.close()
-        except OSError:
-            pass
+        pass
+    finally:
+        for s in (client, up):
+            try:
+                if s:
+                    s.close()
+            except OSError:
+                pass
+        _SEM.release()
 
 
 def start_auth_forwarder(up_host: str, up_port: int, user: str, pw: str) -> int:
@@ -101,7 +112,7 @@ def start_auth_forwarder(up_host: str, up_port: int, user: str, pw: str) -> int:
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         srv.bind(("127.0.0.1", 0))
-        srv.listen(128)
+        srv.listen(256)
         port = srv.getsockname()[1]
 
         def _accept() -> None:
@@ -110,7 +121,20 @@ def start_auth_forwarder(up_host: str, up_port: int, user: str, pw: str) -> int:
                     cli, _ = srv.accept()
                 except OSError:
                     break
-                threading.Thread(target=_handle, args=(cli, up_host, up_port, auth), daemon=True).start()
+                # Backpressure: block until a tunnel slot frees, so thread count
+                # is bounded by _MAX_CONN instead of growing without limit.
+                _SEM.acquire()
+                try:
+                    threading.Thread(
+                        target=_handle, args=(cli, up_host, up_port, auth), daemon=True
+                    ).start()
+                except RuntimeError:
+                    # Out of threads — drop this connection, don't crash the server.
+                    _SEM.release()
+                    try:
+                        cli.close()
+                    except OSError:
+                        pass
 
         threading.Thread(target=_accept, daemon=True).start()
         _RUNNING[key] = port
