@@ -978,6 +978,13 @@
           </select>
           <span class="field-label">Promo Code</span>
           <input type="text" id="sPromoCode" placeholder="Optional">
+          <span class="field-label">Modules (B1 only)</span>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:13px;align-items:center;">
+            <label><input type="checkbox" class="mod-cb" value="reading" checked> Reading</label>
+            <label><input type="checkbox" class="mod-cb" value="listening" checked> Listening</label>
+            <label><input type="checkbox" class="mod-cb" value="writing" checked> Writing</label>
+            <label><input type="checkbox" class="mod-cb" value="speaking" checked> Speaking</label>
+          </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
           <button class="btn btn-primary btn-sm" onclick="addDBStudent()">Add Student</button>
@@ -1500,6 +1507,7 @@ async function addDBStudent() {
     location_city: document.getElementById("sLocationCity").value.trim(),
     motivation: document.getElementById("sMotivation").value,
     promo_code: document.getElementById("sPromoCode").value.trim(),
+    modules: Array.from(document.querySelectorAll(".mod-cb:checked")).map(c => c.value).join(","),
   };
   try {
     const resp = await apiFetch(`${BASE}/api/students`, {

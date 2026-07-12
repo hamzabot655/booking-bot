@@ -764,6 +764,7 @@ def api_add_student():
         "place_of_birth": (data.get("place_of_birth") or "").strip(),
         "motivation": (data.get("motivation") or "").strip(),
         "promo_code": (data.get("promo_code") or "").strip(),
+        "modules": (data.get("modules") or "").strip(),
     }
     try:
         sid = db.add_student(student)

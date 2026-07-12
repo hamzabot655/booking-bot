@@ -1746,6 +1746,48 @@ def _ensure_session(driver: webdriver.Chrome, student: Dict[str, str],
             logger.warning("Re-login failed during %s", step_label)
 
 
+_EXAM_MODULES = ["reading", "listening", "writing", "speaking"]
+
+
+def _select_modules(driver: webdriver.Chrome, student: Dict[str, str], logger: logging.Logger) -> None:
+    """B1 SELECTION page has 4 module checkboxes (Reading/Listening/Writing/Speaking).
+    Tick only the student's chosen modules (default: all), then Continue. No-op when
+    there are no module checkboxes (A1/A2 = whole exam, nothing to pick)."""
+    raw = (student.get("modules", "") or "").strip().lower()
+    want = [m for m in _EXAM_MODULES if m in raw] if raw else list(_EXAM_MODULES)
+    try:
+        found = False
+        for m in _EXAM_MODULES:
+            cbs = driver.find_elements(
+                By.XPATH,
+                "//label[contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ',"
+                "'abcdefghijklmnopqrstuvwxyz'),'%s')]//input[@type='checkbox'] | "
+                "//*[contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ',"
+                "'abcdefghijklmnopqrstuvwxyz'),'%s')]/preceding::input[@type='checkbox'][1]" % (m, m),
+            )
+            for cb in cbs:
+                if not cb.is_displayed():
+                    continue
+                found = True
+                if (m in want) != cb.is_selected():
+                    driver.execute_script("arguments[0].click();", cb)
+                break
+        if found:
+            logger.info("Modules selected: %s", ", ".join(want))
+            _click_continue_wizard(driver, logger)
+            wait_for_document_ready(driver, timeout=20)
+    except Exception as exc:
+        logger.debug("Module selection skipped: %s", exc)
+    # "Book for me / for my child" intermediate (B1 shows it; harmless elsewhere)
+    try:
+        b = find_element_fallback(driver, "book_for_myself", timeout=3, logger=logger)
+        if b and b.is_displayed():
+            human_move_and_click(driver, b)
+            wait_for_document_ready(driver, timeout=20)
+    except Exception:
+        pass
+
+
 def _fill_step_personal_data_1(driver: webdriver.Chrome, student: Dict[str, str],
                                 logger: logging.Logger) -> bool:
     logger.info("══ Wizard Step 1: Personal Data (Name & Birth) ══")
@@ -2223,6 +2265,11 @@ def run_student_flow(student: Dict[str, str], use_headless: bool, logger: loggin
             logger.warning("CAS login failed — proceeding anyway")
 
         random_human_delay(0.3, 0.8)
+
+        # B1 module selection (Reading/Listening/Writing/Speaking). B1 only — A1/A2
+        # have no module page, so leave that path untouched.
+        if resume_step < 2 and str(student.get("level", "")).upper().startswith("B"):
+            _select_modules(driver, student, logger)
 
         if resume_step >= 2:
             logger.info("⏩ Skipping Wizard Step 1 (Name & Birth)")
