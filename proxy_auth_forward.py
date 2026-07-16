@@ -6,11 +6,10 @@ every connection, opens a connection to the upstream proxy (e.g. DataImpulse)
 with a `Proxy-Authorization: Basic ...` header, then pumps bytes. HTTPS goes
 through CONNECT untouched (no cert interception).
 
-Threading: ONE daemon thread per connection (bidirectional pump via select — not
-two threads), and a bounded semaphore caps concurrent connections. This matters
-because Chrome opens hundreds of connections; the old 2-threads-per-connection
-design exhausted the process thread limit ("can't start new thread") and starved
-the Flask server, causing random disconnects.
+Threading: two daemon threads per connection (one relay per direction — the
+proven design that works with Chrome's headless TLS), but a BoundedSemaphore
+caps CONCURRENT connections so we can never exhaust the process thread limit
+("can't start new thread") the way the old uncapped version did.
 
 Usage:
     port = start_auth_forwarder("gw.dataimpulse.com", 823, "user", "pass")
@@ -19,7 +18,6 @@ Usage:
 from __future__ import annotations
 
 import base64
-import select
 import socket
 import threading
 from typing import Dict, Tuple
@@ -28,25 +26,26 @@ _RUNNING: Dict[Tuple[str, int, str, str], int] = {}
 _LOCK = threading.Lock()
 
 # Hard cap on concurrent tunnels so we never exhaust the OS/process thread limit.
-_MAX_CONN = 300
+_MAX_CONN = 250
 _SEM = threading.BoundedSemaphore(_MAX_CONN)
 
 
-def _pump(client: socket.socket, up: socket.socket) -> None:
-    """Bidirectional relay between two sockets in a single thread."""
-    socks = [client, up]
+def _pipe(a: socket.socket, b: socket.socket) -> None:
+    """One-direction relay: read from a, write to b, until either side closes."""
     try:
         while True:
-            r, _, _ = select.select(socks, [], [], 120)
-            if not r:
-                break  # idle timeout
-            for s in r:
-                data = s.recv(65536)
-                if not data:
-                    return
-                (up if s is client else client).sendall(data)
+            data = a.recv(65536)
+            if not data:
+                break
+            b.sendall(data)
     except OSError:
         pass
+    finally:
+        for s in (a, b):
+            try:
+                s.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
 
 
 def _handle(client: socket.socket, up_host: str, up_port: int, auth: str) -> None:
@@ -88,7 +87,10 @@ def _handle(client: socket.socket, up_host: str, up_port: int, auth: str) -> Non
             up.sendall(head)
 
         client.settimeout(None)
-        _pump(client, up)
+        up.settimeout(None)
+        t = threading.Thread(target=_pipe, args=(client, up), daemon=True)
+        t.start()
+        _pipe(up, client)
     except OSError:
         pass
     finally:
@@ -121,15 +123,14 @@ def start_auth_forwarder(up_host: str, up_port: int, user: str, pw: str) -> int:
                     cli, _ = srv.accept()
                 except OSError:
                     break
-                # Backpressure: block until a tunnel slot frees, so thread count
-                # is bounded by _MAX_CONN instead of growing without limit.
+                # Backpressure: block until a tunnel slot frees, so the concurrent
+                # connection count (and thus thread count) stays bounded.
                 _SEM.acquire()
                 try:
                     threading.Thread(
                         target=_handle, args=(cli, up_host, up_port, auth), daemon=True
                     ).start()
                 except RuntimeError:
-                    # Out of threads — drop this connection, don't crash the server.
                     _SEM.release()
                     try:
                         cli.close()
