@@ -7,9 +7,12 @@ with a `Proxy-Authorization: Basic ...` header, then pumps bytes. HTTPS goes
 through CONNECT untouched (no cert interception).
 
 Threading: two daemon threads per connection (one relay per direction — the
-proven design that works with Chrome's headless TLS), but a BoundedSemaphore
-caps CONCURRENT connections so we can never exhaust the process thread limit
-("can't start new thread") the way the old uncapped version did.
+proven design that works with Chrome's headless TLS on Railway). An IDLE
+recv-timeout on every relay socket means a stuck/half-open connection closes on
+its own, so threads always exit and can't pile up to the "can't start new
+thread" limit. (An earlier BoundedSemaphore attempt drained on idle keep-alive
+connections and blocked accept(), causing net::ERR_CONNECTION_CLOSED on Railway
+— hence the timeout approach instead.)
 
 Usage:
     port = start_auth_forwarder("gw.dataimpulse.com", 823, "user", "pass")
@@ -25,13 +28,17 @@ from typing import Dict, Tuple
 _RUNNING: Dict[Tuple[str, int, str, str], int] = {}
 _LOCK = threading.Lock()
 
-# Hard cap on concurrent tunnels so we never exhaust the OS/process thread limit.
-_MAX_CONN = 250
-_SEM = threading.BoundedSemaphore(_MAX_CONN)
+# Idle timeout (seconds): a relay socket with no traffic for this long is closed,
+# so its two threads exit. Bounds thread growth without blocking new connections.
+_IDLE_TIMEOUT = 180
 
 
 def _pipe(a: socket.socket, b: socket.socket) -> None:
-    """One-direction relay: read from a, write to b, until either side closes."""
+    """One-direction relay: read from a, write to b, until either side closes or idles out."""
+    try:
+        a.settimeout(_IDLE_TIMEOUT)
+    except OSError:
+        pass
     try:
         while True:
             data = a.recv(65536)
@@ -86,8 +93,6 @@ def _handle(client: socket.socket, up_host: str, up_port: int, auth: str) -> Non
             head = head.replace(b"\r\n", b"\r\n" + inject, 1)
             up.sendall(head)
 
-        client.settimeout(None)
-        up.settimeout(None)
         t = threading.Thread(target=_pipe, args=(client, up), daemon=True)
         t.start()
         _pipe(up, client)
@@ -100,7 +105,6 @@ def _handle(client: socket.socket, up_host: str, up_port: int, auth: str) -> Non
                     s.close()
             except OSError:
                 pass
-        _SEM.release()
 
 
 def start_auth_forwarder(up_host: str, up_port: int, user: str, pw: str) -> int:
@@ -123,15 +127,12 @@ def start_auth_forwarder(up_host: str, up_port: int, user: str, pw: str) -> int:
                     cli, _ = srv.accept()
                 except OSError:
                     break
-                # Backpressure: block until a tunnel slot frees, so the concurrent
-                # connection count (and thus thread count) stays bounded.
-                _SEM.acquire()
                 try:
                     threading.Thread(
                         target=_handle, args=(cli, up_host, up_port, auth), daemon=True
                     ).start()
                 except RuntimeError:
-                    _SEM.release()
+                    # Extremely unlikely with the idle timeout; drop rather than crash.
                     try:
                         cli.close()
                     except OSError:
