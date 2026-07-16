@@ -1,5 +1,27 @@
 # AGENTS.md — Goethe Booking Bot
 
+## ✅ CURRENT (Jul 2026): Datacenter-IP block SOLVED via residential proxy
+**Railway can now log in + book from the cloud. Client just opens the dashboard → Start.**
+
+Root problem (all along): Railway's datacenter IP gets a low reCAPTCHA v3 score → login POST
+rejected ("Still on login page"). Cookies from a home IP do NOT help — Goethe CAS sessions are
+IP-bound (see "Cookie persistence FAILED" below). **Fix = give Railway a residential IP.**
+
+- **`PROXY_LIST` env** (Railway) = a **Pakistan residential proxy** (DataImpulse). Value:
+  `http://<user>__cr.pk__sessid.goethe1__sesstime.30:<pass>@gw.dataimpulse.com:823`
+  (`__cr.pk` = PK geo; `__sessid.*__sesstime.30` = sticky IP for the whole booking).
+- **`proxy_auth_forward.py`** (new): localhost forwarder that adds `Proxy-Authorization: Basic` to
+  the upstream proxy and tunnels HTTPS via CONNECT. Needed because Chrome `--proxy-server` ignores
+  `user:pass`, MV2 auth-extensions are dead on Chrome 127+, and selenium-wire's MITM broke here.
+  `create_driver` routes credentialed proxies through it (`_parse_proxy` + `start_auth_forwarder`).
+- **Verified:** headless login through the PK proxy reaches `my.goethe.de` (`★ LOGIN SUCCESSFUL`);
+  Railway form-scan passes login (no "Still on login page"). DataImpulse traffic confirmed consumed.
+- Free fallbacks still in repo: local `.exe` (dashboard-in-exe) and `userscript/` (Tampermonkey,
+  runs in the client's own browser = residential IP). Both work but need the client to run something.
+- Do **not** use free proxy lists (datacenter = same block, or credential-theft honeypots).
+- Ops: Railway sometimes fails at "Deploy › Create container" transiently even when Build passes —
+  re-run; don't push right before booking day (code is already live).
+
 ## ✅ Cookie Persistence Fix — Railway Can Now Login Too!
 **Three-layer defense implemented. Railway login is no longer blocked.**
 
@@ -28,6 +50,13 @@ Layer 3: Proxy ($5/mo) ═══> Residential proxy via PROXY_LIST (needs IP-whi
 - **Cloudflare WARP cannot run on Railway** — containers lack tun/privileged mode. NOT viable.
 - **Cookies expire ~24h** — run `scripts/capture_cookies.py` once per day to refresh.
 - **Residential proxy with user:pass** — not supported via `--proxy-server`; needs `selenium-wire` or IP-whitelisted proxy.
+
+## Session Context (latest — DataImpulse proxy purchased, IP-whitelisted, no code changes needed)
+- **Residential proxy bought:** DataImpulse $5 Intro (5GB). Credentials: `gw.dataimpulse.com:823` with login/password.
+- **Dashboard configured:** Country=Pakistan, Type=Sticky, Protocol=HTTP/HTTPS.
+- **IP whitelisted:** Railway IP (39.45.18.10) added to DataImpulse dashboard.
+- **Key finding:** IP whitelist + dashboard sticky config = **no code changes needed.** Current `--proxy-server` works. selenium-wire NOT required.
+- **Next step:** Set `PROXY_LIST=gw.dataimpulse.com:823` on Railway → test via form scanner → book A1.
 
 ## Session Context (latest — maintenance, secret hygiene, Vercel rebuild)
 - **CRITICAL backend-crash fixed** (`7c6294e`): `websocket_handler.py` had a committed
@@ -153,7 +182,12 @@ git commit --allow-empty -m "redeploy" && git push origin main
 5. Checkpoint after each step (resume on restart); confirmation parse + profile verify; status pushed via WebSocket.
 
 ### Schedule Fetch Chain
-ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright (headless) → `pk_fallback.json`.
+ScrapingBee (premium_proxy + `country_code=pk`) → curl_cffi (chrome131, via residential `PROXY_LIST`,
+rotating IP) → Playwright → `pk_fallback.json`. Per-level fetch is **serial + retry** (Goethe's
+exam-finder REST API 403s on bursts). `SCRAPINGBEE_API_KEY` **must be a valid (non-expired) key** —
+SB's residential proxies reliably bypass the WAF; an expired key (401) forces the slow fallback.
+Schedule is **display only**; booking uses `EXAM_URLS` + Selenium, unaffected. "Islamabad 18–19.07"
+shown on the dashboard is **stale cache** (Goethe no longer lists it).
 
 ### Google Sheets 429 Handling
 `_retry_gsheet()` 5→10→20→40s backoff; 15s TTL cache on `load_sheet_data()`; `strict=False` dropdown.
@@ -162,8 +196,26 @@ ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright
 - **"Unexpected token '<'" on any API call** → backend returned HTML (a 500 before the JSON
   error handlers, or a missing route). Check `/api/health`; error handlers now return JSON for `/api/*`.
 - **Google Sheets "Quota exceeded"** → 60 reads/min/user; retry+cache handle it, else wait 1 min.
+- **Duplicate students after edit** → `POST /api/students` **appends, not upserts**. To change a
+  student (e.g. set `booking_datetime`), delete by id then re-add — don't re-POST (creates dupes).
+- **Always verify Goethe logins before booking day** → `login_to_goethe` headless via proxy per
+  student; catches wrong/typo creds (client passwords often have stray spaces).
+- **`config.csv` must NOT ship** → `_get_loaded_students` auto-loads it every run (no DB dedup);
+  it held bogus test students. Removed + gitignored. Don't recreate it in the deploy image.
+- **Proxy forwarder threads** → `proxy_auth_forward.py` uses 1 thread/connection + `BoundedSemaphore(300)`.
+  If disconnects return, check Railway logs for `can't start new thread` (thread exhaustion).
+- **Scheduler is UTC** → `scheduled_wait` uses naive `datetime.now()`. Set `TZ=Asia/Karachi` on Railway
+  for auto-schedule, or click Start manually (immediate mode, TZ-independent).
+- **Concurrency/RAM** → `MAX_CONCURRENT=2` = 2 Chrome; fine on Railway $5 Hobby (up to 8GB), would OOM on
+  the 512MB free tier. Shared `CIRCUIT_BREAKER` opens 15 min for all students after 5 fails (429 storm).
+- **B1 is modular** → B1's SELECTION page has 4 module checkboxes; `_select_modules` (gated to level B*)
+  ticks the student's `modules` (default all) + Continue + "Book for me". A1/A2 have no module page.
+  `modules` is NOT persisted in the DB yet (fixed columns) — subset picks need a `modules` column +
+  migration; full-B1/all-modules works via the default. Untested against a live B1 form.
 - **Schedule returns 0 entries** → ScrapingBee limit / Playwright not installed / Goethe block → falls back to `pk_fallback.json`.
-- **Login fails only from Railway** → datacenter IP triggers reCAPTCHA on Goethe CAS. Needs VPS/residential proxy/2Captcha (see pending).
+- **Login fails only from Railway** → datacenter IP triggers reCAPTCHA on Goethe CAS.
+  **SOLVED** — set `PROXY_LIST` to a Pakistan residential proxy (see top section); traffic exits
+  via a residential IP so reCAPTCHA passes. Verified reaching `my.goethe.de` headless from Railway.
 
 ## Deployment Notes
 - Railway auto-deploys from GitHub `main` (uses `RAILWAY_API_TOKEN` GH secret).
@@ -218,20 +270,25 @@ ScrapingBee (premium_proxy) → curl_cffi (chrome131 impersonate) → Playwright
 - **Mac:** `dist/mac/` — Python scripts + `install.command` + `run.command`. No build needed (Mac has Python).
 - Config via `student.json` (rename from `student.template.json`).
 
-### Residential proxy recommended: Smartproxy
-- **$4/GB pay-as-you-go** (no monthly fee). Cost per booking: ~$0.02-0.05
-- ✅ Supports **IP whitelisting** → whitelist Railway IP → `PROXY_LIST=http://gate:8080`
-- ✅ **No code changes needed** (current `--proxy-server` + `proxy_rotator.py` work with IP-whitelisted proxies)
-- Free trial: 100MB / 3 days at `smartproxy.com`
-- Alternative: IPRoyal ($4.55/GB, no monthly commitment)
+### Residential proxy: DataImpulse (bought + configured)
+- **DataImpulse $5 Intro (5GB)** — cheapest option within budget, ~50-166 bookings
+- ✅ **IP whitelisted** (Railway 39.45.18.10) — in DataImpulse dashboard
+- ✅ **Sticky session** set in dashboard + Country=Pakistan
+- ✅ **No code changes needed** — current `--proxy-server` works with IP-whitelisted proxy
+- `PROXY_LIST` value to set: `gw.dataimpulse.com:823`
 
 ### Key finding: Only residential IP bypasses reCAPTCHA
 All cloud platforms (Railway, Colab, Oracle, GitHub Actions) = datacenter IP = blocked by Google reCAPTCHA v3.
 
 ## ⬜ Pending (owner action)
 - [ ] **Rotate all leaked secrets — STILL REQUIRED.** History scrub ≠ rotation.
-- [ ] Buy residential proxy (Smartproxy/IPRoyal) → IP-whitelist Railway IP → set `PROXY_LIST` env var
+- [x] **Buy residential proxy** — DataImpulse residential (2GB) done
+- [x] **Set `PROXY_LIST` env var** on Railway — full value:
+      `http://<user>__cr.pk__sessid.goethe1__sesstime.30:<pass>@gw.dataimpulse.com:823`
+      (auth handled by `proxy_auth_forward.py`; verified login through it from Railway)
 - [ ] Set repo secret `DATABASE_URL_EXTERNAL` for pg-backup
-- [ ] Live booking test at next booking window
+- [ ] **Live booking test** — needs a real open A1 slot (login + proxy + fields all verified;
+      only the 5-step wizard is unproven until registration opens)
+- [ ] Optional: rotate proxy `sessid` per retry so a failed attempt grabs a fresh PK IP
 
 > India adaptation is **dropped** (client no longer engaged). Scope is Goethe **Pakistan** only.

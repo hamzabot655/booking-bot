@@ -1,3 +1,40 @@
+# Session Summary — July 5, 2026 (Part 15) — DataImpulse Purchased + Proxy Configured
+
+## Context
+Part 14 identified residential proxy as the only solution for Railway bot. This session:
+**Bought DataImpulse $5 Intro (5GB) + configured for Railway.**
+
+## What Happened
+1. **Proxy provider chosen:** DataImpulse ($5 for 5GB, $1/GB — best value within $8 Razon wallet)
+2. **Bought** the DataImpulse Intro plan ($5)
+3. **Credentials obtained:**
+   - Host: `gw.dataimpulse.com:823`
+   - Login: `da5cab4cd629372627e6`
+   - Password: `d849008f4f6ab380`
+4. **IP whitelisted:** Added Railway IP (39.45.18.10) to DataImpulse whitelist
+5. **Config set in dashboard:** Type=Sticky, Protocol=HTTP/HTTPS, Country=Pakistan
+6. **Key insight:** IP whitelisting + sticky session configured in dashboard = **no code changes needed.** Current `--proxy-server` works. No selenium-wire required.
+
+## Current Status
+| Item | Status |
+|------|--------|
+| DataImpulse purchased | ✅ $5 Intro plan activated |
+| IP whitelisted (39.45.18.10) | ✅ Set in dashboard |
+| Country = Pakistan | ✅ Set in dashboard |
+| Type = Sticky | ✅ Set in dashboard |
+| Protocol = HTTP/HTTPS | ✅ Set in dashboard |
+| `PROXY_LIST` env var on Railway | ⬜ Not yet set |
+| Bot code changes | ❌ Not needed (IP whitelist + sticky = no changes) |
+| Test booking (A1, 03.07 12:16 PM) | ⏳ Pending |
+
+## Next Steps
+1. Set Railway env var: `railway variables set PROXY_LIST=gw.dataimpulse.com:823`
+2. Deploy to Railway (commit empty or push)
+3. Test via form scanner on Railway
+4. Book A1 at 03.07.2026 12:16 PM
+
+---
+
 # Session Summary — July 3, 2026 (Part 14) — Residential Proxy Research: Best Provider for Railway Fix
 
 ## Context
@@ -1688,4 +1725,182 @@ Client account created. Steps:
 | `ddc86fd` | fix: add missing os import in save_students |
 | `9a7e31d` | docs: update session 12/13 — full QA, db.py fixes, bidirectional sync |
 | `d3a5926` | docs: add critical plaintext password bug fix to session summary |
+
+## Session 14 — July 8–9, 2026 — Residential proxy (datacenter block SOLVED) + dashboard stability
+
+### ★ Datacenter-IP block finally beaten — residential proxy on Railway
+The long-standing blocker (Railway datacenter IP → reCAPTCHA v3 low score → "Still on
+login page") is **solved**. Route the bot's traffic through a **Pakistan residential proxy**
+(DataImpulse). Verified: headless login through the PK proxy reaches `my.goethe.de`
+(`★ LOGIN SUCCESSFUL`) — the exact step that failed from Railway's own IP.
+
+**How the proxy auth works (`proxy_auth_forward.py`, new):**
+- Chrome `--proxy-server` ignores embedded `user:pass`, and MV2 auth-extensions are dead on
+  Chrome 127+. selenium-wire's HTTPS MITM broke here (`ERR_CONNECTION_CLOSED`).
+- Solution: a tiny **localhost forwarder** that adds `Proxy-Authorization: Basic ...` to the
+  upstream proxy and tunnels HTTPS via CONNECT (no MITM, no cert issues). Chrome →
+  `127.0.0.1:<port>` → DataImpulse. `start_auth_forwarder(host, port, user, pw)` returns the
+  local port; reused per (host,port,user,pw).
+- `create_driver`: credentialed `PROXY_LIST` entries route through the forwarder; `_parse_proxy`
+  splits `http://user:pass@host:port`. `scan_booking_form` now also pulls a rotator proxy so the
+  form scanner exercises the proxy path.
+
+**Config (Railway env `PROXY_LIST`):**
+`http://<user>__cr.pk__sessid.goethe1__sesstime.30:<pass>@gw.dataimpulse.com:823`
+- `__cr.pk` = Pakistan geo; `__sessid.X__sesstime.30` = **sticky** IP for 30 min (whole booking on
+  one IP — reCAPTCHA needs solve-IP == submit-IP). Verified sticky (same IP across calls).
+- DataImpulse 2GB residential plan; booking uses only a few MB. Panel "Rotating" default is
+  overridden by the username modifiers.
+- **Do NOT use free proxy lists** — datacenter (same block) or credential-theft honeypots.
+
+Client experience now: open dashboard → Start. Booking runs on Railway through the PK IP. No
+local run / no .exe needed. (Local exe + Tampermonkey userscript remain as free fallbacks; both
+in the repo — `userscript/`.)
+
+### Form scanner: dropdown dump + robust motivation
+- `scan_booking_form` returns `result.dropdowns` (every `<select>`'s options); dashboard renders a
+  "Dropdown options:" block — so the exact **Motivation** options are visible once a slot is open.
+- `_select_dropdown_first_valid`: matches configured motivation exact→partial, else auto-picks the
+  first non-placeholder option, so a required dropdown never stalls the wizard. Wired into step 2.
+- Cross-checked real client form screenshots against the 37 selectors — all fields match
+  (SELECTION → PERSONAL DATA → PAYMENT → REVIEW; invoice payment; place-of-birth; motivation).
+
+### Dashboard stability (client's MacBook: "Disconnected" mid-run + "Reload Dashboard" popup)
+Root cause was a loop: a transient fetch timeout hit the global `unhandledrejection` handler →
+crash overlay ("signal timed out") → client clicks Reload → page reloads mid-booking → `connect()`
+hits a busy backend → "Disconnected". Fixes (`frontend/index.html`, `frontend/sw.js`):
+1. Global `onerror`/`unhandledrejection` now **ignore transient network/timeout/abort errors**
+   (`_isTransientError`); only real bugs show the overlay.
+2. Status-poll timeouts 4s/5s → **15s** (Railway is CPU-bound during booking).
+3. **`AbortSignal.timeout` polyfill** — older Safari/macOS browsers lack it, which broke every
+   `apiFetch` on the client's Mac while working on Chrome.
+4. Service worker was **cache-first + precached `/`** → clients stuck on a stale dashboard forever.
+   Now **network-first** for the HTML + old caches purged on activate (`goethe-booking-v1` → `v2`).
+   Client must hard-refresh once (Cmd+Shift+R) to drop the old SW.
+> The booking runs server-side in a bot thread — UI "Disconnected" never stops the booking itself.
+
+### Ops notes
+- Railway sometimes fails at **Deploy › Create container** ("Failed to create deployment") even when
+  Build passes — transient Railway infra, not our code; a later deploy succeeds. Don't push/redeploy
+  right before booking day (code is already live).
+- GH Actions `deploy.yml` `railway up --detach` reports success after upload, so a later container
+  failure won't show there — check the Railway dashboard / backend health for the real state.
+
+### Commits (this session)
+| Commit | Message |
+|--------|---------|
+| `0ff4672` | feat: authenticated residential proxy support (fixes Railway datacenter-IP block) |
+| `b743834` | feat: dump dropdown options in form scanner + robust motivation select |
+| `7f9c868` | fix: dashboard disconnect + 'Reload Dashboard' popup on client machines |
+
+### Still open
+- Live 5-step wizard end-to-end unverified — needs a real open A1 Islamabad slot (nothing to fill
+  until registration opens). Login + proxy + field-mapping all verified.
+- Optional: rotate proxy `sessid` per retry so a failed attempt grabs a fresh PK IP.
+
+## Session 15 — July 9, 2026 — Schedule fetch reliability (proxy → ScrapingBee) + Fetch Dates
+
+### Schedule scraping fixed (was slow / 403 / "signal timed out")
+- Old ScrapingBee key had **expired** (401) → schedule loads fell through a slow chain.
+- First tried routing `curl_cffi` through the **residential proxy** (`goethe_scraper._first_proxy`
+  reads `PROXY_LIST`, strips the sticky `__sessid/__sesstime` → rotating PK IP; booking keeps its
+  sticky proxy). Worked, but Goethe's exam-finder REST API (`/rest/examfinderv3/`) **403s on request
+  bursts** — firing 3 levels concurrently through one IP got throttled. Made it **serial + retry**.
+- Under load the serial scrape ran longer than the dashboard's 15s **Fetch Dates** timeout →
+  "signal timed out". Fixes: Fetch Dates now reads the **cached** schedule (no forced re-scrape);
+  panel Refresh handles freshness.
+- **Final fix: new ScrapingBee trial key** (0/1000, expires 23 Jul). SB's premium residential
+  proxies bypass Goethe's WAF/403 reliably, so **SB is the primary schedule fetcher again**
+  (`curl_cffi` + own proxy = free fallback). Added `country_code=pk` to the SB URL.
+  Verified: all 7 A1/A2/B1 exams across cities with reg dates + times.
+- **Owner action:** set `SCRAPINGBEE_API_KEY` on Railway to the new key (done).
+
+### Live schedule (verified via SB, Jul 9)
+| Level | City | Exam | Reg opens |
+|---|---|---|---|
+| A1 | Lahore | 24.07.2026 | 10.07 11:24 AM |
+| A1 | Karachi | 31.07–01.08.2026 | 17.07 12:17 PM |
+| A1 | Lahore | 21.08.2026 | 07.08 11:11 AM |
+| A2 | Lahore | 25–26.07.2026 | 10.07 11:24 AM |
+| B1 | Lahore | 25–26.07.2026 | 10.07 2:08 PM |
+| B1 | Karachi | 31.07–01.08.2026 | 17.07 2:31 PM |
+| B1 | Lahore | 22–23.08.2026 | 07.08 2:37 PM |
+- **No Islamabad live** — the dashboard's "Islamabad 18–19.07 (reg 03.07)" is **stale cache**;
+  Goethe no longer lists it (reg closed 03.07). Don't book Islamabad.
+- Reg **time** varies by level (dashboard "All Levels" was showing B1 times). Verify the target's
+  exact time on `goethe.de/ins/pk/en/spr/prf/anm.html` before booking day.
+
+### Commits (this session)
+| Commit | Message |
+|--------|---------|
+| `2b2d709` | fix: route schedule scrape through residential proxy (ScrapingBee trial expired) |
+| `b9a2b98` | fix: gentler schedule scrape (serial + retry + rotating proxy) to avoid rate-limit |
+| `8a2fba1` | fix: Fetch Dates timeout 15s->45s |
+| `e4d5165` | fix: Fetch Dates reads cached schedule (no force re-scrape -> no timeout) |
+| `8fcbc11` | fix: prefer ScrapingBee (residential, WAF-bypass) for schedule + PK geo |
+
+### Notes
+- Schedule = display only; booking uses `EXAM_URLS` + Selenium, unaffected by the REST API.
+- Goethe's exam REST API rate-limits rapid requests — don't spam Refresh; 1h cache absorbs it.
+
+## Session 16 — July 9, 2026 — Client roster loaded for 10 Jul booking
+
+- **6 client students added** (all **Lahore**), each **Goethe login verified** via `login_to_goethe`
+  through the PK proxy (headless): Naheeda(A1), Fariha(A2), Dia(A1), Fauzia(A1), Zeemal(A2), Hamza(A1).
+- **Credential typos caught by verify:** Fariha pw `Bismillah @786`→`Bismillah@786`; Fauzia email had a
+  space + pw was `Bismillah@786` (not `@123`). All 6 PASS after fixes. **Verify-before-book saved a booking.**
+- All 6 `booking_datetime` = **2026-07-10T11:24** (A1 & A2 Lahore reg open together, 11:24 AM — A1
+  reconfirmed twice via SB; A2 from the reliable full fetch).
+- **Gotcha:** `POST /api/students` **appends, does not upsert** — re-POSTing to set the datetime made
+  duplicates (13 rows). Fixed by deleting the copies without a datetime → 7 rows. If updating a student,
+  delete + re-add, or add a real update endpoint.
+- Dashboard top card shows only the next student by `booking_datetime` (all now 11:24). Roster shows all 7.
+- `MAX_CONCURRENT` limits parallel students (≈2 run at once, rest queue) — "started 7, 2 running" is normal.
+- ScrapingBee is intermittently **500-ing** ("try render_js") even with credits — schedule panel may show
+  "Failed to load" transiently; retry Refresh. **Display only — booking unaffected.**
+- Old test student **Abeer Meer** still in roster (also 11:24) — delete if not booking.
+- Live wizard still the only unproven bit — Form Scanner will dump the real live form + dropdowns when a
+  slot opens 10 Jul.
+
+## Session 17 — July 9–10, 2026 — Stability fixes + full QA audit (booking eve)
+
+- **Random "Disconnected" ROOT CAUSE fixed** (`proxy_auth_forward.py`): the forwarder spawned **2 threads
+  per connection** (handler+pipe), uncapped. Chrome opens hundreds of connections → process hit
+  `RuntimeError: can't start new thread` (seen in Railway deploy logs) → starved the Flask server →
+  random disconnects. Now **1 thread/connection** (select-based bidirectional pump) + `BoundedSemaphore(300)`
+  backpressure. Verified login still PASS. Commit `a3c0153`.
+- **`config.csv` removed** — shipped in the image with 2 bogus "Abeer Meer" rows (A1 Karachi / A2 Lahore)
+  that `_get_loaded_students` auto-loaded every run with no DB dedup → wasted 2 concurrent slots. Deleted +
+  gitignored. Also deleted the DB "Abeer" row via dashboard.
+- **Opus 4.8 QA audit** (remaining files). Findings:
+  - FERNET/passwords: OK — same key used for add + run, live logins already worked. `decrypt_password`
+    swallows errors & returns ciphertext (silent-fail risk **only** if `FERNET_KEY` ever changes).
+  - `run_one` holds the concurrency semaphore during the 300s re-queue backoff → a failing student blocks a
+    slot 5 min (webapp.py ~387/444). Minor for a 2-slot run; worth releasing before the sleep.
+  - Shared `CIRCUIT_BREAKER` (threshold 5 / cooldown 900s) can open 15 min for ALL students on a 429 storm.
+  - OOM: 2 Chrome on 512MB would OOM, but client is on Railway **$5 Hobby = up to 8GB → fine, no action.**
+  - Encryption-at-rest partly dead code (passwords re-saved plaintext) — not booking-blocking.
+  - A few unauth endpoints (`/api/schedule-start`, `/api/goethe-schedule`) — low impact.
+- **Scheduler timezone:** `scheduled_wait` uses naive `datetime.now()` = Railway UTC. Auto-scheduled 11:24
+  would fire 16:24 PKT. Mitigation: set Railway env `TZ=Asia/Karachi` **and/or** click Start manually (uses
+  `immediate` mode, polls now, TZ-independent). **Plan: manual Start ~11:14 PKT.**
+- Live run confirmed clean: proxy assigned, forwarder up, 2 drivers with proxy, correct exam URLs.
+- Commits: `a3c0153` (forwarder threads), config.csv removal.
+- **Booking eve status:** proxy login works, disconnect fixed, 6 real students loaded+verified, RAM fine.
+  Only unproven = live 5-step wizard (needs open slot 10 Jul 11:24).
+
+## Session 18 — July 10, 2026 — B1 module selection
+
+- **B1 is modular** — its SELECTION page has 4 checkboxes (Reading/Listening/Writing/Speaking); A1/A2
+  book the whole exam (no module page). Added `_select_modules(driver, student, logger)`
+  (`booking_helper.py`): ticks only the student's chosen modules (default = all), Continue, then
+  handles the "Book for me / for my child" intermediate. **Gated to level B\*** — A1/A2 flow untouched.
+- Frontend Add-Student form: 4 module checkboxes (all checked default) → `modules` CSV field → API.
+- **Caveat:** DB uses fixed columns and `save_students` maps fields explicitly, so `modules` is
+  **not persisted** (extra key silently ignored — no crash). Full B1 (all modules, the default) works
+  without persistence; a *subset* pick is dropped on reload → falls back to all. Subset persistence
+  needs a `modules` DB column + Alembic migration on Railway Postgres — deferred (schema change on the
+  live DB is risky pre-booking).
+- **Untested live** — no open B1 form to test against; verify via Form Scanner when a B1 slot opens.
+- Commit `6aa108d`. Tomorrow's A1/A2 run = zero impact (gated).
 
