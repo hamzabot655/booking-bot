@@ -447,7 +447,10 @@ def create_driver(use_headless: bool, logger: logging.Logger, proxy: Optional[st
         if system_driver:
             service = Service(system_driver)
         else:
-            service = Service(ChromeDriverManager().install())
+            # Empty Service() → Selenium Manager downloads the chromedriver that
+            # MATCHES the installed Chrome. webdriver_manager grabbed the latest
+            # (151) vs Railway's Chrome 150 → "chromedriver unexpectedly exited -5".
+            service = Service()
     else:
         service = Service(ChromeDriverManager().install())
         service.creation_flags = 0
