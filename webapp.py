@@ -780,6 +780,24 @@ def api_add_student():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@bp.route("/students/status", methods=["POST"])
+@require_auth
+def api_set_student_status():
+    """Manually set a student's booking status — e.g. to record a booking that was
+    made by hand, so it shows in history. Body: {"key": "Name|Level|City",
+    "status": "confirmed", "result": {...optional}}."""
+    data = request.get_json(silent=True) or {}
+    key = (data.get("key") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not key or not status:
+        return jsonify({"ok": False, "error": "key and status required"}), 400
+    try:
+        db.update_student_status(key, status, data.get("result"))
+        return jsonify({"ok": True, "key": key, "status": status})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
 @bp.route("/students/<int(signed=True):student_id>", methods=["DELETE"])
 @require_auth
 def api_delete_student(student_id: int):
