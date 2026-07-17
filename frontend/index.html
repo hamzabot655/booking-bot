@@ -1428,11 +1428,20 @@ async function loadConfigFromBackend() {
     const data = await resp.json();
     if (data.students && data.students.length > 0) {
       document.getElementById("configInfo").textContent = `${data.count} student(s) loaded`;
-      updateStudentUI(data.students.map(s => ({
-        name: s.name, level: s.level || s.exam_level, city: s.city,
-        booking_time: s.booking_datetime, status: "Not started",
-        color: "secondary", details: ""
-      })));
+      updateStudentUI(data.students.map(s => {
+        // Show the stored DB status (e.g. a manually-recorded "confirmed") instead of
+        // always "Not started" — only fall back when there's no real status yet.
+        const raw = (s.status || "").toLowerCase();
+        const st = raw === "confirmed" ? "Confirmed!"
+                 : raw === "submitted" ? "Submitted"
+                 : raw === "failed" ? "Failed"
+                 : "Not started";
+        return {
+          name: s.name, level: s.level || s.exam_level, city: s.city,
+          booking_time: s.booking_datetime, status: st,
+          color: "secondary", details: raw === "confirmed" ? "Booked" : ""
+        };
+      }));
       startCountdown(data.students);
       document.getElementById("configPreview").textContent =
         "name,email,level,city,booking_datetime,...\n" +
@@ -2269,7 +2278,11 @@ function updateCountdown() {
   const allPast = countdownTargets.every(t => t.time <= now);
   if (allPast) {
     bar.innerHTML = countdownTargets.map(t =>
-      `<div class="countdown-item" style="border-left-color:var(--green)"><div class="label">${t.exam}</div><div class="exam">${escHtml(t.name)}</div><div class="time critical">Slot passed</div><div class="city">${escHtml(t.city)}</div></div>`
+      `<div class="countdown-item" style="border-left-color:var(--green)"><div class="label">${t.exam}</div><div class="exam">${escHtml(t.name)}</div>` +
+      (t.booked
+        ? `<div class="time" style="color:var(--green)">Booked ✅</div>`
+        : `<div class="time critical">Slot passed</div>`) +
+      `<div class="city">${escHtml(t.city)}</div></div>`
     ).join("");
     return;
   }
@@ -2297,6 +2310,7 @@ function startCountdown(students) {
           name: s.name || "Student",
           exam: s.level || s.exam_level || "?",
           city: s.city || "",
+          booked: (s.status || "").toLowerCase() === "confirmed",
         });
       }
     }
