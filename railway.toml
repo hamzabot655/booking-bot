@@ -6,6 +6,9 @@ builder = "dockerfile"
 dockerfile_path = "Dockerfile"
 
 [deploy]
-restartPolicyType = "never"
+# ON_FAILURE so a crash/OOM auto-recovers. With "never", the 17-Jul crash left the
+# backend dead (502) until a manual redeploy — never again.
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
 healthcheckPath = "/health"
 healthcheckTimeout = 600
